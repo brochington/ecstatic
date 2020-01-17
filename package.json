@@ -16,6 +16,7 @@
     "url": "https://github.com/brochington/ecstatic/issues"
   },
   "homepage": "https://github.com/brochington/ecstatic#readme",
+  "types": "ecstatic.d.ts",
   "dependencies": {
     "@types/classnames": "^2.2.9",
     "@types/lodash": "^4.14.149",
@@ -27,7 +28,7 @@
     "moment": "^2.24.0",
     "qs": "^6.9.1",
     "rimraf": "^3.0.0",
-    "uuid": "^3.3.3",
+    "uuid": "^3.4.0",
     "webpack-cli": "^3.3.10"
   },
   "devDependencies": {
