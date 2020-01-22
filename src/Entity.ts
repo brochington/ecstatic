@@ -12,7 +12,7 @@ class Entity<CT> {
     this.id = uuidv4();
     this.world = world;
 
-    /* 
+    /*
     Registering with the World.
     */
     this.world.registerEntity(this.id);
@@ -24,9 +24,8 @@ class Entity<CT> {
 }
 
 export function createEntity<CT>(
-  world: World<CT>
+  world: World<CT>,
 ): Entity<CT> {
-
   const entity = new Entity<CT>(world);
 
   return entity;

@@ -11,15 +11,14 @@ const babelLoaderConfig = {
       '@babel/plugin-proposal-object-rest-spread',
     ],
     presets: [
-      '@babel/typescript'
-    ]
-  }
+      '@babel/typescript',
+    ],
+  },
 }
 
 module.exports = {
   entry: [
-    // 'webpack-hot-middleware/client',
-    path.join(process.cwd(), 'src/index.ts')
+    path.join(process.cwd(), 'src/index.ts'),
   ],
   output: {
     filename: 'bundle.js',
@@ -33,20 +32,20 @@ module.exports = {
   devtool: 'eval-source-map',
   resolve: {
     alias: { ...aliases },
-    extensions: ['.js', '.mjs', '.ts', '.tsx']
+    extensions: ['.js', '.mjs', '.ts', '.tsx'],
   },
   module: {
     rules: [{
       test: /\.ts(x?)$/,
       include: path.join(process.cwd(), 'src'),
-      use: [babelLoaderConfig]
+      use: [babelLoaderConfig],
     }, {
       test: /\.m?js$/,
       include: path.join(process.cwd(), 'src'),
-      use: [babelLoaderConfig]
-    }]
+      use: [babelLoaderConfig],
+    }],
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin()
-  ]
-}
+    new webpack.HotModuleReplacementPlugin(),
+  ],
+};

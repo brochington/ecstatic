@@ -17,7 +17,7 @@ export default class World<CT> {
 
     this.entities.set(eid, cc);
 
-    for (let [ctArr, entitySet] of this.entitiesByCType) {
+    for (const [ctArr, entitySet] of this.entitiesByCType) {
       if (ctArr.every(cc.has)) {
         entitySet.add(eid);
       }
@@ -25,23 +25,11 @@ export default class World<CT> {
   }
 
   registerSystem(cTypes: CT[]): void {
-    console.log('rrr', cTypes);
     this.entitiesByCType.set(cTypes, new Set<EntityId>());
   }
 
-  registerEntity(eid: EntityId) {
+  registerEntity(eid: EntityId): void {
     const cc = new ComponentCollection<CT>();
     this.entities.set(eid, cc);
-
-    // if ctArr matches componentTypes in cc, add entity to entityId Set.
-    for (let [ctArr, entitySet] of this.entitiesByCType) {
-      if (ctArr.every(cc.has)) {
-        entitySet.add(eid);
-      }
-    }
   }
-
-  // updateInterals() {
-
-  // }
 }

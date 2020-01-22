@@ -5,5 +5,5 @@ import { createSystem } from './System';
 export {
   World,
   createEntity,
-  createSystem
+  createSystem,
 };

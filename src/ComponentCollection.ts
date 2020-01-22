@@ -3,15 +3,12 @@ import { Component } from './Component';
 export default class ComponentCollection<CT> {
   private components: Map<CT, Component<CT>> = new Map();
 
-  private componentTypes: Set<CT> = new Set();
-
   add = (component: Component<CT>): void => {
     this.components.set(component.type, component);
-    this.componentTypes.add(component.type);
   }
 
   update = (cType: CT, func: (c: Component<CT>) => Component<CT>): void => {
-    if (this.componentTypes.has(cType)) {
+    if (this.components.has(cType)) {
       const c = this.components.get(cType);
 
       if (c) {
@@ -27,5 +24,9 @@ export default class ComponentCollection<CT> {
 
   has = (cType: CT): boolean => {
     return this.components.has(cType)
+  }
+
+  size = (): number => {
+    return this.components.size;
   }
 }
