@@ -29,8 +29,8 @@ describe('World', () => {
             // don't need to do anything here for this test.
           }
         );
-        expect(testWorld.entitiesByCType.has(cTypes)).to.equal(true);
-        expect(testWorld.entitiesByCType.get(cTypes)).to.be.instanceof(Set);
+        expect(testWorld.entitiesByCTypes.has(cTypes)).to.equal(true);
+        expect(testWorld.entitiesByCTypes.get(cTypes)).to.be.instanceof(Set);
       });
     });
     context('registerEntity', () => {
@@ -60,8 +60,8 @@ describe('World', () => {
 
         entity.add(firstComponet);
 
-        expect(testWorld.entitiesByCType.get(cTypes1).has(entity.id)).to.equal(true);
-        expect(testWorld.entitiesByCType.get(cTypes2).has(entity.id)).to.equal(false);
+        expect(testWorld.entitiesByCTypes.get(cTypes1).has(entity.id)).to.equal(true);
+        expect(testWorld.entitiesByCTypes.get(cTypes2).has(entity.id)).to.equal(false);
       });
     });
     context('set', () => {
@@ -86,7 +86,7 @@ describe('World', () => {
         expect(cc.has(CompTypes.FirstComponent)).to.equal(true);
         expect(cc.size()).to.equal(1);
 
-        expect(testWorld.entitiesByCType.get(cTypes).has(entity.id)).to.equal(true);
+        expect(testWorld.entitiesByCTypes.get(cTypes).has(entity.id)).to.equal(true);
       })
     })
   });

@@ -4,7 +4,9 @@
   "description": "a damn fine ECS library",
   "main": "dist/bundle.js",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
+    "clean": "rimraf dist",
+    "build": "npm run clean && webpack --config webpack.config.js",
+    "dev": "npm run clean && webpack --config webpack.config.js --watch",
     "test": " ./node_modules/karma/bin/karma start"
   },
   "repository": {

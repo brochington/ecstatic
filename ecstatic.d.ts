@@ -1,6 +1,25 @@
 export type EntityId = string;
 
+export class Entity<CT> {
+  id: string;
+  world: World<CT>;
+
+  add(component: Component<CT>): this;
+
+  clear(): this;
+
+  destroy(): void;
+}
+
+export function createEntity<CT>(world: World<CT>): Entity<CT>;
+
 export type System = () => void;
+
+export interface SystemFuncArgs<CT> {
+  entity: Entity<CT>;
+  components: ComponentCollection<CT>;
+  world: World<CT>;
+}
 
 export interface Component<CT> {
   type: CT;
@@ -16,15 +35,13 @@ export class ComponentCollection<CT> {
 
   update(cType: CT, func: (c: Component<CT>) => Component<CT>): void;
 
-  get(cType: CT): Component<CT> | undefined;
+  get(cType: CT): Component<CT>;
 
   has(cType: CT): boolean;
 }
 
 export type SystemFunc<CT> = (
-  entityId: EntityId,
-  cc: ComponentCollection<CT>,
-  world: World<CT>,
+  args: SystemFuncArgs<CT>
 ) => void;
 
 export function createSystem<CT>(world: World < CT >, cTypes: CT[], func: SystemFunc<CT>): System

@@ -27,6 +27,8 @@ module.exports = {
     libraryTarget: 'umd',
     publicPath: '/static/',
     umdNamedDefine: true,
+    hotUpdateChunkFilename: 'hot/hot-update.js',
+    hotUpdateMainFilename: 'hot/hot-update.json',
   },
   mode: 'development',
   devtool: 'eval-source-map',
