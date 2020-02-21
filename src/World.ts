@@ -9,6 +9,19 @@ export default class World<CT> {
 
   entitiesByCTypes: Map<CT[], Set<EntityId>> = new Map();
 
+  getEntitiesBy = (predicate: (entity: Entity<CT>, cc: ComponentCollection<CT>) => boolean): Map<Entity<CT>, ComponentCollection<CT>> => {
+    console.log('here!!');
+    const results = new Map<Entity<CT>, ComponentCollection<CT>>();
+
+    for (const [entityId, entity] of this.entities) {
+      const cc = this.componentCollections.get(entityId);
+      if (predicate(entity, cc)) {
+        results.set(entity, cc);
+      }
+    }
+
+    return results;
+  }
 
   simulate = (func: Function): void => {
     func(this.componentCollections);

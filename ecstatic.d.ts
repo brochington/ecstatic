@@ -6,6 +6,10 @@ export class Entity<CT> {
 
   add(component: Component<CT>): this;
 
+  get(cType: CT): Component<CT>;
+
+  getAll(): ComponentCollection<CT>;
+
   clear(): this;
 
   destroy(): void;
@@ -19,6 +23,10 @@ export interface SystemFuncArgs<CT> {
   entity: Entity<CT>;
   components: ComponentCollection<CT>;
   world: World<CT>;
+  index: number;
+  size: number;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
 export interface Component<CT> {
@@ -38,6 +46,8 @@ export class ComponentCollection<CT> {
   get(cType: CT): Component<CT>;
 
   has(cType: CT): boolean;
+
+  size(): number;
 }
 
 export type SystemFunc<CT> = (
@@ -48,4 +58,6 @@ export function createSystem<CT>(world: World < CT >, cTypes: CT[], func: System
 
 declare class World<CT> {
   set: (entityId: EntityId, component: Component<CT>) => void;
+
+  getEntitiesBy(predicate: (entity: Entity<CT>, cc: ComponentCollection<CT>) => boolean): Map<Entity<CT>, ComponentCollection<CT>>
 }

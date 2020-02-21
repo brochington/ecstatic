@@ -1,6 +1,7 @@
 import uuidv4 from 'uuid/v4';
 import World from './World';
 import { Component } from './Component';
+import ComponentCollection from './ComponentCollection';
 
 export type EntityId = string;
 
@@ -24,17 +25,6 @@ export default class Entity<CT> {
     return this;
   }
 
-  /** Clears all components from an Entity */
-  clear(): Entity<CT> {
-    this.world.clearEntityComponents(this.id);
-
-    return this
-  }
-
-  destroy(): void {
-    this.world.destroyEntity(this.id);
-  }
-
   // TODO: figure out some much better error handling throughout this library.
   get(cType: CT): Component<CT> {
     const cc = this.world.entities.get(this.id);
@@ -51,6 +41,21 @@ export default class Entity<CT> {
 
 
     return component;
+  }
+
+  getAll(): ComponentCollection<CT> {
+    return this.world.componentCollections.get(this.id);
+  }
+
+  /** Clears all components from an Entity */
+  clear(): Entity<CT> {
+    this.world.clearEntityComponents(this.id);
+
+    return this
+  }
+
+  destroy(): void {
+    this.world.destroyEntity(this.id);
   }
 }
 
