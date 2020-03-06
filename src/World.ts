@@ -2,6 +2,13 @@ import Entity, { EntityId } from './Entity';
 import { Component } from './Component';
 import ComponentCollection from './ComponentCollection';
 
+type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
+
+interface SingleComponentResp<CT, C> {
+  entity: Entity<CT>;
+  component: C;
+}
+
 export default class World<CT> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
 
@@ -9,22 +16,60 @@ export default class World<CT> {
 
   entitiesByCTypes: Map<CT[], Set<EntityId>> = new Map();
 
-  getEntitiesBy = (predicate: (entity: Entity<CT>, cc: ComponentCollection<CT>) => boolean): Map<Entity<CT>, ComponentCollection<CT>> => {
-    console.log('here!!');
-    const results = new Map<Entity<CT>, ComponentCollection<CT>>();
+  find = (predicate: FindPredicate<CT>): Entity<CT> | null => {
+    for (const entity of this.entities.values()) {
+      if (predicate(entity)) {
+        return entity;
+      }
+    }
 
-    for (const [entityId, entity] of this.entities) {
-      const cc = this.componentCollections.get(entityId);
-      if (predicate(entity, cc)) {
-        results.set(entity, cc);
+    return null;
+  }
+
+  findAll = (predicate: FindPredicate<CT>): Entity<CT>[] => {
+    const results: Entity<CT>[] = [];
+
+    for (const entity of this.entities.values()) {
+      if (predicate(entity)) {
+        results.push(entity);
       }
     }
 
     return results;
   }
 
-  simulate = (func: Function): void => {
-    func(this.componentCollections);
+  /** "locates" a single entity based on its Components. */
+  locate = (cTypes: CT | CT[]): Entity<CT> | null => {
+    for (const entity of this.entities.values()) {
+      if (entity.components.has(cTypes)) {
+        return entity;
+      }
+    }
+
+    return null;
+  }
+
+  /** Locates all entities that contain the components named */
+  locateAll = (cTypes: CT | CT[]): Entity<CT>[] => {
+    const results: Entity<CT>[] = [];
+
+    for (const entity of this.entities.values()) {
+      if (entity.components.has(cTypes)) {
+        results.push(entity);
+      }
+    }
+
+    return results;
+  }
+
+  /** Grab all the components primarily, and the entities if needed  */
+  grabAll = <C>(cType: CT): SingleComponentResp<CT, C>[] => {
+    return this
+      .locateAll(cType)
+      .map(entity => ({
+        entity,
+        component: entity.components.get(cType) as unknown as C,
+      }));
   }
 
   set = (eid: EntityId, component: Component<CT>): void => {

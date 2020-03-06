@@ -26,11 +26,15 @@ export default class ComponentCollection<CT> {
     return this.components.get(cType);
   }
 
-  has = (cType: CT): boolean => {
-    return this.components.has(cType)
+  has = (cType: CT | CT[]): boolean => {
+    if (Array.isArray(cType)) {
+      return cType.every(this.components.has);
+    } else {
+      return this.components.has(cType)
+    }
   }
 
-  size = (): number => {
+  get size(): number {
     return this.components.size;
   }
 }

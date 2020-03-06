@@ -10,6 +10,8 @@ export class Entity<CT> {
 
   getAll(): ComponentCollection<CT>;
 
+  get components(): ComponentCollection<CT>;
+
   clear(): this;
 
   destroy(): void;
@@ -45,9 +47,9 @@ export class ComponentCollection<CT> {
 
   get(cType: CT): Component<CT>;
 
-  has(cType: CT): boolean;
+  has(cType: CT | CT[]): boolean;
 
-  size(): number;
+  get size(): number;
 }
 
 export type SystemFunc<CT> = (
@@ -56,8 +58,27 @@ export type SystemFunc<CT> = (
 
 export function createSystem<CT>(world: World < CT >, cTypes: CT[], func: SystemFunc<CT>): System
 
+export type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
+
+export type FilterPredicate<CT> = (entity: Entity<CT>) => boolean;
+
+export interface SingleComponentResp<CT, C> {
+  entity: Entity<CT>;
+  component: C;
+}
+
 declare class World<CT> {
+  find: (predicate: FindPredicate<CT>) => Entity<CT> | null;
+
+  findAll: (predicate: FindPredicate<CT>) => Entity<CT>[];
+
+  locate: (cTypes: CT | CT[]) => Entity<CT> | null;
+
+  locateAll: (cTypes: CT | CT[]) => Entity<CT>[];
+
+  grabAll: <C>(cType: CT) => SingleComponentResp<CT, C>[];
+
   set: (entityId: EntityId, component: Component<CT>) => void;
 
-  getEntitiesBy(predicate: (entity: Entity<CT>, cc: ComponentCollection<CT>) => boolean): Map<Entity<CT>, ComponentCollection<CT>>
+  entitiesBy(predicate: (entity: Entity<CT>) => boolean): Entity<CT>
 }

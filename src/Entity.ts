@@ -47,6 +47,10 @@ export default class Entity<CT> {
     return this.world.componentCollections.get(this.id);
   }
 
+  get components(): ComponentCollection<CT> {
+    return this.world.componentCollections.get(this.id);
+  }
+
   /** Clears all components from an Entity */
   clear(): Entity<CT> {
     this.world.clearEntityComponents(this.id);
