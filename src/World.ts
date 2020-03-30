@@ -16,6 +16,7 @@ export default class World<CT> {
 
   entitiesByCTypes: Map<CT[], Set<EntityId>> = new Map();
 
+  /** "finds" a single entity based on a predicate */
   find = (predicate: FindPredicate<CT>): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (predicate(entity)) {
@@ -26,6 +27,7 @@ export default class World<CT> {
     return null;
   }
 
+  /** "finds" all entities based on a predicate, kinda like filter. */
   findAll = (predicate: FindPredicate<CT>): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
