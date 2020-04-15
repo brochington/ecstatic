@@ -4,6 +4,8 @@ import ComponentCollection from './ComponentCollection';
 
 type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
 
+type GrabPredicate<C> = (component: C) => boolean;
+
 interface SingleComponentResp<CT, C> {
   entity: Entity<CT>;
   component: C;
@@ -62,6 +64,28 @@ export default class World<CT> {
     }
 
     return results;
+  }
+
+  /* Grab single component based on component type and predicate. */
+  grabBy = <C>(cType: CT, predicate: GrabPredicate<C>): SingleComponentResp<CT, C> | null => {
+    const entities = this.locateAll(cType);
+
+    for (const entity of entities) {
+
+      const cc = this.componentCollections.get(entity.id);
+
+      const component = cc.get(cType) as unknown as C;
+
+
+      if (predicate(component)) {
+        return {
+          component,
+          entity,
+        }
+      }
+    }
+
+    return null;
   }
 
   /** Grab all the components primarily, and the entities if needed  */

@@ -1,4 +1,4 @@
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 import World from './World';
 import { Component } from './Component';
 import ComponentCollection from './ComponentCollection';
@@ -26,6 +26,7 @@ export default class Entity<CT> {
   }
 
   // TODO: figure out some much better error handling throughout this library.
+  //       Probably throw some errors.
   get(cType: CT): Component<CT> {
     const cc = this.world.entities.get(this.id);
 

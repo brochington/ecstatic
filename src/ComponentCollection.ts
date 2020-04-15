@@ -28,7 +28,7 @@ export default class ComponentCollection<CT> {
 
   has = (cType: CT | CT[]): boolean => {
     if (Array.isArray(cType)) {
-      return cType.every(this.components.has);
+      return cType.every((ct) => this.components.has(ct) === true);
     } else {
       return this.components.has(cType)
     }

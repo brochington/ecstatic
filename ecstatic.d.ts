@@ -60,6 +60,8 @@ export function createSystem<CT>(world: World < CT >, cTypes: CT[], func: System
 
 export type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
 
+export type GrabPredicate<C> = (component: C) => boolean;
+
 export type FilterPredicate<CT> = (entity: Entity<CT>) => boolean;
 
 export interface SingleComponentResp<CT, C> {
@@ -75,6 +77,8 @@ declare class World<CT> {
   locate: (cTypes: CT | CT[]) => Entity<CT> | null;
 
   locateAll: (cTypes: CT | CT[]) => Entity<CT>[];
+
+  grabBy: <C>(cType: CT, predicate: GrabPredicate<C>) => SingleComponentResp<CT, C> | null;
 
   grabAll: <C>(cType: CT) => SingleComponentResp<CT, C>[];
 
