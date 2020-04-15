@@ -18,12 +18,12 @@ export default class ComponentCollection<CT> {
     }
   };
 
-  get = (cType: CT): Component<CT> => {
+  get = <C>(cType: CT): C => {
     if (!this.components.has(cType)) {
       throw new Error(`ComponentCollection does not have component of type ${cType}`)
     }
     
-    return this.components.get(cType);
+    return this.components.get(cType) as unknown as C;
   }
 
   has = (cType: CT | CT[]): boolean => {

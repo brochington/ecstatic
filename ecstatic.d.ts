@@ -78,6 +78,8 @@ declare class World<CT> {
 
   locateAll: (cTypes: CT | CT[]) => Entity<CT>[];
 
+  grab: <C>(cType: CT) => SingleComponentResp<CT, C> | null;
+
   grabBy: <C>(cType: CT, predicate: GrabPredicate<C>) => SingleComponentResp<CT, C> | null;
 
   grabAll: <C>(cType: CT) => SingleComponentResp<CT, C>[];

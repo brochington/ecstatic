@@ -66,6 +66,23 @@ export default class World<CT> {
     return results;
   }
 
+  grab = <C>(cType: CT): SingleComponentResp<CT, C> | null => {
+    const entity = this.locate(cType);
+
+    if (entity) {
+      const cc = this.componentCollections.get(entity.id);
+  
+      const component = cc.get<C>(cType);
+
+      return {
+        entity,
+        component,
+      }
+    }
+
+    return null;
+  }
+
   /* Grab single component based on component type and predicate. */
   grabBy = <C>(cType: CT, predicate: GrabPredicate<C>): SingleComponentResp<CT, C> | null => {
     const entities = this.locateAll(cType);
@@ -74,7 +91,7 @@ export default class World<CT> {
 
       const cc = this.componentCollections.get(entity.id);
 
-      const component = cc.get(cType) as unknown as C;
+      const component = cc.get<C>(cType);
 
 
       if (predicate(component)) {
