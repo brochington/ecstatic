@@ -30,7 +30,7 @@ module.exports = {
     hotUpdateChunkFilename: 'hot/hot-update.js',
     hotUpdateMainFilename: 'hot/hot-update.json',
   },
-  mode: 'development',
+  mode: 'production',
   devtool: 'eval-source-map',
   resolve: {
     alias: { ...aliases },

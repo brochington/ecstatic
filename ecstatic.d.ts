@@ -45,7 +45,7 @@ export class ComponentCollection<CT> {
 
   update(cType: CT, func: (c: Component<CT>) => Component<CT>): void;
 
-  get(cType: CT): Component<CT>;
+  get: <C>(cType: CT) => C;
 
   has(cType: CT | CT[]): boolean;
 

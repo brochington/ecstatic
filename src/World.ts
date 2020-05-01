@@ -67,7 +67,10 @@ export default class World<CT> {
   }
 
   grab = <C>(cType: CT): SingleComponentResp<CT, C> | null => {
+    console.log('in grab', cType);
+    console.log('entities', this.entities.values());
     const entity = this.locate(cType);
+    console.log('got an entity!!', entity);
 
     if (entity) {
       const cc = this.componentCollections.get(entity.id);
