@@ -84,6 +84,8 @@ declare class World<CT> {
 
   grabAll: <C>(cType: CT) => SingleComponentResp<CT, C>[];
 
+  get: <C>(entityId: EntityId, cType: CT) => C;
+
   set: (entityId: EntityId, component: Component<CT>) => void;
 
   entitiesBy(predicate: (entity: Entity<CT>) => boolean): Entity<CT>

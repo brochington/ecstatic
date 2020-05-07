@@ -105,7 +105,7 @@ export default class World<CT> {
     return null;
   }
 
-  /** Grab all the components primarily, and the entities if needed  */
+  /* Grab all the components primarily, and the entities if needed  */
   grabAll = <C>(cType: CT): SingleComponentResp<CT, C>[] => {
     return this
       .locateAll(cType)
@@ -113,6 +113,13 @@ export default class World<CT> {
         entity,
         component: entity.components.get(cType) as unknown as C,
       }));
+  }
+
+  /* Given an entity id and componentType, returns component */
+  get = <C>(eid: EntityId, cType: CT): C => {
+    const cc = this.componentCollections.get(eid);
+
+    return cc.get<C>(cType);
   }
 
   set = (eid: EntityId, component: Component<CT>): void => {
