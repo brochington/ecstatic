@@ -11,19 +11,10 @@
     "esModuleInterop": true,
     "jsx": "react",
     "baseUrl": ".",
-    "paths": {
-      "components/*": ["src/client/components/*"],
-      "pages/*": ["src/client/pages/*"],
-      "actions/*": ["src/client/actions/*"],
-      "actions": ["src/client/actions/index.ts"],
-      "contexts/*": ["src/client/contexts/*"],
-      "utils/*": ["src/client/utils/*"],
-      "constants/*": ["src/client/constants/*"],
-      "services/*": ["src/client/services/*"],
-      "records/*": ["src/client/records/*"]
-    }
+    "paths": {}
   },
   "include": [
-    "src/client"
+    "src",
+    "interfaces.d.ts"
   ]
 }

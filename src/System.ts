@@ -53,10 +53,13 @@ export function createSystem<CT>(
     //     }
     //   }
     // }
-    for (const eid of world.entitiesByCTypes.get(cTypes)) {
+
+    const cTypeArrs = world.entitiesByCTypes.get(cTypes) || new Set();
+
+    for (const eid of cTypeArrs) {
       const args: SystemFuncArgs<CT> = {
-        entity: world.entities.get(eid),
-        components: world.componentCollections.get(eid),
+        entity: world.entities.get(eid) || new Entity<CT>(world),
+        components: world.componentCollections.get(eid) || new ComponentCollection<CT>(),
         world,
         index,
         size,

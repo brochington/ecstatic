@@ -1,12 +1,27 @@
 import World from '../World';
 import { createSystem } from '../System';
-import { createEntity } from '../Entity';
+import Entity, { createEntity } from '../Entity';
 import ComponentCollection from '../ComponentCollection';
 import { Component } from '../Component';
 
 enum CompTypes {
   FirstComponent,
   SecondComponent,
+}
+
+interface TestComp1Storage {
+  id: string;
+}
+
+class TestComp1 implements Component<CompTypes> {
+  type = CompTypes.FirstComponent;
+  storage: TestComp1Storage;
+
+  constructor(id: string) {
+    this.storage = {
+      id,
+    }
+  }
 }
 
 describe('World', () => {
@@ -21,14 +36,10 @@ describe('World', () => {
       it('set correct content in the world instance.', () => {
         const testWorld = new World<CompTypes>();
         const cTypes = [CompTypes.FirstComponent];
-  
-        createSystem<CompTypes>(
-          testWorld,
-          cTypes,
-          () => {
-            // don't need to do anything here for this test.
-          }
-        );
+
+        createSystem<CompTypes>(testWorld, cTypes, () => {
+          // don't need to do anything here for this test.
+        });
         expect(testWorld.entitiesByCTypes.has(cTypes)).to.equal(true);
         expect(testWorld.entitiesByCTypes.get(cTypes)).to.be.instanceof(Set);
       });
@@ -39,8 +50,18 @@ describe('World', () => {
 
         const entity = createEntity<CompTypes>(testWorld);
 
+        entity.add(new TestComp1('test-comp-1'));
+
+        const cc = testWorld.componentCollections.get(entity.id) as ComponentCollection<CompTypes>;
+
+        expect(cc.size).to.equal(1);
+
         expect(testWorld.entities.has(entity.id)).to.equal(true);
-        expect(testWorld.entities.get(entity.id)).to.be.instanceof(ComponentCollection);
+        expect(testWorld.entities.get(entity.id)).to.be.instanceof(Entity);
+        expect(cc.has(CompTypes.FirstComponent)).to.equal(true);
+        expect(cc.get<TestComp1>(CompTypes.FirstComponent).storage.id).to.equal('test-comp-1');
+
+
       });
 
       it('Add entity to entitiesByCType in correct spot', () => {
@@ -56,12 +77,16 @@ describe('World', () => {
         const firstComponet: Component<CompTypes> = {
           type: CompTypes.FirstComponent,
           storage: {},
-        }
+        };
 
         entity.add(firstComponet);
 
-        expect(testWorld.entitiesByCTypes.get(cTypes1).has(entity.id)).to.equal(true);
-        expect(testWorld.entitiesByCTypes.get(cTypes2).has(entity.id)).to.equal(false);
+        expect(testWorld.entitiesByCTypes.get(cTypes1).has(entity.id)).to.equal(
+          true
+        );
+        expect(testWorld.entitiesByCTypes.get(cTypes2).has(entity.id)).to.equal(
+          false
+        );
       });
     });
     context('set', () => {
@@ -76,19 +101,18 @@ describe('World', () => {
         const component: Component<CompTypes> = {
           type: CompTypes.FirstComponent,
           storage: {},
-        }
+        };
 
         testWorld.set(entity.id, component);
 
-        const cc = testWorld.entities.get(entity.id);
+        const cc = testWorld.componentCollections.get(entity.id) as ComponentCollection<CompTypes>;
 
         expect(cc).to.be.instanceof(ComponentCollection);
         expect(cc.has(CompTypes.FirstComponent)).to.equal(true);
-        expect(cc.size()).to.equal(1);
+        expect(cc.size).to.equal(1);
 
         expect(testWorld.entitiesByCTypes.get(cTypes).has(entity.id)).to.equal(true);
-      })
-    })
+      });
+    });
   });
-
 });

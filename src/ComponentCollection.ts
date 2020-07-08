@@ -18,6 +18,10 @@ export default class ComponentCollection<CT> {
     }
   };
 
+  remove = (cType: CT): void => {
+    this.components.delete(cType);
+  }
+
   get = <C>(cType: CT): C => {
     if (!this.components.has(cType)) {
       throw new Error(`ComponentCollection does not have component of type ${cType}`)
@@ -32,6 +36,10 @@ export default class ComponentCollection<CT> {
     } else {
       return this.components.has(cType)
     }
+  }
+
+  get componentTypes(): CT[] {
+    return [...this.components.keys()];
   }
 
   get size(): number {

@@ -6,61 +6,76 @@ import ComponentCollection from './ComponentCollection';
 export type EntityId = string;
 
 export default class Entity<CT> {
-  id: string;
-  world: World<CT>;
+  private _id: string;
+  private _world: World<CT>;
 
   constructor(world: World<CT>) {
-    this.id = uuidv4();
-    this.world = world;
+    this._id = uuidv4();
+    this._world = world;
 
     /*
     Registering with the World.
     */
-    this.world.registerEntity(this);
+    this._world.registerEntity(this);
   }
 
+  /**
+   * Add a component to an Entity, doh.
+   */
   add(component: Component<CT>): Entity<CT> {
-    this.world.set(this.id, component);
+    this._world.set(this._id, component);
 
     return this;
   }
 
-  // TODO: figure out some much better error handling throughout this library.
-  //       Probably throw some errors.
-  get(cType: CT): Component<CT> {
-    const cc = this.world.entities.get(this.id);
+  /**
+   * Determines if an entity has a component related to it.
+   */
+  has(cType: CT): boolean {
+    const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
-    if (!cc) {
-      console.error('unable to find component collection for specified entity: ', this.id);
-    }
+    return cc.has(cType);
+  }
 
-    const component = cc.get(cType)
+  get<C>(cType: CT): C {
+    const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
-    if (!component) {
-      console.error(`Unable to find component of type ${cType} in entity ${this.id}`);
-    }
-
+    const component = cc.get<C>(cType);
 
     return component;
   }
 
   getAll(): ComponentCollection<CT> {
-    return this.world.componentCollections.get(this.id);
+    return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
   }
 
   get components(): ComponentCollection<CT> {
-    return this.world.componentCollections.get(this.id);
+    return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
+  }
+
+  remove(cType: CT): Entity<CT> {
+    this._world.remove(this._id, cType);
+
+    return this;
   }
 
   /** Clears all components from an Entity */
   clear(): Entity<CT> {
-    this.world.clearEntityComponents(this.id);
+    this._world.clearEntityComponents(this._id);
 
     return this
   }
 
   destroy(): void {
-    this.world.destroyEntity(this.id);
+    this._world.destroyEntity(this._id);
+  }
+
+  get id(): string {
+    return this._id;
+  }
+
+  get world(): World<CT> {
+    return this._world;
   }
 }
 
