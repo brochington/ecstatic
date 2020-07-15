@@ -1,3 +1,32 @@
+/**
+ * Right now a Component is just something that implements the Component interface.
+ * Basically, it's any class that has a type and storage property. I recommend typing the
+ * storage as well
+ *
+ * @example
+ * ```
+ * import { Component } from '@brochington/ecstatic';
+ *
+ * enum MyComponents {
+ *   Component1
+ *   Component2
+ * }
+ *
+ * interface AwesomeComponentStorage {
+ *  id: string;
+ * }
+ *
+ * class AwesomeComponent implements Component<MyComponents> {
+ *  type = MyComponents.Component1;
+ *
+ *  storage: AwesomeComponentStorage;
+ *
+ *  constructor(id: string) {
+ *    this.storage = { id };
+ *  }
+ * }
+ * ```
+ */
 export interface Component<CT> {
   type: CT;
   storage: Map<any, any> | Set<any> | object;

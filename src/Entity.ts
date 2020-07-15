@@ -37,6 +37,9 @@ export default class Entity<CT> {
     return cc.has(cType);
   }
 
+  /**
+   * Get a component that belongs to an entity.
+   */
   get<C>(cType: CT): C {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
@@ -45,10 +48,17 @@ export default class Entity<CT> {
     return component;
   }
 
+  /**
+   * Get all components that have been added to an entity, via a ComponentCollection
+   */
   getAll(): ComponentCollection<CT> {
     return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
   }
 
+  /**
+   * Get all components that have been added to an entity, via a ComponentCollection.
+   * Does the same thing as entityInstance.getAll().
+   */
   get components(): ComponentCollection<CT> {
     return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
   }

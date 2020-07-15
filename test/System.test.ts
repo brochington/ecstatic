@@ -1,4 +1,4 @@
-import { createSystem } from '../System';
+import { createSystem } from '../src/System';
 
 describe('System', () => {
 

@@ -1,11 +1,11 @@
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
-import World from "../World";
-import Entity from "../Entity";
-import { Component } from '../Component';
-import ComponentCollection from '../ComponentCollection';
-import { createSystem } from '../System'
+import World from "../src/World";
+import Entity from "../src/Entity";
+import { Component } from '../src/Component';
+import ComponentCollection from '../src/ComponentCollection';
+import { createSystem } from '../src/System'
 
 enum CompTypes {
   FirstComponent,

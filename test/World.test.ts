@@ -1,8 +1,8 @@
-import World from '../World';
-import { createSystem } from '../System';
-import Entity, { createEntity } from '../Entity';
-import ComponentCollection from '../ComponentCollection';
-import { Component } from '../Component';
+import World from '../src/World';
+import { createSystem } from '../src/System';
+import Entity, { createEntity } from '../src/Entity';
+import ComponentCollection from '../src/ComponentCollection';
+import { Component } from '../src/Component';
 
 enum CompTypes {
   FirstComponent,

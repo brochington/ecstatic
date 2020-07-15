@@ -4,20 +4,54 @@ import ComponentCollection from './ComponentCollection';
 
 export type System = () => void;
 
+/**
+ * Arguments that are passed into a System function on each iteration.
+ * This is how you acces things like the entity that particular entity to act on,
+ * as well as some other helpful params like if the entity is the first or last entity
+ * in the group of entities that being iterated over.
+ */
 export interface SystemFuncArgs<CT> {
+  /**
+   * The current entity being iterated.
+   */
   entity: Entity<CT>;
+  /**
+   * The components that belong to the entity
+   */
   components: ComponentCollection<CT>;
+  /**
+   * The World instance.
+   * Use this to access other entities.
+   */
   world: World<CT>;
   index: number;
   size: number;
+  /**
+   * Is the first entity to be iterated on this run of a system.
+   * Helpful for setting up state that is the same for all entities only once.
+   */
   isFirst: boolean;
+  /**
+   * Is the last entity to be iterated on this run of a system.
+   * Can be helpful to tear down anything that should be dealt with after all the entites have ran.
+   */
   isLast: boolean;
 }
 
+/**
+ * Function that is called when a system is run.
+ */
 export type SystemFunc<CT> = (
   sytemFuncArgs: SystemFuncArgs<CT>,
 ) => void;
 
+/**
+ * This is how you create a System.
+ * @example
+ * ```
+ * createSystem(world, ['ComponentType'], ({ entity }) => 'Do fun system things here.')
+ * ```
+ */
 export function createSystem<CT>(
   world: World<CT>,
   cTypes: CT[],

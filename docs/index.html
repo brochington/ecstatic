@@ -1,0 +1,184 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@brochington/ecstatic</title>
+	<meta name="description" content="Documentation for @brochington/ecstatic">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@brochington/ecstatic</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1>@brochington/ecstatic</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#ecstatic" id="ecstatic" style="color: inherit; text-decoration: none;">
+					<h1>ecstatic</h1>
+				</a>
+				<p>a simple ECS lib</p>
+				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> {
+  World,
+  createSystem,
+  SystemFuncArgs,
+  Entity
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@brochington/ecstatic&#x27;</span>;
+
+<span class="hljs-keyword">type</span> <span class="hljs-built_in">enum</span> Components {
+  AwesomeComponent,
+  CoolComponent
+}
+
+<span class="hljs-comment">// Implement a class that uses the Component stucture.</span>
+<span class="hljs-keyword">class</span> AwesomeComponent <span class="hljs-keyword">implements</span> Component&lt;Components&gt; {
+  <span class="hljs-keyword">type</span> = Components.AwesomeComponent;
+
+  storage: {
+    count: <span class="hljs-built_in">number</span> = <span class="hljs-number">0</span>,
+  };
+
+  <span class="hljs-comment">// It can be nice to place some accessors on the class for</span>
+  <span class="hljs-comment">// storage contents.</span>
+  get count(): <span class="hljs-built_in">number</span> {
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.storage.count;
+  }
+
+  set count(nextCount: <span class="hljs-built_in">number</span>) {
+    <span class="hljs-built_in">this</span>.storage.count = nextCount;
+  }
+}
+
+<span class="hljs-comment">// Create a component instance</span>
+<span class="hljs-keyword">const</span> awesomeComponent = <span class="hljs-keyword">new</span> AwesomeComponent();
+
+<span class="hljs-comment">// Create an instance of the world, which contains all ECS state, </span>
+<span class="hljs-comment">// including all entities and components. Also has some methods</span>
+<span class="hljs-comment">// to help in interacting with these as well.</span>
+<span class="hljs-keyword">const</span> world = <span class="hljs-keyword">new</span> World&lt;Components&gt;();
+
+<span class="hljs-comment">// Create a system</span>
+<span class="hljs-keyword">const</span> system = createSystem(
+  world,
+  [Components.AwesomeComponent],
+  (args: SystemFuncArgs&lt;Components&gt;): <span class="hljs-function"><span class="hljs-params">void</span> =&gt;</span> {
+    <span class="hljs-keyword">const</span> { components } = args;
+    <span class="hljs-comment">// do stuff with components here.</span>
+  }
+)
+
+<span class="hljs-comment">// Create entity instance</span>
+<span class="hljs-keyword">const</span> awesomeEntity = <span class="hljs-keyword">new</span> Entity&lt;Components&gt;(world)
+
+<span class="hljs-comment">// Add a component to the entity</span>
+awesomeEntity.add(awesomeComponent);
+
+<span class="hljs-comment">// Run system</span>
+system.run();</code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_component_.html">&quot;src/<wbr>Component&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_componentcollection_.html">&quot;src/<wbr>Component<wbr>Collection&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_entity_.html">&quot;src/<wbr>Entity&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_system_.html">&quot;src/<wbr>System&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_world_.html">&quot;src/<wbr>World&quot;</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

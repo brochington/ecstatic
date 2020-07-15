@@ -14,10 +14,20 @@ export class Entity<CT> {
    */
   has(cType: CT): boolean;
 
+  /**
+   * Get a component that belongs to an entity.
+   */
   get<C>(cType: CT): C;
 
+  /**
+   * Get all components that have been added to an entity, via a ComponentCollection
+   */
   getAll(): ComponentCollection<CT>;
 
+  /**
+   * Get all components that have been added to an entity, via a ComponentCollection.
+   * Does the same thing as entityInstance.getAll().
+   */
   get components(): ComponentCollection<CT>;
 
   /**
@@ -25,8 +35,14 @@ export class Entity<CT> {
    */
   remove(cType: CT): Entity<CT>;
 
+  /**
+   * Clears all components from an Entity
+   */
   clear(): this;
 
+  /**
+   * Detroy an entity.
+   */
   destroy(): void;
 }
 

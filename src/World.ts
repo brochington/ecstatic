@@ -156,7 +156,7 @@ export default class World<CT> {
   /**
    * Set a component on the given entity
    */
-  set = (eid: EntityId, component: Component<CT>): void => {
+  set = (eid: EntityId, component: Component<CT>): World<CT> => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -169,6 +169,8 @@ export default class World<CT> {
         entitySet.add(eid);
       }
     }
+
+    return this;
   };
 
   /**
@@ -196,18 +198,28 @@ export default class World<CT> {
     }
   };
 
-  registerSystem(cTypes: CT[]): void {
+  /**
+   * Internal method used in setting up a new system.
+   */
+  registerSystem(cTypes: CT[]): World<CT> {
     this.entitiesByCTypes.set(cTypes, new Set<EntityId>());
+
+    return this;
   }
 
-  registerEntity(entity: Entity<CT>): void {
+  registerEntity(entity: Entity<CT>): World<CT> {
     const cc = new ComponentCollection<CT>();
 
     this.componentCollections.set(entity.id, cc);
     this.entities.set(entity.id, entity);
+
+    return this;
   }
 
-  clearEntityComponents(eid: EntityId): void {
+  /**
+   * Remove all components that belong to an entity.
+   */
+  clearEntityComponents(eid: EntityId): World<CT> {
     this.componentCollections.set(eid, new ComponentCollection<CT>());
 
     for (const entitySet of this.entitiesByCTypes.values()) {
@@ -215,9 +227,15 @@ export default class World<CT> {
         entitySet.delete(eid);
       }
     }
+
+    return this;
   }
 
-  destroyEntity(eid: EntityId): void {
+  /**
+   * Destroys an entity.
+   * Same as entity.destroy().
+   */
+  destroyEntity(eid: EntityId): World<CT> {
     this.componentCollections.delete(eid);
     this.entities.delete(eid);
 
@@ -226,5 +244,7 @@ export default class World<CT> {
         entitySet.delete(eid);
       }
     }
+
+    return this;
   }
 }

@@ -16,5 +16,8 @@
   "include": [
     "src",
     "interfaces.d.ts"
+  ],
+  "exclude": [
+    "src/test"
   ]
 }
