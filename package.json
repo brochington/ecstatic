@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "a damn fine ECS library",
   "main": "dist/bundle.js",
   "scripts": {
@@ -37,7 +37,8 @@
     "typedoc": "^0.17.8",
     "uuid": "^8.2.0",
     "validator": "^13.1.1",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "minimist": ">=1.2.3"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
