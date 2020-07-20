@@ -54,6 +54,9 @@ export default class Entity<CT> {
     return cc.has(cType);
   }
 
+  /**
+   * Check to see if an entity tagged with a given tag.
+   */
   hasTag(tag: Tag): boolean {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
@@ -89,6 +92,9 @@ export default class Entity<CT> {
     return this;
   }
 
+  /**
+   * Remove a tag from an entity
+   */
   removeTag(tag: string | number): Entity<CT> {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
@@ -111,6 +117,9 @@ export default class Entity<CT> {
     return this
   }
 
+  /**
+   * Remove all tags on an entity
+   */
   clearTags(): Entity<CT> {
     for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
       entitySet.delete(this._id);
