@@ -1,13 +1,17 @@
-import { Component } from './Component';
+import Component from './Component';
+import LifecycleComponent from './LifecycleComponent';
+import isFunction from 'lodash/isFunction';
+
+type JointComp<CT> = Component<CT> | LifecycleComponent<CT>;
 
 export default class ComponentCollection<CT> {
-  private components: Map<CT, Component<CT>> = new Map();
+  private components: Map<CT, JointComp<CT>> = new Map();
 
-  add = (component: Component<CT>): void => {
+  add = (component: JointComp<CT>): void => {
     this.components.set(component.type, component);
   }
 
-  update = (cType: CT, func: (c: Component<CT>) => Component<CT>): void => {
+  update = (cType: CT, func: (c: JointComp<CT>) => JointComp<CT>): void => {
     if (this.components.has(cType)) {
       const c = this.components.get(cType);
 
@@ -19,6 +23,14 @@ export default class ComponentCollection<CT> {
   };
 
   remove = (cType: CT): void => {
+    if (this.components.has(cType)) {
+      const component = this.components.get(cType);
+
+      if (component) {
+        component.onRemove();
+      }
+    }
+
     this.components.delete(cType);
   }
 

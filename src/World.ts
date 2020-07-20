@@ -1,7 +1,10 @@
 import Entity, { EntityId } from './Entity';
-import { Component } from './Component';
+import Component from './Component';
+import LifecycleComponent from './LifecycleComponent';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
+
+type JointComp<CT> = Component<CT> | LifecycleComponent<CT>;
 
 type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
 

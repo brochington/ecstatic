@@ -2,7 +2,7 @@ import World from '../src/World';
 import { createSystem } from '../src/System';
 import Entity, { createEntity } from '../src/Entity';
 import ComponentCollection from '../src/ComponentCollection';
-import { Component } from '../src/Component';
+import Component from '../src/Component';
 
 enum CompTypes {
   FirstComponent,
@@ -13,14 +13,13 @@ interface TestComp1Storage {
   id: string;
 }
 
-class TestComp1 implements Component<CompTypes> {
+class TestComp1 extends Component<CompTypes, TestComp1Storage> {
   type = CompTypes.FirstComponent;
-  storage: TestComp1Storage;
 
   constructor(id: string) {
-    this.storage = {
+    super({
       id,
-    }
+    });
   }
 }
 
@@ -74,11 +73,7 @@ describe('World', () => {
 
         const entity = createEntity<CompTypes>(testWorld);
 
-        const firstComponet: Component<CompTypes> = {
-          type: CompTypes.FirstComponent,
-          storage: {},
-        };
-
+        const firstComponet = new TestComp1('test-comp-1');
         entity.add(firstComponet);
 
         expect(testWorld.entitiesByCTypes.get(cTypes1).has(entity.id)).to.equal(
@@ -98,10 +93,7 @@ describe('World', () => {
 
         const entity = createEntity<CompTypes>(testWorld);
 
-        const component: Component<CompTypes> = {
-          type: CompTypes.FirstComponent,
-          storage: {},
-        };
+        const component = new TestComp1('test-comp-1');
 
         testWorld.set(entity.id, component);
 

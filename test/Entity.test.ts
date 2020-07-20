@@ -3,7 +3,7 @@ import noop from 'lodash/noop';
 
 import World from "../src/World";
 import Entity from "../src/Entity";
-import { Component } from '../src/Component';
+import Component from '../src/Component';
 import ComponentCollection from '../src/ComponentCollection';
 import { createSystem } from '../src/System'
 
@@ -16,25 +16,25 @@ interface TestCompStorage {
   id: string;
 }
 
-class FirstComponent implements Component<CompTypes> {
+class FirstComponent extends Component<CompTypes, TestCompStorage> {
   type = CompTypes.FirstComponent;
   storage: TestCompStorage;
 
   constructor(id: string) {
-    this.storage = {
+    super({
       id,
-    }
+    });
   }
 }
 
-class SecondComponent implements Component<CompTypes> {
+class SecondComponent extends Component<CompTypes, TestCompStorage> {
   type = CompTypes.SecondComponent;
   storage: TestCompStorage;
 
   constructor(id: string) {
-    this.storage = {
+    super({
       id,
-    }
+    });
   }
 }
 
