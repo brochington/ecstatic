@@ -1,6 +1,7 @@
 import Entity, { EntityId } from './Entity';
 import { Component } from './Component';
 import ComponentCollection from './ComponentCollection';
+import { Tag } from './Tag';
 
 type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
 
@@ -17,6 +18,8 @@ export default class World<CT> {
   entities: Map<EntityId, Entity<CT>> = new Map();
 
   entitiesByCTypes: Map<CT[], Set<EntityId>> = new Map();
+
+  entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
   /**
    * "finds" a single entity based on a predicate
@@ -152,6 +155,25 @@ export default class World<CT> {
     return cc.get<C>(cType);
   };
 
+  /**
+   * Get all entities that have been given a tag.
+   */
+  getTagged = (tag: Tag): Entity<CT>[] => {
+    let entities: Entity<CT>[] = [];
+
+    const tagEntityIds = this.entitiesByTags.get(tag);
+
+    if (tagEntityIds) {
+      for (const entityId of tagEntityIds) {
+        const entity = this.entities.get(entityId);
+        if (entity) {
+          entities.push(entity);
+        }
+      }
+    }
+
+    return entities;
+  }
 
   /**
    * Set a component on the given entity

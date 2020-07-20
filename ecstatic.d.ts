@@ -1,3 +1,5 @@
+export type Tag = string | number;
+
 export type EntityId = string;
 
 export class Entity<CT> {
@@ -10,9 +12,19 @@ export class Entity<CT> {
   add(component: Component<CT>): this;
 
   /**
+   * Add a tag to a component
+   */
+  addTag(tag: Tag): Entity<CT>;
+
+  /**
    * Check to see if the entity has a specific component.
    */
   has(cType: CT): boolean;
+
+  /**
+   * Check to see if an entity tagged with a given tag.
+   */
+  hasTag(tag: Tag): boolean;
 
   /**
    * Get a component that belongs to an entity.
@@ -36,9 +48,19 @@ export class Entity<CT> {
   remove(cType: CT): Entity<CT>;
 
   /**
+   * Remove a tag from an entity
+   */
+  removeTag(tag: Tag): Entity<CT>
+
+  /**
    * Clears all components from an Entity
    */
-  clear(): this;
+  clear(): Entity<CT>;
+
+  /**
+   * Remove all tags on an entity
+   */
+  clearTags(): Entity<CT>;
 
   /**
    * Detroy an entity.
@@ -156,6 +178,11 @@ declare class World<CT> {
    * Given an entity id and componentType, returns component
    */
   get: <C>(entityId: EntityId, cType: CT) => C;
+
+  /**
+   * Get all entities that have been given a tag.
+   */
+  getTagged(tag: Tag): Entity<CT>[];
 
   /**
    * Set a component on the given entity

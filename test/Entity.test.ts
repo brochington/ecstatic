@@ -115,4 +115,57 @@ describe('Entity', () => {
       expect(entitySet3.has(testEntity.id)).to.equal(true);
     });
   });
+
+  describe('tags', () => {
+    it('Add a tag to an entity', () => {
+      const testWorld = new World<CompTypes>();
+      const testEntity = new Entity<CompTypes>(testWorld);
+      const testTag = 'Tag1';
+
+      expect(testEntity.tags.size).to.equal(0);
+      expect(testEntity.hasTag(testTag)).to.equal(false);
+      expect(testWorld.getTagged(testTag).length).to.equal(0);
+
+      testEntity.addTag(testTag);
+
+      expect(testEntity.hasTag(testTag)).to.equal(true);
+      expect(testEntity.tags.size).to.equal(1);
+      expect(testEntity.tags.has(testTag)).to.equal(true);
+      expect(testWorld.getTagged(testTag).length).to.equal(1);
+      expect(testWorld.getTagged(testTag)[0].id).to.equal(testEntity.id);
+    });
+
+    it('Remove tag from entity', () => {
+      const testWorld = new World<CompTypes>();
+      const testEntity = new Entity<CompTypes>(testWorld);
+      const testTag1 = 'Tag1';
+      const testTag2 = 'Tag2';
+
+      expect(testEntity.tags.size).to.equal(0);
+      expect(testEntity.hasTag(testTag1)).to.equal(false);
+      expect(testWorld.getTagged(testTag1).length).to.equal(0);
+
+      testEntity.addTag(testTag1);
+      testEntity.addTag(testTag2);
+
+      expect(testEntity.hasTag(testTag1)).to.equal(true);
+      expect(testEntity.hasTag(testTag2)).to.equal(true);
+      expect(testEntity.tags.size).to.equal(2);
+      expect(testEntity.tags.has(testTag1)).to.equal(true);
+      expect(testEntity.tags.has(testTag2)).to.equal(true);
+      expect(testWorld.getTagged(testTag1).length).to.equal(1);
+      expect(testWorld.getTagged(testTag1)[0].id).to.equal(testEntity.id);
+
+      testEntity.removeTag(testTag2);
+
+      expect(testEntity.hasTag(testTag1)).to.equal(true);
+      expect(testEntity.hasTag(testTag2)).to.equal(false);
+      expect(testEntity.tags.size).to.equal(1);
+      expect(testEntity.tags.has(testTag1)).to.equal(true);
+      expect(testEntity.tags.has(testTag2)).to.equal(false);
+      expect(testWorld.getTagged(testTag1).length).to.equal(1);
+      expect(testWorld.getTagged(testTag2).length).to.equal(0);
+      expect(testWorld.getTagged(testTag1)[0].id).to.equal(testEntity.id);
+    });
+  });
 });
