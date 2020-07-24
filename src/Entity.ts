@@ -156,7 +156,7 @@ export default class Entity<CT> {
    * Retrieves all the tags that have been added to this entity.
    */
   get tags(): Set<Tag> {
-    let tags = new Set<Tag>();
+    const tags = new Set<Tag>();
     for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
       if (entitySet.has(this._id)) {
         tags.add(tag);

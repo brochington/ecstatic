@@ -156,10 +156,26 @@ export default class World<CT> {
   };
 
   /**
-   * Get all entities that have been given a tag.
+   * Get an entity that has been tagged with the given tag, or return null;
    */
-  getTagged = (tag: Tag): Entity<CT>[] => {
-    let entities: Entity<CT>[] = [];
+  getTagged = (tag: Tag): Entity<CT> | null => {
+    const tagEntityIds = this.entitiesByTags.get(tag);
+
+    if (tagEntityIds) {
+      const entityId = tagEntityIds.values().next().value;
+
+      const entity = this.entities.get(entityId);
+
+      if (entity) {
+        return entity;
+      }
+    }
+
+    return null;
+  }
+
+  getAllTagged = (tag: Tag): Entity<CT>[] => {
+    let entities: Entity<CT>[] = []; // eslint-disable-line
 
     const tagEntityIds = this.entitiesByTags.get(tag);
 
@@ -264,6 +280,17 @@ export default class World<CT> {
     for (const entitySet of this.entitiesByCTypes.values()) {
       if (entitySet.has(eid)) {
         entitySet.delete(eid);
+      }
+    }
+
+    // remove any tag associations with destroyed entities.
+    for (const [tag, entitySet] of this.entitiesByTags) {
+      if (entitySet.has(eid)) {
+        entitySet.delete(eid)
+      }
+
+      if (entitySet.size === 0) {
+        this.entitiesByTags.delete(tag);
       }
     }
 
