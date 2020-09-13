@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import World from './World';
-import { Component } from './Component';
+import Component from './Component';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
 

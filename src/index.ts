@@ -9,5 +9,5 @@ export {
   createEntity,
   createSystem,
   Component,
-  LifecycleComponent
+  LifecycleComponent,
 };

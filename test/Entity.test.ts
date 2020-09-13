@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
@@ -16,20 +17,23 @@ interface TestCompStorage {
   id: string;
 }
 
-class FirstComponent extends Component<CompTypes, TestCompStorage> {
+// Testing an "implemented" class.
+class FirstComponent implements Component<CompTypes> {
   type = CompTypes.FirstComponent;
+
   storage: TestCompStorage;
 
   constructor(id: string) {
-    super({
-      id,
-    });
+    this.storage = { id };
   }
+
+  onRemove(): void { /* empty */ }
 }
 
+// Testing an "extended" class.
 class SecondComponent extends Component<CompTypes, TestCompStorage> {
   type = CompTypes.SecondComponent;
-  storage: TestCompStorage;
+  // storage: TestCompStorage;
 
   constructor(id: string) {
     super({

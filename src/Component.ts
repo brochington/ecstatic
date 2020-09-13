@@ -7,7 +7,11 @@ export default class Component<CT, S extends ComponentStorage = {}> {
   constructor(storage: S) {
     this.type = ('AbstractComponent' as unknown) as CT;
     this.storage = storage;
+
+    // Add getters/setters? 
   }
 
-  onRemove() {}
+  // TODO: Will add onRemove later as not to screw up components that
+  //       "implement" Component instead of "extend"ing it.
+  onRemove(): void {}
 }

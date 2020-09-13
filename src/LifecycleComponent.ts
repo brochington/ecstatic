@@ -10,7 +10,7 @@ export default class LifeCycleComponent<CT, S extends ComponentStorage = {}> {
     // Should the proxy be a "revocable" type?
     this.storage = new Proxy(storage, {
       get: this.handleStoragePropAccess,
-      set: this.handleStoragePropChange
+      set: this.handleStoragePropChange,
     });
   }
 
@@ -22,34 +22,50 @@ export default class LifeCycleComponent<CT, S extends ComponentStorage = {}> {
     this.storageWasAccessed(prop);
 
     return val;
-  }
+  };
 
-  handleStoragePropChange = (target: S, prop: keyof S, value: any, _receiver: any): boolean => {  
+  handleStoragePropChange = (
+    target: S,
+    prop: keyof S,
+    value: any,
+    _receiver: any
+  ): boolean => {
     if (this.storageShouldUpdate(prop, value)) {
-      this.storageWillUpdate(prop, value)
+      this.storageWillUpdate(prop, value);
       const prevValue = target[prop];
       target[prop] = value;
-      this.storageDidUpdate(prop, prevValue)
+      this.storageDidUpdate(prop, prevValue);
     }
 
     return true;
-  }
+  };
 
   // Lifecycle methods
   storageShouldUpdate(_prop: keyof S, _value: any): boolean {
     return true;
   }
 
-  storageWillBeAccessed(_prop: keyof S) {}
-  onStorageAccess(prop: keyof S) {
+  storageWillBeAccessed(_prop: keyof S): void {
+    // left empty.
+  }
+
+  onStorageAccess(prop: keyof S): S[keyof S] {
     return this.storage[prop];
   }
-  storageWasAccessed(_prop: keyof S) {}
 
-  storageWillUpdate(_prop: keyof S, _nextValue: any): void {}
-  storageDidUpdate(_prop: keyof S, _prevValue: any): void {}
+  storageWasAccessed(_prop: keyof S): void {
+    // left empty.
+  }
 
-  onRemove() {
+  storageWillUpdate(_prop: keyof S, _nextValue: any): void {
+    // left empty.
+  }
+
+  storageDidUpdate(_prop: keyof S, _prevValue: any): void {
+    // left empty.
+  }
+
+  onRemove(): void {
     // do stuff when removed....
   }
 }

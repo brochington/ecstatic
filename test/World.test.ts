@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import World from '../src/World';
 import { createSystem } from '../src/System';
 import Entity, { createEntity } from '../src/Entity';
