@@ -1,11 +1,9 @@
-import { ComponentStorage } from './Component';
-
-export default class LifeCycleComponent<CT, S extends ComponentStorage = {}> {
+export default class LifeCycleComponent<CT, S extends object = object> {
   type: CT;
   storage: S;
 
   constructor(storage: S) {
-    this.type = ('AbstractComponent' as unknown) as CT;
+    this.type = ("AbstractComponent" as unknown) as CT;
 
     // Should the proxy be a "revocable" type?
     this.storage = new Proxy(storage, {
@@ -14,7 +12,11 @@ export default class LifeCycleComponent<CT, S extends ComponentStorage = {}> {
     });
   }
 
-  handleStoragePropAccess = (_target: S, prop: keyof S, _receiver: any) => {
+  handleStoragePropAccess = (
+    _target: S,
+    prop: keyof S,
+    _receiver: any
+  ): S[keyof S] => {
     this.storageWillBeAccessed(prop);
 
     const val = this.onStorageAccess(prop);

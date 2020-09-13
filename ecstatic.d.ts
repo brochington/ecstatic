@@ -50,7 +50,7 @@ export class Entity<CT> {
   /**
    * Remove a tag from an entity
    */
-  removeTag(tag: Tag): Entity<CT>
+  removeTag(tag: Tag): Entity<CT>;
 
   /**
    * Clears all components from an Entity
@@ -82,17 +82,32 @@ export interface SystemFuncArgs<CT> {
   isLast: boolean;
 }
 
-export interface Component<CT> {
+export class Component<CT, S extends object = object> {
   type: CT;
-  storage: Map<any, any> | Set<any> | object;
+  storage: S;
 }
 
-// export abstract class Component<CT, S = Record<string, unknown>> {
-//   type: CT;
-//   private storage: S;
+export default class LifeCycleComponent<CT, S extends object = object> {
+  type: CT;
+  storage: S;
 
-//   constructor(storage: S);
-// }
+  constructor(storage: S);
+
+  // Lifecycle methods
+  storageShouldUpdate(prop: keyof S, value: any): boolean;
+
+  storageWillBeAccessed(prop: keyof S): void;
+
+  onStorageAccess(prop: keyof S): S[keyof S];
+
+  storageWasAccessed(prop: keyof S): void;
+
+  storageWillUpdate(prop: keyof S, nextValue: any): void;
+
+  storageDidUpdate(prop: keyof S, prevValue: any): void;
+
+  onRemove(): void;
+}
 
 export class ComponentCollection<CT> {
   private components: Map<CT, Component<CT>>;
@@ -110,11 +125,13 @@ export class ComponentCollection<CT> {
   get size(): number;
 }
 
-export type SystemFunc<CT> = (
-  args: SystemFuncArgs<CT>
-) => void;
+export type SystemFunc<CT> = (args: SystemFuncArgs<CT>) => void;
 
-export function createSystem<CT>(world: World < CT >, cTypes: CT[], func: SystemFunc<CT>): System
+export function createSystem<CT>(
+  world: World<CT>,
+  cTypes: CT[],
+  func: SystemFunc<CT>
+): System;
 
 export type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
 
@@ -157,7 +174,6 @@ declare class World<CT> {
    */
   grab: <C>(cType: CT) => SingleComponentResp<CT, C> | null;
 
-
   /**
    * Grab single component based on component type and predicate.
    *
@@ -166,8 +182,10 @@ declare class World<CT> {
    * const { entity, component } = world.grabBy<FirstComponent>(Components.FirstComponent, (comp) => comp.id == 'awesome')
    * ```
    */
-  grabBy: <C>(cType: CT, predicate: GrabPredicate<C>) => SingleComponentResp<CT, C> | null;
-
+  grabBy: <C>(
+    cType: CT,
+    predicate: GrabPredicate<C>
+  ) => SingleComponentResp<CT, C> | null;
 
   /**
    * Grab all the components primarily, and the entities if needed
