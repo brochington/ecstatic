@@ -128,15 +128,15 @@ describe('Entity', () => {
 
       expect(testEntity.tags.size).to.equal(0);
       expect(testEntity.hasTag(testTag)).to.equal(false);
-      expect(testWorld.getTagged(testTag).length).to.equal(0);
+      expect(testWorld.getTagged(testTag)).to.equal(null);
 
       testEntity.addTag(testTag);
 
       expect(testEntity.hasTag(testTag)).to.equal(true);
       expect(testEntity.tags.size).to.equal(1);
       expect(testEntity.tags.has(testTag)).to.equal(true);
-      expect(testWorld.getTagged(testTag).length).to.equal(1);
-      expect(testWorld.getTagged(testTag)[0].id).to.equal(testEntity.id);
+      expect(testWorld.getTagged(testTag)).to.equal(testEntity);
+      expect(testWorld.getAllTagged(testTag)[0]).to.equal(testEntity);
     });
 
     it('Remove tag from entity', () => {
@@ -147,7 +147,7 @@ describe('Entity', () => {
 
       expect(testEntity.tags.size).to.equal(0);
       expect(testEntity.hasTag(testTag1)).to.equal(false);
-      expect(testWorld.getTagged(testTag1).length).to.equal(0);
+      expect(testWorld.getTagged(testTag1)).to.equal(null);
 
       testEntity.addTag(testTag1);
       testEntity.addTag(testTag2);
@@ -157,8 +157,8 @@ describe('Entity', () => {
       expect(testEntity.tags.size).to.equal(2);
       expect(testEntity.tags.has(testTag1)).to.equal(true);
       expect(testEntity.tags.has(testTag2)).to.equal(true);
-      expect(testWorld.getTagged(testTag1).length).to.equal(1);
-      expect(testWorld.getTagged(testTag1)[0].id).to.equal(testEntity.id);
+      expect(testWorld.getTagged(testTag1)).to.equal(testEntity);
+      expect(testWorld.getAllTagged(testTag1)[0]).to.equal(testEntity);
 
       testEntity.removeTag(testTag2);
 
@@ -167,9 +167,26 @@ describe('Entity', () => {
       expect(testEntity.tags.size).to.equal(1);
       expect(testEntity.tags.has(testTag1)).to.equal(true);
       expect(testEntity.tags.has(testTag2)).to.equal(false);
-      expect(testWorld.getTagged(testTag1).length).to.equal(1);
-      expect(testWorld.getTagged(testTag2).length).to.equal(0);
-      expect(testWorld.getTagged(testTag1)[0].id).to.equal(testEntity.id);
+      expect(testWorld.getTagged(testTag1)).to.equal(testEntity);
+      expect(testWorld.getTagged(testTag2)).to.equal(null);
+      expect(testWorld.getAllTagged(testTag1)[0]).to.equal(testEntity);
     });
+
+    it('Cleans up tags for entities that have been destroyed', () => {
+      const testWorld = new World<CompTypes>();
+      const testEntity = new Entity<CompTypes>(testWorld);
+      const testTag1 = 'Tag1';
+
+      expect(testEntity.tags.size).to.equal(0);
+      expect(testEntity.hasTag(testTag1)).to.equal(false);
+      expect(testWorld.getTagged(testTag1)).to.equal(null);
+
+      testEntity.addTag(testTag1);
+
+      testEntity.destroy();
+
+      expect(testWorld.getTagged(testTag1)).to.equal(null);
+      expect(testWorld.getAllTagged(testTag1).length).to.equal(0);
+    })
   });
 });

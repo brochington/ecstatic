@@ -180,9 +180,14 @@ declare class World<CT> {
   get: <C>(entityId: EntityId, cType: CT) => C;
 
   /**
+   * Get an entity that has been tagged with the given tag, or return null;
+   */
+  getTagged(tag: Tag): Entity<CT> | null;
+
+  /**
    * Get all entities that have been given a tag.
    */
-  getTagged(tag: Tag): Entity<CT>[];
+  getAllTagged(tag: Tag): Entity<CT>[];
 
   /**
    * Set a component on the given entity
