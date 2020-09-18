@@ -12,7 +12,7 @@ export default class LifeCycleComponent<CT, S extends object = object> {
     });
   }
 
-  handleStoragePropAccess = (
+  private handleStoragePropAccess = (
     _target: S,
     prop: keyof S,
     _receiver: any
@@ -26,7 +26,7 @@ export default class LifeCycleComponent<CT, S extends object = object> {
     return val;
   };
 
-  handleStoragePropChange = (
+  private handleStoragePropChange = (
     target: S,
     prop: keyof S,
     value: any,
