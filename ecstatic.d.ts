@@ -1,15 +1,25 @@
 export type Tag = string | number;
 
+export type Class<T> = { new (...args: any[]): T };
+
+export interface CompTypes<CT> {
+  [key: string]: Class<CT>;
+}
+
+export type Key<C extends CompTypes<C>> = C[keyof C];
+
+export type ClassInstance<C extends CompTypes<C>> = InstanceType<Key<C>>;
+
 export type EntityId = string;
 
-export class Entity<CT> {
+export class Entity<CT extends CompTypes<CT>> {
   id: string;
   world: World<CT>;
 
   /**
    * Add a component to an Entity
    */
-  add(component: Component<CT>): this;
+  add(component: ClassInstance<CT>): this;
 
   /**
    * Add a tag to a component
@@ -82,10 +92,18 @@ export interface SystemFuncArgs<CT> {
   isLast: boolean;
 }
 
-export class Component<CT, S extends object = object> {
-  type: CT;
-  storage: S;
+export abstract class Component<CT> {
+  abstract type: CT;
+  // storage: S;
+
+  // constructor(storage: S);
 }
+// export class Component<CT, S extends object = object> {
+//   type: CT;
+//   storage: S;
+
+//   constructor(storage: S);
+// }
 
 export default class LifeCycleComponent<CT, S extends object = object> {
   type: CT;

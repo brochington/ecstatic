@@ -8,38 +8,19 @@ import Component from '../src/Component';
 import ComponentCollection from '../src/ComponentCollection';
 import { createSystem } from '../src/System'
 
-enum CompTypes {
-  FirstComponent,
-  SecondComponent,
-}
-
-interface TestCompStorage {
+class FirstComponent {
   id: string;
-}
-
-// Testing an "implemented" class.
-class FirstComponent implements Component<CompTypes> {
-  type = CompTypes.FirstComponent;
-
-  storage: TestCompStorage;
 
   constructor(id: string) {
-    this.storage = { id };
+    this.id = id;
   }
-
-  onRemove(): void { /* empty */ }
 }
 
-// Testing an "extended" class.
-class SecondComponent extends Component<CompTypes, TestCompStorage> {
-  type = CompTypes.SecondComponent;
-  // storage: TestCompStorage;
+class SecondComponent {}
 
-  constructor(id: string) {
-    super({
-      id,
-    });
-  }
+interface CompTypes {
+  FirstComponent: typeof FirstComponent;
+  SecondComponent: typeof SecondComponent;
 }
 
 describe('Entity', () => {
@@ -58,57 +39,58 @@ describe('Entity', () => {
   });
 
   describe('instance methods', () => {
-    it('add', () => {
+    it('add one entity', () => {
       const testWorld = new World<CompTypes>();
       const testEntity = new Entity<CompTypes>(testWorld);
       const testCompId = 'test-comp-1';
 
       testEntity.add(new FirstComponent(testCompId));
 
-      const cc = testWorld.componentCollections.get(testEntity.id) as ComponentCollection<CompTypes>;
+      const cc = testWorld.componentCollections.get(testEntity.id);
       expect(cc.size).to.equal(1);
-      expect(cc.has(CompTypes.FirstComponent)).to.equal(true);
+      expect(cc.has(FirstComponent)).to.equal(true);
     });
 
     it('remove', () => {
       const testWorld = new World<CompTypes>();
       const testEntity = new Entity<CompTypes>(testWorld);
 
-      // Systems are needed here to create placeholders on entitiesByCTypes.
-      createSystem(testWorld, [CompTypes.FirstComponent, CompTypes.SecondComponent], noop);
-      createSystem(testWorld, [CompTypes.SecondComponent], noop);
+      createSystem(testWorld, [FirstComponent, SecondComponent], noop);
 
       testEntity.add(new FirstComponent('test-comp-1'));
-      testEntity.add(new SecondComponent('test-comp-2'));
+      testEntity.add(new SecondComponent());
 
-      expect(testEntity.has(CompTypes.FirstComponent)).to.equal(true);
-      expect(testEntity.has(CompTypes.SecondComponent)).to.equal(true);
-      expect(testWorld.entitiesByCTypes.size).to.equal(2);
+      expect(testEntity.has(FirstComponent)).to.equal(true);
+      expect(testEntity.has(SecondComponent)).to.equal(true);
+      expect(testWorld.entitiesByCTypes.size).to.equal(1);
+
 
       // Testing to make sure World.entitiesByCType is dealt with correctly.
       let entitySet1 = new Set();
+
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-        if (ctArr.includes(CompTypes.FirstComponent && ctArr.includes(CompTypes.SecondComponent))) {
+        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
           entitySet1 = entitySet;
         }
       }
+
       expect(entitySet1.size).to.equal(1);
       expect(entitySet1.has(testEntity.id)).to.equal(true);
 
-      testEntity.remove(CompTypes.FirstComponent);
+      testEntity.remove(FirstComponent);
 
-      expect(testEntity.has(CompTypes.FirstComponent)).to.equal(false);
-      expect(testEntity.has(CompTypes.SecondComponent)).to.equal(true);
+      expect(testEntity.has(FirstComponent)).to.equal(false);
+      expect(testEntity.has(SecondComponent)).to.equal(true);
 
       let entitySet2 = new Set();
       let entitySet3 = new Set();
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-        if (ctArr.includes(CompTypes.FirstComponent && ctArr.includes(CompTypes.SecondComponent))) {
+        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
           entitySet2 = entitySet;
           return;
         }
 
-        if (ctArr.includes(CompTypes.SecondComponent)) {
+        if (ctArr.includes(SecondComponent.name)) {
           entitySet3 = entitySet;
         }
       }

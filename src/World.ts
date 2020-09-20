@@ -1,26 +1,18 @@
-import Entity, { EntityId } from './Entity';
-import Component from './Component';
-import LifecycleComponent from './LifecycleComponent';
-import ComponentCollection from './ComponentCollection';
-import { Tag } from './Tag';
+import Entity, { EntityId } from "./Entity";
+import ComponentCollection from "./ComponentCollection";
+import { Tag } from "./Tag";
+import { CompTypes } from "interfaces";
 
-type JointComp<CT> = Component<CT> | LifecycleComponent<CT>;
+type FindPredicate<CT extends CompTypes<CT>> = (entity: Entity<CT>) => boolean;
 
-type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
+type Class<T> = { new (...args: any[]): T };
 
-type GrabPredicate<C> = (component: C) => boolean;
-
-interface SingleComponentResp<CT, C> {
-  entity: Entity<CT>;
-  component: C;
-}
-
-export default class World<CT> {
+export default class World<CT extends CompTypes<CT>> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
 
   entities: Map<EntityId, Entity<CT>> = new Map();
 
-  entitiesByCTypes: Map<CT[], Set<EntityId>> = new Map();
+  entitiesByCTypes: Map<(keyof CT)[], Set<EntityId>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
@@ -55,9 +47,10 @@ export default class World<CT> {
   /**
    * "locates" a single entity based on its Components.
    */
-  locate = (cTypes: CT | CT[]): Entity<CT> | null => {
+  locate = (cl: CT[keyof CT] | CT[keyof CT][]): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
-      if (entity.components.has(cTypes)) {
+      // console.log("entity?", entity.components, cl.name);
+      if (entity.components.has(cl)) {
         return entity;
       }
     }
@@ -68,11 +61,11 @@ export default class World<CT> {
   /**
    * Locates all entities that contain the components named
    */
-  locateAll = (cTypes: CT | CT[]): Entity<CT>[] => {
+  locateAll = (cl: CT[keyof CT] | CT[keyof CT][]): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
-      if (entity.components.has(cTypes)) {
+      if (entity.components.has(cl)) {
         results.push(entity);
       }
     }
@@ -84,18 +77,20 @@ export default class World<CT> {
    * Grabs the first entity, and its related component, that matches the component type.
    * @example
    * ```
-   * const { entity, component } = world.grab<MyComponent>(Components.MyComponent);
+   * const { entity, component } = world.grab(MyComponent);
    * ```
    */
-  grab = <C>(cType: CT): SingleComponentResp<CT, C> | null => {
-    const entity = this.locate(cType);
+  grab = <T>(
+    cl: Class<T>
+  ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
+    const entity = this.locate((cl as unknown) as CT[keyof CT]);
 
     if (entity) {
       const cc =
         this.componentCollections.get(entity.id) ||
         new ComponentCollection<CT>();
 
-      const component = cc.get<C>(cType);
+      const component = cc.get<T>(cl);
 
       return {
         entity,
@@ -114,18 +109,18 @@ export default class World<CT> {
    * const { entity, component } = world.grabBy(Components.FirstComponent, (comp) => comp.id == 'awesome')
    * ```
    */
-  grabBy = <C>(
-    cType: CT,
-    predicate: GrabPredicate<C>
-  ): SingleComponentResp<CT, C> | null => {
-    const entities = this.locateAll(cType);
+  grabBy = <T>(
+    cl: Class<T>,
+    predicate: (comp: InstanceType<typeof cl>) => boolean
+  ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
+    const entities = this.locateAll((cl as unknown) as CT[keyof CT]);
 
     for (const entity of entities) {
       const cc =
         this.componentCollections.get(entity.id) ||
         new ComponentCollection<CT>();
 
-      const component = cc.get<C>(cType);
+      const component = cc.get<T>(cl);
 
       if (predicate(component)) {
         return {
@@ -141,21 +136,27 @@ export default class World<CT> {
   /**
    * Grab all the components primarily, and the entities if needed
    */
-  grabAll = <C>(cType: CT): SingleComponentResp<CT, C>[] => {
-    return this.locateAll(cType).map((entity) => ({
-      entity,
-      component: (entity.components.get(cType) as unknown) as C,
-    }));
+  grabAll = <T>(
+    cl: Class<T>
+  ): { entity: Entity<CT>; component: InstanceType<typeof cl> }[] => {
+    const entities = this.locateAll((cl as unknown) as CT[keyof CT]);
+
+    return entities.map((entity) => {
+      return {
+        entity,
+        component: entity.components.get<T>(cl),
+      }
+    });
   };
 
   /**
    * Given an entity id and componentType, returns component
    */
-  get = <C>(eid: EntityId, cType: CT): C => {
+  get = <T>(eid: EntityId, cl: Class<T>): InstanceType<typeof cl> => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
-    return cc.get<C>(cType);
+    return cc.get<T>(cl);
   };
 
   /**
@@ -175,7 +176,7 @@ export default class World<CT> {
     }
 
     return null;
-  }
+  };
 
   getAllTagged = (tag: Tag): Entity<CT>[] => {
     let entities: Entity<CT>[] = []; // eslint-disable-line
@@ -192,12 +193,12 @@ export default class World<CT> {
     }
 
     return entities;
-  }
+  };
 
   /**
    * Set a component on the given entity
    */
-  set = (eid: EntityId, component: Component<CT>): World<CT> => {
+  set = (eid: EntityId, component: InstanceType<CT[keyof CT]>): World<CT> => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -206,7 +207,7 @@ export default class World<CT> {
     this.componentCollections.set(eid, cc);
 
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if (ctArr.every(cc.has)) {
+      if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
@@ -218,13 +219,13 @@ export default class World<CT> {
    * Remove a component from the given entity.
    * NOTE: This will change what systems will be called on the entity.
    */
-  remove = (eid: EntityId, cType: CT): void => {
+  remove = (eid: EntityId, cType: CT[keyof CT]): void => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
     // remove entity from current entitiesByCTypes
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if (ctArr.every(cc.has)) {
+      if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.delete(eid);
       }
     }
@@ -233,7 +234,7 @@ export default class World<CT> {
 
     // Move entityId to new CTypes if needed.
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if (ctArr.every(cc.has)) {
+      if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
@@ -242,8 +243,8 @@ export default class World<CT> {
   /**
    * Internal method used in setting up a new system.
    */
-  registerSystem(cTypes: CT[]): World<CT> {
-    this.entitiesByCTypes.set(cTypes, new Set<EntityId>());
+  registerSystem(cNames: (keyof CT)[]): World<CT> {
+    this.entitiesByCTypes.set(cNames, new Set<EntityId>());
 
     return this;
   }
@@ -289,7 +290,7 @@ export default class World<CT> {
     // remove any tag associations with destroyed entities.
     for (const [tag, entitySet] of this.entitiesByTags) {
       if (entitySet.has(eid)) {
-        entitySet.delete(eid)
+        entitySet.delete(eid);
       }
 
       if (entitySet.size === 0) {

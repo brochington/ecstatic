@@ -1,56 +1,70 @@
-import Component from './Component';
-import LifecycleComponent from './LifecycleComponent';
-import isFunction from 'lodash/isFunction';
+import { CompTypes } from "interfaces";
+import { isComponentInstance } from "./guards";
 
-type JointComp<CT> = Component<CT> | LifecycleComponent<CT>;
+type Class<T> = { new (...args: any[]): T };
 
-export default class ComponentCollection<CT> {
-  private components: Map<CT, JointComp<CT>> = new Map();
+export default class ComponentCollection<CT extends CompTypes<CT>> {
+  components: Map<keyof CT, InstanceType<CT[keyof CT]>> = new Map();
 
-  add = (component: JointComp<CT>): void => {
-    this.components.set(component.type, component);
-  }
+  // instance of a component
+  add = (component: InstanceType<CT[keyof CT]>): void => {
+    this.components.set(component.constructor.name, component);
+  };
 
-  update = (cType: CT, func: (c: JointComp<CT>) => JointComp<CT>): void => {
-    if (this.components.has(cType)) {
-      const c = this.components.get(cType);
+  update = <T>(
+    cl: Class<T>,
+    func: (c: InstanceType<typeof cl>) => InstanceType<typeof cl>
+  ): void => {
+    const c = this.components.get(cl.name);
 
-      if (c) {
-        const updatedComponent = func(c);
-        this.components.set(cType, updatedComponent);
-      }
+    if (isComponentInstance(cl, c)) {
+      const updatedComponent = func(c);
+      this.components.set(cl.name, updatedComponent as InstanceType<CT[keyof CT]>);
     }
   };
 
-  remove = (cType: CT): void => {
-    if (this.components.has(cType)) {
-      const component = this.components.get(cType);
+  remove = (cType: CT[keyof CT]): void => {
+    this.components.delete(cType.name);
+  };
 
-      if (component) {
-        component.onRemove();
-      }
-    }
+  get = <T>(cl: Class<T>): InstanceType<typeof cl> => {
+    const comp = this.components.get(cl.name);
 
-    this.components.delete(cType);
-  }
-
-  get = <C>(cType: CT): C => {
-    if (!this.components.has(cType)) {
-      throw new Error(`ComponentCollection does not have component of type ${cType}`)
-    }
-    
-    return this.components.get(cType) as unknown as C;
-  }
-
-  has = (cType: CT | CT[]): boolean => {
-    if (Array.isArray(cType)) {
-      return cType.every((ct) => this.components.has(ct) === true);
+    if (isComponentInstance<T>(cl, comp)) {
+      return comp;
     } else {
-      return this.components.has(cType)
+      throw new Error(
+        `ComponentCollection does not have component of type ${cl.name}`
+      );
     }
-  }
+  };
 
-  get componentTypes(): CT[] {
+  // Possible other way to write a get method that maintains the type of the
+  // Component throughout. Keeping around for now are a reference.
+  // get<U extends CT>(compClass: Class<U>): U {
+  //   if (!this.components.has(compClass.name)) {
+  //     throw new Error(
+  //       `ComponentCollection does not have component of type ${compClass.name}`
+  //     );
+  //   }
+
+  //   return this.components.get(compClass.name)! as unknown as U;
+  // }
+
+  has = (cType: CT[keyof CT] | CT[keyof CT][]): boolean => {
+  // has = <T>(cType: Class<T> | Class<T>[]): boolean => {
+    return Array.isArray(cType)
+      ? cType.every((ct) => this.components.has(ct.name) === true)
+      : this.components.has(cType.name);
+  };
+
+  hasByName = (cName: string | string[]): boolean => {
+    return Array.isArray(cName)
+      ? cName.every(ct => this.components.has(ct) === true)
+      : this.components.has(cName);
+  };
+
+  get componentTypes(): (keyof CT)[] {
     return [...this.components.keys()];
   }
 

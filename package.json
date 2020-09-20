@@ -31,14 +31,15 @@
     "color": "^3.1.2",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.19",
+    "minimist": ">=1.2.5",
     "moment": "^2.27.0",
     "qs": "^6.9.4",
     "rimraf": "^3.0.2",
+    "sinon": "^9.0.3",
     "typedoc": "^0.17.8",
     "uuid": "^8.2.0",
     "validator": "^13.1.1",
-    "webpack-cli": "^3.3.12",
-    "minimist": ">=1.2.5"
+    "webpack-cli": "^3.3.12"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",

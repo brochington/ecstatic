@@ -1,6 +1,7 @@
 import World from './World';
 import Entity from './Entity';
 import ComponentCollection from './ComponentCollection';
+import { CompTypes } from 'interfaces';
 
 export type System = () => void;
 
@@ -10,7 +11,7 @@ export type System = () => void;
  * as well as some other helpful params like if the entity is the first or last entity
  * in the group of entities that being iterated over.
  */
-export interface SystemFuncArgs<CT> {
+export interface SystemFuncArgs<CT extends CompTypes<CT>> {
   /**
    * The current entity being iterated.
    */
@@ -41,7 +42,7 @@ export interface SystemFuncArgs<CT> {
 /**
  * Function that is called when a system is run.
  */
-export type SystemFunc<CT> = (
+export type SystemFunc<CT extends CompTypes<CT>> = (
   sytemFuncArgs: SystemFuncArgs<CT>,
 ) => void;
 
@@ -52,12 +53,15 @@ export type SystemFunc<CT> = (
  * createSystem(world, ['ComponentType'], ({ entity }) => 'Do fun system things here.')
  * ```
  */
-export function createSystem<CT>(
+export function createSystem<CT extends CompTypes<CT>>(
   world: World<CT>,
-  cTypes: CT[],
+  // cTypes: CT[],
+  cTypes: CT[keyof CT][],
   systemFunc: SystemFunc<CT>
 ): System {
-  world.registerSystem(cTypes);
+  const cNames = cTypes.map(ct => ct.name);
+  world.registerSystem(cNames);
+  // world.registerSystem(cTypes);
 
   return (): void => {
     let index = 0;
@@ -88,7 +92,7 @@ export function createSystem<CT>(
     //   }
     // }
 
-    const cTypeArrs = world.entitiesByCTypes.get(cTypes) || new Set();
+    const cTypeArrs = world.entitiesByCTypes.get(cNames) || new Set();
 
     for (const eid of cTypeArrs) {
       const args: SystemFuncArgs<CT> = {

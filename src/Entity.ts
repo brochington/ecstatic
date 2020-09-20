@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import World from './World';
-import Component from './Component';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
+import { CompTypes } from 'interfaces';
 
 export type EntityId = string;
 
-export default class Entity<CT> {
+export default class Entity<CT extends CompTypes<CT>> {
   private _id: string;
   private _world: World<CT>;
 
@@ -23,7 +23,7 @@ export default class Entity<CT> {
   /**
    * Add a component to an Entity, doh.
    */
-  add(component: Component<CT>): Entity<CT> {
+  add(component: InstanceType<CT[keyof CT]>): Entity<CT> {
     this._world.set(this._id, component);
 
     return this;
@@ -48,7 +48,7 @@ export default class Entity<CT> {
   /**
    * Determines if an entity has a component related to it.
    */
-  has(cType: CT): boolean {
+  has(cType: CT[keyof CT]): boolean {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
     return cc.has(cType);
@@ -71,10 +71,10 @@ export default class Entity<CT> {
   /**
    * Get a component that belongs to an entity.
    */
-  get<C>(cType: CT): C {
+  get(cType: CT[keyof CT]): CT {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
-    const component = cc.get<C>(cType);
+    const component = cc.get(cType);
 
     return component;
   }
@@ -86,7 +86,7 @@ export default class Entity<CT> {
     return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
   }
 
-  remove(cType: CT): Entity<CT> {
+  remove(cType: CT[keyof CT]): Entity<CT> {
     this._world.remove(this._id, cType);
 
     return this;
@@ -167,7 +167,7 @@ export default class Entity<CT> {
   }
 }
 
-export function createEntity<CT>(
+export function createEntity<CT extends CompTypes<CT>>(
   world: World<CT>,
 ): Entity<CT> {
   const entity = new Entity<CT>(world);
