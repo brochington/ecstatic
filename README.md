@@ -1,6 +1,8 @@
 # Ecstatic
 #### a simple ECS lib
 
+[Documentation](https://brochington.github.io/ecstatic/)
+
 Ecstatic is a straightforward Javascript implementation of the ECS pattern. 
 
 Ecstatic is:
