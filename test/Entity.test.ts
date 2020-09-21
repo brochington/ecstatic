@@ -1,11 +1,10 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expect } from 'chai';
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
 import World from "../src/World";
 import Entity from "../src/Entity";
-import Component from '../src/Component';
-import ComponentCollection from '../src/ComponentCollection';
 import { createSystem } from '../src/System'
 
 class FirstComponent {
@@ -69,6 +68,7 @@ describe('Entity', () => {
       let entitySet1 = new Set();
 
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+        //@ts-ignore
         if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
           entitySet1 = entitySet;
         }
@@ -85,11 +85,13 @@ describe('Entity', () => {
       let entitySet2 = new Set();
       let entitySet3 = new Set();
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+        // @ts-ignore
         if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
           entitySet2 = entitySet;
           return;
         }
 
+        // @ts-ignore
         if (ctArr.includes(SecondComponent.name)) {
           entitySet3 = entitySet;
         }

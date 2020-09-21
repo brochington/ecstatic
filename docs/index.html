@@ -65,9 +65,18 @@
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
 				<a href="#ecstatic" id="ecstatic" style="color: inherit; text-decoration: none;">
-					<h1>ecstatic</h1>
+					<h1>Ecstatic</h1>
 				</a>
-				<p>a simple ECS lib</p>
+				<a href="#a-simple-ecs-lib" id="a-simple-ecs-lib" style="color: inherit; text-decoration: none;">
+					<h4>a simple ECS lib</h4>
+				</a>
+				<p>Ecstatic is a straightforward Javascript implementation of the ECS pattern. </p>
+				<p>Ecstatic is:</p>
+				<ul>
+					<li><strong>Fast!</strong> Some fancy indexing occurs when an entity is created to make sure that systems iterate over entities very efficiently.</li>
+					<li><strong>Simple!</strong> Class definitions (<code>class MyClass { ... }</code>) are used to key off of for things like Sytem registration and component querying. This greatly helps to reduce the amount typing. </li>
+					<li><strong>Type Safe!</strong> Typescript is not required, but if you do use it, then you can enjoy autocomplete throughout.</li>
+				</ul>
 				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> {
   World,
   createSystem,
@@ -75,56 +84,79 @@
   Entity
 } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@brochington/ecstatic&#x27;</span>;
 
-<span class="hljs-keyword">type</span> <span class="hljs-built_in">enum</span> Components {
-  AwesomeComponent,
-  CoolComponent
+<span class="hljs-comment">/*
+  Components are just a regular ol&#x27; class!
+  No need to inherit or extend another class. 
+*/</span>
+<span class="hljs-keyword">class</span> AwesomeComponent {
+  count = <span class="hljs-number">0</span>;
 }
 
-<span class="hljs-comment">// Implement a class that uses the Component stucture.</span>
-<span class="hljs-keyword">class</span> AwesomeComponent <span class="hljs-keyword">implements</span> Component&lt;Components&gt; {
-  <span class="hljs-keyword">type</span> = Components.AwesomeComponent;
+<span class="hljs-keyword">class</span> UnusedComponent {}
 
-  storage: {
-    count: <span class="hljs-built_in">number</span> = <span class="hljs-number">0</span>,
-  };
+<span class="hljs-comment">/*
+  This type lets Ecstatic know the available component types.
+  Unneeded if you are using vanilla JS.
+*/</span> 
+<span class="hljs-keyword">type</span> Components = <span class="hljs-keyword">typeof</span> AwesomeComponent | <span class="hljs-keyword">typeof</span> UnusedComponent
 
-  <span class="hljs-comment">// It can be nice to place some accessors on the class for</span>
-  <span class="hljs-comment">// storage contents.</span>
-  get count(): <span class="hljs-built_in">number</span> {
-    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.storage.count;
-  }
-
-  set count(nextCount: <span class="hljs-built_in">number</span>) {
-    <span class="hljs-built_in">this</span>.storage.count = nextCount;
-  }
-}
-
-<span class="hljs-comment">// Create a component instance</span>
-<span class="hljs-keyword">const</span> awesomeComponent = <span class="hljs-keyword">new</span> AwesomeComponent();
-
-<span class="hljs-comment">// Create an instance of the world, which contains all ECS state, </span>
-<span class="hljs-comment">// including all entities and components. Also has some methods</span>
-<span class="hljs-comment">// to help in interacting with these as well.</span>
+<span class="hljs-comment">/*
+  Create an instance of the world, which contains all ECS state, 
+  including all entities and components. Also has some methods
+  to help in interacting with these as well.
+*/</span>
 <span class="hljs-keyword">const</span> world = <span class="hljs-keyword">new</span> World&lt;Components&gt;();
 
-<span class="hljs-comment">// Create a system</span>
-<span class="hljs-keyword">const</span> system = createSystem(
-  world,
-  [Components.AwesomeComponent],
+<span class="hljs-comment">/* Create a system */</span>
+<span class="hljs-keyword">const</span> system = world.createSystem(
+  <span class="hljs-comment">/* 
+    Note that you pass in the Component Class definition here.
+    No need to use other keys such as strings.
+  */</span>
+  [AwesomeComponent],
   (args: SystemFuncArgs&lt;Components&gt;): <span class="hljs-function"><span class="hljs-params">void</span> =&gt;</span> {
     <span class="hljs-keyword">const</span> { components } = args;
-    <span class="hljs-comment">// do stuff with components here.</span>
-  }
-)
+    <span class="hljs-comment">/*
+      Ecstatic offers a number of ways to query for entities and components.
+      Great care has been taken to maintain type completion in Typescript.
+    */</span>
+    <span class="hljs-keyword">const</span> comp = components.get(AwesomeComponent);
 
-<span class="hljs-comment">// Create entity instance</span>
+    comp.count += <span class="hljs-number">1</span>;
+  }
+);
+
+<span class="hljs-comment">/* Create a component instance */</span>
+<span class="hljs-keyword">const</span> awesomeComponent = <span class="hljs-keyword">new</span> AwesomeComponent();
+
+<span class="hljs-comment">/* Create entity instance */</span>
 <span class="hljs-keyword">const</span> awesomeEntity = <span class="hljs-keyword">new</span> Entity&lt;Components&gt;(world)
 
-<span class="hljs-comment">// Add a component to the entity</span>
+<span class="hljs-comment">/* Add a component to the entity */</span>
 awesomeEntity.add(awesomeComponent);
 
-<span class="hljs-comment">// Run system</span>
-system.run();</code></pre>
+<span class="hljs-comment">/* Run system */</span>
+system.run();
+
+<span class="hljs-comment">/* Count is updated! */</span>
+expect(awesomeComponent.count).to.equal(<span class="hljs-number">1</span>);</code></pre>
+				<a href="#what-is-ecs" id="what-is-ecs" style="color: inherit; text-decoration: none;">
+					<h3>What is ECS?</h3>
+				</a>
+				<p>ECS stands for <code>Entity, Component, System</code>, and is a way to organize logic and state in your code. Although the definition of each of these parts can vary greatly with the implementation,  the way that Ecstatic defines these is:</p>
+				<ul>
+					<li><p><code>Entity</code> - An unique ID. Ecstatic houses this ID in an object with some helper methods (<code>new Entity()</code>) .</p>
+					</li>
+					<li><p><code>Component</code> - A container of state, that has a type. Each instance of a Component is usually linked to an Entity. Basically the Entity has a collection of components that are &quot;attached&quot; to it.</p>
+					</li>
+					<li><p><code>Systems</code> - Systems are functions that iterate all Entities that have Components that match certain types. If I have an Entity with a <code>MyComponent</code> Component added to it, and I have a System that is set to be called on all Entities that have a <code>MyComponent</code> Component attached to it, then my Sytem will be called. The important part here is that the composition of the types of Components is what determines what logic is run. Usually Systems are run every &quot;tick&quot;, and in a loop.</p>
+					</li>
+				</ul>
+				<p>There is a whooooole lot more that can go into this, but this should be enough to let you start Googling up things. Although ECS is not too common in JS land, it&#39;s the new hotness in videogame engines.</p>
+				<a href="#questions-comments-bugs" id="questions-comments-bugs" style="color: inherit; text-decoration: none;">
+					<h3>Questions? Comments? Bugs?</h3>
+				</a>
+				<p>Create an issue, but be kind :)</p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -134,16 +166,10 @@ system.run();</code></pre>
 						<a href="globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="modules/_src_component_.html">&quot;src/<wbr>Component&quot;</a>
-					</li>
-					<li class=" tsd-kind-module">
 						<a href="modules/_src_componentcollection_.html">&quot;src/<wbr>Component<wbr>Collection&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/_src_entity_.html">&quot;src/<wbr>Entity&quot;</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/_src_lifecyclecomponent_.html">&quot;src/<wbr>Lifecycle<wbr>Component&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/_src_system_.html">&quot;src/<wbr>System&quot;</a>
@@ -153,6 +179,9 @@ system.run();</code></pre>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/_src_world_.html">&quot;src/<wbr>World&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_src_guards_.html">&quot;src/guards&quot;</a>
 					</li>
 				</ul>
 			</nav>

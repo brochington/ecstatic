@@ -6,7 +6,9 @@ import { CompTypes } from 'interfaces';
 
 export type EntityId = string;
 
-export default class Entity<CT extends CompTypes<CT>> {
+type Class<T> = { new (...args: any[]): T };
+
+export default class Entity<CT extends Class<any>> {
   private _id: string;
   private _world: World<CT>;
 
@@ -23,7 +25,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Add a component to an Entity, doh.
    */
-  add(component: InstanceType<CT[keyof CT]>): Entity<CT> {
+  add(component: InstanceType<CT>): this {
     this._world.set(this._id, component);
 
     return this;
@@ -32,7 +34,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Add a tag to a component
    */
-  addTag(tag: Tag): Entity<CT> {
+  addTag(tag: Tag): this {
     const entitySet = this._world.entitiesByTags.has(tag)
       ? this._world.entitiesByTags.get(tag)
       : new Set<EntityId>();
@@ -48,7 +50,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Determines if an entity has a component related to it.
    */
-  has(cType: CT[keyof CT]): boolean {
+  has(cType: CT): boolean {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
     return cc.has(cType);
@@ -71,7 +73,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Get a component that belongs to an entity.
    */
-  get(cType: CT[keyof CT]): CT {
+  get(cType: CT): CT {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
     const component = cc.get(cType);
@@ -86,7 +88,11 @@ export default class Entity<CT extends CompTypes<CT>> {
     return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
   }
 
-  remove(cType: CT[keyof CT]): Entity<CT> {
+  /**
+   * Remove a component from an entity.
+   * @param cType A component class, eg MyComponent
+   */
+  remove(cType: CT): this {
     this._world.remove(this._id, cType);
 
     return this;
@@ -95,7 +101,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Remove a tag from an entity
    */
-  removeTag(tag: string | number): Entity<CT> {
+  removeTag(tag: Tag): this {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
       
@@ -111,7 +117,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   }
 
   /** Clears all components from an Entity */
-  clear(): Entity<CT> {
+  clear(): this {
     this._world.clearEntityComponents(this._id);
 
     return this
@@ -120,7 +126,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   /**
    * Remove all tags on an entity
    */
-  clearTags(): Entity<CT> {
+  clearTags(): this {
     for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
       entitySet.delete(this._id);
 
@@ -167,7 +173,7 @@ export default class Entity<CT extends CompTypes<CT>> {
   }
 }
 
-export function createEntity<CT extends CompTypes<CT>>(
+export function createEntity<CT extends Class<any>>(
   world: World<CT>,
 ): Entity<CT> {
   const entity = new Entity<CT>(world);

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export type Tag = string | number;
 
 export type Class<T> = { new (...args: any[]): T };
@@ -12,19 +14,21 @@ export type ClassInstance<C extends CompTypes<C>> = InstanceType<Key<C>>;
 
 export type EntityId = string;
 
-export class Entity<CT extends CompTypes<CT>> {
+export class Entity<CT extends Class<any>> {
   id: string;
   world: World<CT>;
+
+  constructor(world: World<CT>);
 
   /**
    * Add a component to an Entity
    */
-  add(component: ClassInstance<CT>): this;
+  add(component: InstanceType<CT>): this;
 
   /**
    * Add a tag to a component
    */
-  addTag(tag: Tag): Entity<CT>;
+  addTag(tag: Tag): this;
 
   /**
    * Check to see if the entity has a specific component.
@@ -39,7 +43,7 @@ export class Entity<CT extends CompTypes<CT>> {
   /**
    * Get a component that belongs to an entity.
    */
-  get<C>(cType: CT): C;
+  get(cType: CT): CT;
 
   /**
    * Get all components that have been added to an entity, via a ComponentCollection
@@ -53,24 +57,30 @@ export class Entity<CT extends CompTypes<CT>> {
   get components(): ComponentCollection<CT>;
 
   /**
-   * Remove a component from an entity.
+   * Retrieves all the tags that have been added to this entity.
    */
-  remove(cType: CT): Entity<CT>;
+  get tags(): Set<Tag>;
+
+  /**
+   * Remove a component from an entity.
+   * @param cType A component class, eg MyComponent
+   */
+  remove(cType: CT): this;
 
   /**
    * Remove a tag from an entity
    */
-  removeTag(tag: Tag): Entity<CT>;
+  removeTag(tag: Tag): this;
 
   /**
    * Clears all components from an Entity
    */
-  clear(): Entity<CT>;
+  clear(): this;
 
   /**
    * Remove all tags on an entity
    */
-  clearTags(): Entity<CT>;
+  clearTags(): this;
 
   /**
    * Detroy an entity.
@@ -78,11 +88,64 @@ export class Entity<CT extends CompTypes<CT>> {
   destroy(): void;
 }
 
-export function createEntity<CT>(world: World<CT>): Entity<CT>;
+export function createEntity<CT extends Class<any>>(
+  world: World<CT>
+): Entity<CT>;
+
+export class ComponentCollection<CT extends Class<any>> {
+  components: Map<string, InstanceType<CT>>;
+
+  add(component: InstanceType<CT>): void;
+
+  update<T>(
+    cl: Class<T>,
+    func: (c: InstanceType<typeof cl>) => InstanceType<typeof cl>
+  ): void;
+
+  /**
+   * Remove a component.
+   * @param cType Class of component to remove.
+   */
+  remove(cType: CT): void;
+
+  /**
+   * Get a component that matches the passed class.
+   * Will throw an error if an instance of the given component
+   * doesn't exist in the collection, so if you don't know if it's safe
+   * to get a component, you should test with has() or hasByName() first.
+   * You have been warned.
+   * @param cl component Class reference.
+   */
+  get<T>(cl: Class<T>): InstanceType<typeof cl>;
+
+  /**
+   * Test to see if the collection contains a specific Class or Classes.
+   * @param cType component Class, or array of component Classes.
+   */
+  has(cType: CT | CT[]): boolean;
+
+  /**
+   * Test to see if the collection has a component instance based on a
+   * class name. Some build steps/minifiers will change the name of Classes,
+   * so it's usually best to pass in a MyClass.name instead of 'MyClass'.
+   * @param cName The name of a Class, or array of Class names.
+   */
+  hasByName(cName: string | string[]): boolean;
+
+  /**
+   * Get the component type names that are currently being used in the collection.
+   */
+  get componentTypes(): string[];
+
+  /**
+   * Get the current number of components that are in the collection.
+   */
+  get size(): number;
+}
 
 export type System = () => void;
 
-export interface SystemFuncArgs<CT> {
+export interface SystemFuncArgs<CT extends Class<any>> {
   entity: Entity<CT>;
   components: ComponentCollection<CT>;
   world: World<CT>;
@@ -92,128 +155,72 @@ export interface SystemFuncArgs<CT> {
   isLast: boolean;
 }
 
-export abstract class Component<CT> {
-  abstract type: CT;
-  // storage: S;
+export type SystemFunc<CT extends Class<any>> = (
+  args: SystemFuncArgs<CT>
+) => void;
 
-  // constructor(storage: S);
-}
-// export class Component<CT, S extends object = object> {
-//   type: CT;
-//   storage: S;
-
-//   constructor(storage: S);
-// }
-
-export default class LifeCycleComponent<CT, S extends object = object> {
-  type: CT;
-  storage: S;
-
-  constructor(storage: S);
-
-  // Lifecycle methods
-  storageShouldUpdate(prop: keyof S, value: any): boolean;
-
-  storageWillBeAccessed(prop: keyof S): void;
-
-  onStorageAccess(prop: keyof S): S[keyof S];
-
-  storageWasAccessed(prop: keyof S): void;
-
-  storageWillUpdate(prop: keyof S, nextValue: any): void;
-
-  storageDidUpdate(prop: keyof S, prevValue: any): void;
-
-  onRemove(): void;
-}
-
-export class ComponentCollection<CT> {
-  private components: Map<CT, Component<CT>>;
-
-  private componentTypes: Set<CT>;
-
-  add(component: Component<CT>): void;
-
-  update(cType: CT, func: (c: Component<CT>) => Component<CT>): void;
-
-  get: <C>(cType: CT) => C;
-
-  has(cType: CT | CT[]): boolean;
-
-  get size(): number;
-}
-
-export type SystemFunc<CT> = (args: SystemFuncArgs<CT>) => void;
-
-export function createSystem<CT>(
+export function createSystem<CT extends Class<any>>(
   world: World<CT>,
   cTypes: CT[],
   func: SystemFunc<CT>
 ): System;
 
-export type FindPredicate<CT> = (entity: Entity<CT>) => boolean;
-
-export type GrabPredicate<C> = (component: C) => boolean;
-
-export type FilterPredicate<CT> = (entity: Entity<CT>) => boolean;
-
-export interface SingleComponentResp<CT, C> {
-  entity: Entity<CT>;
-  component: C;
-}
-
-declare class World<CT> {
+declare class World<CT extends Class<any>> {
   /**
    * "finds" a single entity based on a predicate
    */
-  find: (predicate: FindPredicate<CT>) => Entity<CT> | null;
+  find: (predicate: (entity: Entity<CT>) => boolean) => Entity<CT> | null;
 
   /**
    * "finds" all entities based on a predicate, kinda like filter.
    */
-  findAll: (predicate: FindPredicate<CT>) => Entity<CT>[];
+  findAll: (predicate: (entity: Entity<CT>) => boolean) => Entity<CT>[];
 
   /**
    * "locates" a single entity based on its Components.
    */
-  locate: (cTypes: CT | CT[]) => Entity<CT> | null;
+  locate: (cl: CT | CT[]) => Entity<CT> | null;
 
   /**
    * Locates all entities that contain the components named
    */
-  locateAll: (cTypes: CT | CT[]) => Entity<CT>[];
+  locateAll: (cl: CT | CT[]) => Entity<CT>[];
 
   /**
    * Grabs the first entity, and its related component, that matches the component type.
    * @example
    * ```
-   * const { entity, component } = world.grab<MyComponent>(Components.MyComponent);
+   * const { entity, component } = world.grab(MyComponent);
    * ```
    */
-  grab: <C>(cType: CT) => SingleComponentResp<CT, C> | null;
+  grab: <T>(
+    cl: Class<T>
+  ) => { entity: Entity<CT>; component: InstanceType<typeof cl> } | null;
 
   /**
    * Grab single component based on component type and predicate.
    *
    * @example
    * ```typescript
-   * const { entity, component } = world.grabBy<FirstComponent>(Components.FirstComponent, (comp) => comp.id == 'awesome')
+   * const { entity, component } = world.grabBy(FirstComponent, (comp) => comp.id == 'awesome')
    * ```
    */
-  grabBy: <C>(
-    cType: CT,
-    predicate: GrabPredicate<C>
-  ) => SingleComponentResp<CT, C> | null;
+  grabBy: <T>(
+    cl: Class<T>,
+    predicate: (comp: InstanceType<typeof cl>) => boolean
+  ) => { entity: Entity<CT>; component: InstanceType<typeof cl> } | null;
 
   /**
    * Grab all the components primarily, and the entities if needed
    */
-  grabAll: <C>(cType: CT) => SingleComponentResp<CT, C>[];
+  grabAll: <T>(
+    cl: Class<T>
+  ) => { entity: Entity<CT>; component: InstanceType<typeof cl> }[];
 
   /**
    * Given an entity id and componentType, returns component
    */
-  get: <C>(entityId: EntityId, cType: CT) => C;
+  get: <T>(eid: EntityId, cl: Class<T>) => InstanceType<typeof cl>;
 
   /**
    * Get an entity that has been tagged with the given tag, or return null;
@@ -228,21 +235,32 @@ declare class World<CT> {
   /**
    * Set a component on the given entity
    */
-  set: (entityId: EntityId, component: Component<CT>) => void;
+  set: (eid: EntityId, component: InstanceType<CT>) => this;
 
   /**
    * Remove a component from the given entity.
    * NOTE: This will change what systems will be called on the entity.
    */
-  remove: (entityId: EntityId, cType: CT) => void;
+  remove: (eid: EntityId, cType: CT) => this;
+
+  /**
+   * an alias for createSystem().
+   */
+  createSystem(cl: CT[], systemFunc: SystemFunc<CT>): System;
 
   /**
    * Remove all components from a given entity
    */
-  clearEntityComponents(entityId: EntityId): void;
+  clearEntityComponents(entityId: EntityId): this;
+
+  /**
+   * Create an entity that is in the world.
+   * Basically just new Entity(world), but saves an import of Entity.
+   */
+  createEntity(): Entity<CT>;
 
   /**
    * Destroys an entity
    */
-  destroyEntity(entityId: EntityId): void;
+  destroyEntity(entityId: EntityId): this;
 }

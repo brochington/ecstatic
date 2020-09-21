@@ -1,13 +1,14 @@
-import { CompTypes } from "interfaces";
 import { isComponentInstance } from "./guards";
 
 type Class<T> = { new (...args: any[]): T };
 
-export default class ComponentCollection<CT extends CompTypes<CT>> {
-  components: Map<keyof CT, InstanceType<CT[keyof CT]>> = new Map();
+// CT is a Union, like `type = typeof FirstComponent | typeof SecondComponent`.
+export default class ComponentCollection<CT extends Class<any>> {
+  components: Map<string, InstanceType<CT>> = new Map();
 
   // instance of a component
-  add = (component: InstanceType<CT[keyof CT]>): void => {
+  // add = (component: InstanceType<CT[keyof CT]>): void => {
+  add = (component: InstanceType<CT>): void => {
     this.components.set(component.constructor.name, component);
   };
 
@@ -19,14 +20,26 @@ export default class ComponentCollection<CT extends CompTypes<CT>> {
 
     if (isComponentInstance(cl, c)) {
       const updatedComponent = func(c);
-      this.components.set(cl.name, updatedComponent as InstanceType<CT[keyof CT]>);
+      this.components.set(cl.name, updatedComponent as InstanceType<CT>);
     }
   };
 
-  remove = (cType: CT[keyof CT]): void => {
+  /**
+   * Remove a component.
+   * @param cType Class of component to remove.
+   */
+  remove = (cType: CT): void => {
     this.components.delete(cType.name);
   };
 
+  /**
+   * Get a component that matches the passed class.
+   * Will throw an error if an instance of the given component
+   * doesn't exist in the collection, so if you don't know if it's safe
+   * to get a component, you should test with has() or hasByName() first.
+   * You have been warned.
+   * @param cl component Class reference.
+   */
   get = <T>(cl: Class<T>): InstanceType<typeof cl> => {
     const comp = this.components.get(cl.name);
 
@@ -51,23 +64,38 @@ export default class ComponentCollection<CT extends CompTypes<CT>> {
   //   return this.components.get(compClass.name)! as unknown as U;
   // }
 
-  has = (cType: CT[keyof CT] | CT[keyof CT][]): boolean => {
-  // has = <T>(cType: Class<T> | Class<T>[]): boolean => {
+  /**
+   * Test to see if the collection contains a specific Class or Classes.
+   * @param cType component Class, or array of component Classes.
+   */
+  has = (cType: CT | CT[]): boolean => {
     return Array.isArray(cType)
       ? cType.every((ct) => this.components.has(ct.name) === true)
       : this.components.has(cType.name);
   };
 
+  /**
+   * Test to see if the collection has a component instance based on a
+   * class name. Some build steps/minifiers will change the name of Classes,
+   * so it's usually best to pass in a MyClass.name instead of 'MyClass'.
+   * @param cName The name of a Class, or array of Class names.
+   */
   hasByName = (cName: string | string[]): boolean => {
     return Array.isArray(cName)
       ? cName.every(ct => this.components.has(ct) === true)
       : this.components.has(cName);
   };
 
-  get componentTypes(): (keyof CT)[] {
+  /**
+   * Get the component type names that are currently being used in the collection.
+   */
+  get componentTypes(): string[] {
     return [...this.components.keys()];
   }
 
+  /**
+   * Get the current number of components that are in the collection.
+   */
   get size(): number {
     return this.components.size;
   }

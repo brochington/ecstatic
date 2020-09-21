@@ -1,25 +1,23 @@
 import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
-import { CompTypes } from "interfaces";
-
-type FindPredicate<CT extends CompTypes<CT>> = (entity: Entity<CT>) => boolean;
+import { createSystem, System, SystemFunc } from './System';
 
 type Class<T> = { new (...args: any[]): T };
 
-export default class World<CT extends CompTypes<CT>> {
+export default class World<CT extends Class<any>> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
 
   entities: Map<EntityId, Entity<CT>> = new Map();
 
-  entitiesByCTypes: Map<(keyof CT)[], Set<EntityId>> = new Map();
+  entitiesByCTypes: Map<string[], Set<EntityId>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
   /**
    * "finds" a single entity based on a predicate
    */
-  find = (predicate: FindPredicate<CT>): Entity<CT> | null => {
+  find = (predicate: (entity: Entity<CT>) => boolean): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (predicate(entity)) {
         return entity;
@@ -32,7 +30,7 @@ export default class World<CT extends CompTypes<CT>> {
   /**
    * "finds" all entities based on a predicate, kinda like filter.
    */
-  findAll = (predicate: FindPredicate<CT>): Entity<CT>[] => {
+  findAll = (predicate: (entity: Entity<CT>) => boolean): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
@@ -47,7 +45,7 @@ export default class World<CT extends CompTypes<CT>> {
   /**
    * "locates" a single entity based on its Components.
    */
-  locate = (cl: CT[keyof CT] | CT[keyof CT][]): Entity<CT> | null => {
+  locate = (cl: CT | CT[]): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       // console.log("entity?", entity.components, cl.name);
       if (entity.components.has(cl)) {
@@ -61,7 +59,7 @@ export default class World<CT extends CompTypes<CT>> {
   /**
    * Locates all entities that contain the components named
    */
-  locateAll = (cl: CT[keyof CT] | CT[keyof CT][]): Entity<CT>[] => {
+  locateAll = (cl: CT | CT[]): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
@@ -83,7 +81,8 @@ export default class World<CT extends CompTypes<CT>> {
   grab = <T>(
     cl: Class<T>
   ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
-    const entity = this.locate((cl as unknown) as CT[keyof CT]);
+    // const entity = this.locate((cl as unknown) as CT[keyof CT]);
+    const entity = this.locate((cl as unknown) as CT);
 
     if (entity) {
       const cc =
@@ -106,14 +105,14 @@ export default class World<CT extends CompTypes<CT>> {
    *
    * @example
    * ```typescript
-   * const { entity, component } = world.grabBy(Components.FirstComponent, (comp) => comp.id == 'awesome')
+   * const { entity, component } = world.grabBy(FirstComponent, (comp) => comp.id == 'awesome')
    * ```
    */
   grabBy = <T>(
     cl: Class<T>,
     predicate: (comp: InstanceType<typeof cl>) => boolean
   ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
-    const entities = this.locateAll((cl as unknown) as CT[keyof CT]);
+    const entities = this.locateAll((cl as unknown) as CT);
 
     for (const entity of entities) {
       const cc =
@@ -139,7 +138,7 @@ export default class World<CT extends CompTypes<CT>> {
   grabAll = <T>(
     cl: Class<T>
   ): { entity: Entity<CT>; component: InstanceType<typeof cl> }[] => {
-    const entities = this.locateAll((cl as unknown) as CT[keyof CT]);
+    const entities = this.locateAll((cl as unknown) as CT);
 
     return entities.map((entity) => {
       return {
@@ -178,6 +177,10 @@ export default class World<CT extends CompTypes<CT>> {
     return null;
   };
 
+  /**
+   * Gett all entities that have been tagged with the given tag.
+   * @param tag A string or number.
+   */
   getAllTagged = (tag: Tag): Entity<CT>[] => {
     let entities: Entity<CT>[] = []; // eslint-disable-line
 
@@ -198,7 +201,7 @@ export default class World<CT extends CompTypes<CT>> {
   /**
    * Set a component on the given entity
    */
-  set = (eid: EntityId, component: InstanceType<CT[keyof CT]>): World<CT> => {
+  set = (eid: EntityId, component: InstanceType<CT>): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -219,7 +222,7 @@ export default class World<CT extends CompTypes<CT>> {
    * Remove a component from the given entity.
    * NOTE: This will change what systems will be called on the entity.
    */
-  remove = (eid: EntityId, cType: CT[keyof CT]): void => {
+  remove = (eid: EntityId, cType: CT): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -238,15 +241,26 @@ export default class World<CT extends CompTypes<CT>> {
         entitySet.add(eid);
       }
     }
+
+    return this;
   };
 
   /**
    * Internal method used in setting up a new system.
    */
-  registerSystem(cNames: (keyof CT)[]): World<CT> {
+  registerSystem(cNames: string[]): this {
     this.entitiesByCTypes.set(cNames, new Set<EntityId>());
 
     return this;
+  }
+
+  /**
+   * an alias for createSystem().
+   */
+  createSystem(cl: CT[], systemFunc: SystemFunc<CT>): System {
+    const system = createSystem<CT>(this, cl, systemFunc);
+
+    return system;
   }
 
   registerEntity(entity: Entity<CT>): World<CT> {
@@ -261,7 +275,7 @@ export default class World<CT extends CompTypes<CT>> {
   /**
    * Remove all components that belong to an entity.
    */
-  clearEntityComponents(eid: EntityId): World<CT> {
+  clearEntityComponents(eid: EntityId): this {
     this.componentCollections.set(eid, new ComponentCollection<CT>());
 
     for (const entitySet of this.entitiesByCTypes.values()) {
@@ -271,6 +285,16 @@ export default class World<CT extends CompTypes<CT>> {
     }
 
     return this;
+  }
+
+  /**
+   * Create an entity that is in the world.
+   * Basically just new Entity(world), but saves an import of Entity.
+   */
+  createEntity(): Entity<CT> {
+    const entity = new Entity(this);
+
+    return entity;
   }
 
   /**

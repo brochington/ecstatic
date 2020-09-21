@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expect } from "chai";
 import noop from "lodash/noop";
 import World from "../src/World";
@@ -20,12 +21,7 @@ class SecondComponent {
   }
 }
 
-interface CompTypes {
-  FirstComponent: typeof FirstComponent;
-  SecondComponent: typeof SecondComponent;
-}
-
-// type CompTypes = FirstComponent | SecondComponent;
+type CompTypes = typeof FirstComponent | typeof SecondComponent;
 
 describe("World", () => {
   it("exists", () => {
@@ -40,21 +36,21 @@ describe("World", () => {
         const testWorld = new World<CompTypes>();
         const cTypes = [FirstComponent];
 
-        createSystem<CompTypes>(testWorld, cTypes, noop);
+        testWorld.createSystem(cTypes, noop);
 
         const t = [...testWorld.entitiesByCTypes.entries()];
 
         expect(testWorld.entitiesByCTypes.size).to.equal(1);
+        // @ts-ignore
         expect(t[0][0].includes(FirstComponent.name)).to.equal(true);
         expect(t[0][1]).to.be.instanceof(Set);
-        // expect(testWorld.entitiesByCTypes.has(ctNames)).to.equal(true);
       });
     });
     context("registerEntity", () => {
       it("creates ComponentCollection at correct entityId location in entities map", () => {
         const testWorld = new World<CompTypes>();
 
-        const entity = createEntity<CompTypes>(testWorld);
+        const entity = testWorld.createEntity();
 
         entity.add(new FirstComponent("test-comp-1"));
 

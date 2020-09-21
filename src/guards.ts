@@ -2,6 +2,8 @@ import Entity, { EntityId } from "./Entity";
 import { CompTypes } from 'interfaces';
 import ComponentCollection from './ComponentCollection';
 
+// export function classIsCompType(cl: any)
+
 export function isComponentInstance<T>(
   Class: new (...args: any) => T,
   comp: any

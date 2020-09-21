@@ -1,10 +1,5 @@
 import { expect } from "chai";
-import noop from "lodash/noop";
-import World from "../src/World";
-import { createSystem } from "../src/System";
-import Entity, { createEntity } from "../src/Entity";
 import ComponentCollection from "../src/ComponentCollection";
-import Component from "../src/Component";
 
 class FirstComponent {
   id: string;
@@ -21,10 +16,7 @@ class SecondComponent {
   }
 }
 
-interface CompTypes {
-  FirstComponent: typeof FirstComponent;
-  SecondComponent: typeof SecondComponent;
-}
+type CompTypes = typeof FirstComponent | typeof SecondComponent;
 
 describe("Component Collection (internal)", () => {
   it("Can be created", () => {

@@ -73,7 +73,7 @@
 				<h3>Type parameters</h3>
 				<ul class="tsd-type-parameters">
 					<li>
-						<h4>CT</h4>
+						<h4>CT<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -102,6 +102,8 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#clearentitycomponents" class="tsd-kind-icon">clear<wbr>Entity<wbr>Components</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#createentity" class="tsd-kind-icon">create<wbr>Entity</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#createsystem" class="tsd-kind-icon">create<wbr>System</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#destroyentity" class="tsd-kind-icon">destroy<wbr>Entity</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#find" class="tsd-kind-icon">find</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_src_world_.world.html#findall" class="tsd-kind-icon">find<wbr>All</a></li>
@@ -130,7 +132,7 @@
 					<div class="tsd-signature tsd-kind-icon">component<wbr>Collections<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">, </span><a href="_src_componentcollection_.componentcollection.html" class="tsd-signature-type">ComponentCollection</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L19">src/World.ts:19</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L9">src/World.ts:9</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -140,17 +142,17 @@
 					<div class="tsd-signature tsd-kind-icon">entities<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">, </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L21">src/World.ts:21</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L11">src/World.ts:11</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="entitiesbyctypes" class="tsd-anchor"></a>
 					<h3>entities<wbr>ByCTypes</h3>
-					<div class="tsd-signature tsd-kind-icon">entities<wbr>ByCTypes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
+					<div class="tsd-signature tsd-kind-icon">entities<wbr>ByCTypes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L23">src/World.ts:23</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L13">src/World.ts:13</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -160,7 +162,7 @@
 					<div class="tsd-signature tsd-kind-icon">entities<wbr>ByTags<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_tag_.html#tag" class="tsd-signature-type">Tag</a><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L25">src/World.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L15">src/World.ts:15</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -171,13 +173,13 @@
 					<a name="clearentitycomponents" class="tsd-anchor"></a>
 					<h3>clear<wbr>Entity<wbr>Components</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">clear<wbr>Entity<wbr>Components<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">clear<wbr>Entity<wbr>Components<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L263">src/World.ts:263</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L278">src/World.ts:278</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -191,7 +193,61 @@
 									<h5>eid: <a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="createentity" class="tsd-anchor"></a>
+					<h3>create<wbr>Entity</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Entity<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L294">src/World.ts:294</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create an entity that is in the world.
+									Basically just new Entity(world), but saves an import of Entity.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="createsystem" class="tsd-anchor"></a>
+					<h3>create<wbr>System</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>System<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span>, systemFunc<span class="tsd-signature-symbol">: </span><a href="../modules/_src_system_.html#systemfunc" class="tsd-signature-type">SystemFunc</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../modules/_src_system_.html#system" class="tsd-signature-type">System</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L260">src/World.ts:260</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>an alias for createSystem().</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>cl: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+								<li>
+									<h5>systemFunc: <a href="../modules/_src_system_.html#systemfunc" class="tsd-signature-type">SystemFunc</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="../modules/_src_system_.html#system" class="tsd-signature-type">System</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -205,7 +261,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L279">src/World.ts:279</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L304">src/World.ts:304</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -228,13 +284,13 @@
 					<a name="find" class="tsd-anchor"></a>
 					<h3>find</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">find<span class="tsd-signature-symbol">(</span>predicate<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#findpredicate" class="tsd-signature-type">FindPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+						<li class="tsd-signature tsd-kind-icon">find<span class="tsd-signature-symbol">(</span>predicate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L30">src/World.ts:30</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L20">src/World.ts:20</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -245,7 +301,25 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>predicate: <a href="../modules/_src_world_.html#findpredicate" class="tsd-signature-type">FindPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>predicate: <span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-signature">
+											<ul class="tsd-signatures tsd-kind-type-literal">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>entity: <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
@@ -256,13 +330,13 @@
 					<a name="findall" class="tsd-anchor"></a>
 					<h3>find<wbr>All</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">find<wbr>All<span class="tsd-signature-symbol">(</span>predicate<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#findpredicate" class="tsd-signature-type">FindPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
+						<li class="tsd-signature tsd-kind-icon">find<wbr>All<span class="tsd-signature-symbol">(</span>predicate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L43">src/World.ts:43</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L33">src/World.ts:33</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -273,7 +347,25 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>predicate: <a href="../modules/_src_world_.html#findpredicate" class="tsd-signature-type">FindPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>predicate: <span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-signature">
+											<ul class="tsd-signatures tsd-kind-type-literal">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>entity: <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -284,13 +376,13 @@
 					<a name="get" class="tsd-anchor"></a>
 					<h3>get</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">get&lt;C&gt;<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span></li>
+						<li class="tsd-signature tsd-kind-icon">get&lt;T&gt;<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, cl<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L154">src/World.ts:154</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L154">src/World.ts:154</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -301,7 +393,7 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>C</h4>
+									<h4>T</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -310,10 +402,10 @@
 									<h5>eid: <a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a></h5>
 								</li>
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cl: <a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">C</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -327,13 +419,23 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L180">src/World.ts:180</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L184">src/World.ts:184</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Gett all entities that have been tagged with the given tag.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>tag: <a href="../modules/_src_tag_.html#tag" class="tsd-signature-type">Tag</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>A string or number.</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -350,7 +452,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L164">src/World.ts:164</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L164">src/World.ts:164</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -372,13 +474,13 @@
 					<a name="grab" class="tsd-anchor"></a>
 					<h3>grab</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">grab&lt;C&gt;<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+						<li class="tsd-signature tsd-kind-icon">grab&lt;T&gt;<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L90">src/World.ts:90</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L81">src/World.ts:81</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -387,22 +489,23 @@
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
-									<dd><pre><code><span class="hljs-class">const </span>{ entity, component } = world.grab<span class="hljs-params">&lt;MyComponent&gt;</span>(Components.MyComponent);</code></pre></dd>
+									<dd><pre><code><span class="hljs-keyword">const</span> { entity, component } = world.grab(MyComponent);</code></pre>
+									</dd>
 								</dl>
 							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>C</h4>
+									<h4>T</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cl: <a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -410,13 +513,13 @@
 					<a name="graball" class="tsd-anchor"></a>
 					<h3>grab<wbr>All</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">grab<wbr>All&lt;C&gt;<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
+						<li class="tsd-signature tsd-kind-icon">grab<wbr>All&lt;T&gt;<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L144">src/World.ts:144</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L138">src/World.ts:138</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -427,16 +530,16 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>C</h4>
+									<h4>T</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cl: <a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -444,13 +547,13 @@
 					<a name="grabby" class="tsd-anchor"></a>
 					<h3>grab<wbr>By</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">grab<wbr>By&lt;C&gt;<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span>, predicate<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#grabpredicate" class="tsd-signature-type">GrabPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+						<li class="tsd-signature tsd-kind-icon">grab<wbr>By&lt;T&gt;<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span>, predicate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>comp<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L117">src/World.ts:117</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L111">src/World.ts:111</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -459,26 +562,44 @@
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
-									<dd><pre><code class="language-typescript"><span class="hljs-keyword">const</span> { entity, component } = world.grabBy(Components.FirstComponent, <span class="hljs-function">(<span class="hljs-params">comp</span>) =&gt;</span> comp.id == <span class="hljs-string">&#x27;awesome&#x27;</span>)</code></pre>
+									<dd><pre><code class="language-typescript"><span class="hljs-keyword">const</span> { entity, component } = world.grabBy(FirstComponent, <span class="hljs-function">(<span class="hljs-params">comp</span>) =&gt;</span> comp.id == <span class="hljs-string">&#x27;awesome&#x27;</span>)</code></pre>
 									</dd>
 								</dl>
 							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>C</h4>
+									<h4>T</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cl: <a href="../modules/_src_world_.html#class" class="tsd-signature-type">Class</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 								<li>
-									<h5>predicate: <a href="../modules/_src_world_.html#grabpredicate" class="tsd-signature-type">GrabPredicate</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>predicate: <span class="tsd-signature-symbol">(</span>comp<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-signature">
+											<ul class="tsd-signatures tsd-kind-type-literal">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>comp<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>comp: <span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-signature-type">SingleComponentResp</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">C</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">cl</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>entity<span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -486,13 +607,13 @@
 					<a name="locate" class="tsd-anchor"></a>
 					<h3>locate</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">locate<span class="tsd-signature-symbol">(</span>cTypes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+						<li class="tsd-signature tsd-kind-icon">locate<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L58">src/World.ts:58</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L48">src/World.ts:48</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -503,7 +624,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cTypes: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>cl: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h4>
@@ -514,13 +635,13 @@
 					<a name="locateall" class="tsd-anchor"></a>
 					<h3>locate<wbr>All</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">locate<wbr>All<span class="tsd-signature-symbol">(</span>cTypes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
+						<li class="tsd-signature tsd-kind-icon">locate<wbr>All<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L71">src/World.ts:71</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L62">src/World.ts:62</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -531,7 +652,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cTypes: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>cl: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_src_entity_.entity.html" class="tsd-signature-type">Entity</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -548,7 +669,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L251">src/World.ts:251</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L266">src/World.ts:266</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -565,13 +686,13 @@
 					<a name="registersystem" class="tsd-anchor"></a>
 					<h3>register<wbr>System</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">register<wbr>System<span class="tsd-signature-symbol">(</span>cTypes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">register<wbr>System<span class="tsd-signature-symbol">(</span>cNames<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L245">src/World.ts:245</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L251">src/World.ts:251</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -582,10 +703,10 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cTypes: <span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>cNames: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -593,13 +714,13 @@
 					<a name="remove" class="tsd-anchor"></a>
 					<h3>remove</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L221">src/World.ts:221</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L225">src/World.ts:225</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -617,7 +738,7 @@
 									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -625,13 +746,13 @@
 					<a name="set" class="tsd-anchor"></a>
 					<h3>set</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">set<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, component<span class="tsd-signature-symbol">: </span><a href="_src_component_.component.html" class="tsd-signature-type">Component</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">set<span class="tsd-signature-symbol">(</span>eid<span class="tsd-signature-symbol">: </span><a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a>, component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/27308ff/src/World.ts#L200">src/World.ts:200</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/d061e4a/src/World.ts#L204">src/World.ts:204</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -645,10 +766,10 @@
 									<h5>eid: <a href="../modules/_src_entity_.html#entityid" class="tsd-signature-type">EntityId</a></h5>
 								</li>
 								<li>
-									<h5>component: <a href="_src_component_.component.html" class="tsd-signature-type">Component</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>component: <span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_src_world_.world.html" class="tsd-signature-type">World</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -661,16 +782,10 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/_src_component_.html">&quot;src/<wbr>Component&quot;</a>
-					</li>
-					<li class=" tsd-kind-module">
 						<a href="../modules/_src_componentcollection_.html">&quot;src/<wbr>Component<wbr>Collection&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/_src_entity_.html">&quot;src/<wbr>Entity&quot;</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="../modules/_src_lifecyclecomponent_.html">&quot;src/<wbr>Lifecycle<wbr>Component&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/_src_system_.html">&quot;src/<wbr>System&quot;</a>
@@ -680,6 +795,9 @@
 					</li>
 					<li class="current tsd-kind-module">
 						<a href="../modules/_src_world_.html">&quot;src/<wbr>World&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_src_guards_.html">&quot;src/guards&quot;</a>
 					</li>
 				</ul>
 			</nav>
@@ -704,6 +822,12 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_src_world_.world.html#clearentitycomponents" class="tsd-kind-icon">clear<wbr>Entity<wbr>Components</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_src_world_.world.html#createentity" class="tsd-kind-icon">create<wbr>Entity</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_src_world_.world.html#createsystem" class="tsd-kind-icon">create<wbr>System</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_src_world_.world.html#destroyentity" class="tsd-kind-icon">destroy<wbr>Entity</a>
@@ -754,17 +878,8 @@
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-module tsd-has-type-parameter tsd-is-not-exported">
-						<a href="../interfaces/_src_world_.singlecomponentresp.html" class="tsd-kind-icon">Single<wbr>Component<wbr>Resp</a>
-					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter tsd-is-not-exported">
-						<a href="../modules/_src_world_.html#findpredicate" class="tsd-kind-icon">Find<wbr>Predicate</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter tsd-is-not-exported">
-						<a href="../modules/_src_world_.html#grabpredicate" class="tsd-kind-icon">Grab<wbr>Predicate</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter tsd-is-not-exported">
-						<a href="../modules/_src_world_.html#jointcomp" class="tsd-kind-icon">Joint<wbr>Comp</a>
+						<a href="../modules/_src_world_.html#class" class="tsd-kind-icon">Class</a>
 					</li>
 				</ul>
 			</nav>

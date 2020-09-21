@@ -1,7 +1,8 @@
 import World from './World';
 import Entity from './Entity';
 import ComponentCollection from './ComponentCollection';
-import { CompTypes } from 'interfaces';
+
+type Class<T> = { new (...args: any[]): T };
 
 export type System = () => void;
 
@@ -11,7 +12,7 @@ export type System = () => void;
  * as well as some other helpful params like if the entity is the first or last entity
  * in the group of entities that being iterated over.
  */
-export interface SystemFuncArgs<CT extends CompTypes<CT>> {
+export interface SystemFuncArgs<CT extends Class<any>> {
   /**
    * The current entity being iterated.
    */
@@ -42,7 +43,7 @@ export interface SystemFuncArgs<CT extends CompTypes<CT>> {
 /**
  * Function that is called when a system is run.
  */
-export type SystemFunc<CT extends CompTypes<CT>> = (
+export type SystemFunc<CT extends Class<CT>> = (
   sytemFuncArgs: SystemFuncArgs<CT>,
 ) => void;
 
@@ -53,10 +54,11 @@ export type SystemFunc<CT extends CompTypes<CT>> = (
  * createSystem(world, ['ComponentType'], ({ entity }) => 'Do fun system things here.')
  * ```
  */
-export function createSystem<CT extends CompTypes<CT>>(
+export function createSystem<CT extends Class<any>>(
+// export function createSystem<CT extends CompTypes<CT>>(
   world: World<CT>,
   // cTypes: CT[],
-  cTypes: CT[keyof CT][],
+  cTypes: CT[],
   systemFunc: SystemFunc<CT>
 ): System {
   const cNames = cTypes.map(ct => ct.name);
