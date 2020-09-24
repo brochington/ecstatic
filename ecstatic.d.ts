@@ -43,7 +43,7 @@ export class Entity<CT extends Class<any>> {
   /**
    * Get a component that belongs to an entity.
    */
-  get(cType: CT): CT;
+  get<T>(cl: Class<T>): InstanceType<typeof cl>;
 
   /**
    * Get all components that have been added to an entity, via a ComponentCollection

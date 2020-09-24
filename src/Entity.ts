@@ -73,10 +73,10 @@ export default class Entity<CT extends Class<any>> {
   /**
    * Get a component that belongs to an entity.
    */
-  get(cType: CT): CT {
+  get<T>(cl: Class<T>): InstanceType<typeof cl> {
     const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
 
-    const component = cc.get(cType);
+    const component = cc.get<T>(cl);
 
     return component;
   }
