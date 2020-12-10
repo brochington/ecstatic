@@ -219,7 +219,30 @@ describe("World", () => {
       const comp = world.get(entity1.id, FirstComponent);
 
       expect(comp.id).to.equal('a');
+    });
+
+    context('getComponent', () => {
+      it('getComponent no default value', () => {
+        const world = new World<CompTypes>();
+  
+        createEntity(world).add(new FirstComponent("a"));
+  
+        const comp1 = world.getComponent(FirstComponent);
+        const comp2 = world.getComponent(SecondComponent);
+  
+        expect(comp1.id).to.equal('a');
+        expect(comp2).to.equal(null);
+      });
+
+      it('getComponent with default value', () => {
+        const world = new World<CompTypes>();
+  
+        const comp1 = world.getComponent(FirstComponent, new FirstComponent('b'));
+  
+        expect(comp1.id).to.equal('b');
+      })
     })
+
 
     context("set", () => {
       it("sets component in the correct entityId, and updates entitiesByCType", () => {

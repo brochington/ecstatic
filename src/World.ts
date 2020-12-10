@@ -1,7 +1,7 @@
 import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
-import { createSystem, System, SystemFunc } from './System';
+import { createSystem, System, SystemFunc } from "./System";
 
 type Class<T> = { new (...args: any[]): T };
 
@@ -144,7 +144,7 @@ export default class World<CT extends Class<any>> {
       return {
         entity,
         component: entity.components.get<T>(cl),
-      }
+      };
     });
   };
 
@@ -156,6 +156,25 @@ export default class World<CT extends Class<any>> {
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
     return cc.get<T>(cl);
+  };
+
+  /**
+   * Find and get the first instance of a component, without any associated entities.
+   * Helpful is you know that only one instance of a component exists across all entities.
+   * @param cl Component Class Contructor
+   * @param defaultValue A default component instance if no components are found.
+   */
+  getComponent = <T>(
+    cl: Class<T>,
+    defaultValue?: InstanceType<typeof cl>
+  ): InstanceType<typeof cl> | null => {
+    const result = this.grab(cl);
+
+    if (!result) {
+      return defaultValue ? defaultValue : null;
+    }
+
+    return result.component;
   };
 
   /**
