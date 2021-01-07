@@ -26,7 +26,7 @@ module.exports = function (config) {
     exclude: [],
 
     webpack: {
-      mode: 'production',
+      mode: 'development',
       module: {
         rules: [
           {

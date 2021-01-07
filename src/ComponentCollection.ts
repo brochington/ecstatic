@@ -99,4 +99,13 @@ export default class ComponentCollection<CT extends Class<any>> {
   get size(): number {
     return this.components.size;
   }
+
+  toDevComponents(): Record<string, InstanceType<CT>> {
+    const obj: Record<string, InstanceType<CT>> = {};
+    for (const [compName, comp] of this.components) {
+      obj[compName] = comp;
+    }
+
+    return obj;
+  }
 }

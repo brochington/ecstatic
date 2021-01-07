@@ -3,6 +3,7 @@ import World from './World';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
 import { CompTypes } from 'interfaces';
+import DevEntity from './DevEntity';
 
 export type EntityId = string;
 
@@ -170,6 +171,10 @@ export default class Entity<CT extends Class<any>> {
     }
 
     return tags;
+  }
+
+  toDevEntity(): DevEntity<CT> {
+    return new DevEntity<CT>(this);
   }
 }
 

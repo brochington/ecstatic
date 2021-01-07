@@ -23,19 +23,22 @@ class SecondComponent {
 
 class ThirdComponent {}
 
-interface CompTypes {
-  FirstComponent: typeof FirstComponent;
-  SecondComponent: typeof SecondComponent;
-  ThirdComponent: typeof ThirdComponent;
-}
+type CompTypes =
+  | typeof FirstComponent
+  | typeof SecondComponent
+  | typeof ThirdComponent;
+
+function firstSystem() { /* */ }
 
 describe("System", () => {
   it("create a system", () => {
     const world = new World<CompTypes>();
 
-    const system1 = createSystem(world, [FirstComponent], noop);
+    const system1 = createSystem(world, [FirstComponent], firstSystem);
 
     expect(system1).to.be.instanceof(Function);
+
+    world.dev.logSystemCompTable();
   });
 
   it("Basic System Run", (done) => {

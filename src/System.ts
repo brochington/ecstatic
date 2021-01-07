@@ -55,15 +55,12 @@ export type SystemFunc<CT extends Class<CT>> = (
  * ```
  */
 export function createSystem<CT extends Class<any>>(
-// export function createSystem<CT extends CompTypes<CT>>(
   world: World<CT>,
-  // cTypes: CT[],
   cTypes: CT[],
-  systemFunc: SystemFunc<CT>
+  systemFunc: SystemFunc<CT>,
 ): System {
   const cNames = cTypes.map(ct => ct.name);
-  world.registerSystem(cNames);
-  // world.registerSystem(cTypes);
+  world.registerSystem(cNames, systemFunc.name);
 
   return (): void => {
     let index = 0;

@@ -2,8 +2,9 @@ import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 import { createSystem, System, SystemFunc } from "./System";
+import Devtools from "./DevTools";
 
-type Class<T> = { new (...args: any[]): T };
+export type Class<T> = { new (...args: any[]): T };
 
 export default class World<CT extends Class<any>> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
@@ -13,6 +14,14 @@ export default class World<CT extends Class<any>> {
   entitiesByCTypes: Map<string[], Set<EntityId>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
+
+  compNamesBySystemName: Map<string, string[]> = new Map();
+
+  dev: Devtools<CT>;
+
+  constructor() {
+    this.dev = new Devtools(this);
+  }
 
   /**
    * "finds" a single entity based on a predicate
@@ -267,7 +276,8 @@ export default class World<CT extends Class<any>> {
   /**
    * Internal method used in setting up a new system.
    */
-  registerSystem(cNames: string[]): this {
+  registerSystem(cNames: string[], systemName: string): this {
+    this.compNamesBySystemName.set(systemName, [...cNames]);
     this.entitiesByCTypes.set(cNames, new Set<EntityId>());
 
     return this;

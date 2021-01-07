@@ -17,10 +17,9 @@ class FirstComponent {
 
 class SecondComponent {}
 
-interface CompTypes {
-  FirstComponent: typeof FirstComponent;
-  SecondComponent: typeof SecondComponent;
-}
+type CompTypes =
+  | typeof FirstComponent
+  | typeof SecondComponent
 
 describe('Entity', () => {
   it('exists', () => {
@@ -154,6 +153,8 @@ describe('Entity', () => {
       expect(testWorld.getTagged(testTag1)).to.equal(testEntity);
       expect(testWorld.getTagged(testTag2)).to.equal(null);
       expect(testWorld.getAllTagged(testTag1)[0]).to.equal(testEntity);
+
+      console.log(testWorld.dev.entities);
     });
 
     it('Cleans up tags for entities that have been destroyed', () => {
