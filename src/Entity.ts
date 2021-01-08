@@ -174,7 +174,7 @@ export default class Entity<CT extends Class<any>> {
   }
 
   toDevEntity(): DevEntity<CT> {
-    return new DevEntity<CT>(this);
+    return new DevEntity<CT>(this, this._world);
   }
 }
 

@@ -2,7 +2,7 @@ import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 import { createSystem, System, SystemFunc } from "./System";
-import Devtools from "./DevTools";
+import DevTools from "./DevTools";
 
 export type Class<T> = { new (...args: any[]): T };
 
@@ -17,10 +17,10 @@ export default class World<CT extends Class<any>> {
 
   compNamesBySystemName: Map<string, string[]> = new Map();
 
-  dev: Devtools<CT>;
+  dev: DevTools<CT>;
 
   constructor() {
-    this.dev = new Devtools(this);
+    this.dev = new DevTools(this);
   }
 
   /**

@@ -37,8 +37,6 @@ describe("System", () => {
     const system1 = createSystem(world, [FirstComponent], firstSystem);
 
     expect(system1).to.be.instanceof(Function);
-
-    world.dev.logSystemCompTable();
   });
 
   it("Basic System Run", (done) => {

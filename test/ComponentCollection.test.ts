@@ -117,4 +117,10 @@ describe("Component Collection (internal)", () => {
       expect(cc.has(SecondComponent)).to.equal(true);
     });
   });
+
+  describe('dev', () => {
+    it('toDevComponents', () => {
+      /* TODO! */
+    });
+  });
 });

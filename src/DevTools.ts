@@ -1,28 +1,50 @@
 import World, { Class } from './World';
 import DevEntity from './DevEntity';
 
+interface DevSystemComps {
+  system: string;
+  components: string;
+}
+
+
 class DevTools<CT extends Class<any>> {
   world: World<CT>;
 
   constructor(world: World<CT>) {
     this.world = world;
   }
+  /**
+   * display the all systems of the world, and the components required by each system.
+   * Super helpful to use with console.table()
+   * @example
+   * ```
+   * console.table(world.dev.systemComponents);
+   * ```
+   */
+  get systemComponents(): DevSystemComps[] {
+    const compsBySystems = [];
 
-  // log a table of systems, and the components for them.
-  logSystemCompTable(): void {
-    const things = [];
-
-    for (const [systemName, compNames] of this.world.compNamesBySystemName) {
-      things.push({ systemName, components: compNames.join(',') });
+    for (const [system, compNames] of this.world.compNamesBySystemName) {
+      compsBySystems.push({ system, components: compNames.join(", ") });
     }
 
-    console.table(things);
+    return compsBySystems;
   }
 
-  // Would be nice to list all the systems that will apply to an entity.
+  /**
+   * Create an array of DevEntites. Can be very helpful for things like inspecting component state,
+   * and which systems will be called on an entity.
+   * @example
+   * ```
+   * console.table(world.dev.entities);
+   *
+   * // Pro tip! try displaying a table of entities with console.table and DevEntity.toTableRow().
+   * console.table(world.dev.entities.map(devEntity => devEntity.toTableRow()));
+   * ```
+   */
 
   get entities(): DevEntity<CT>[] {
-    return [...this.world.entities.values()].map(e => e.toDevEntity());
+    return [...this.world.entities.values()].map((e) => e.toDevEntity());
   }
 }
 

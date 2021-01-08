@@ -5,6 +5,7 @@ import noop from 'lodash/noop';
 
 import World from "../src/World";
 import Entity from "../src/Entity";
+import DevEntity from '../src/DevEntity';
 import { createSystem } from '../src/System'
 
 class FirstComponent {
@@ -153,8 +154,6 @@ describe('Entity', () => {
       expect(testWorld.getTagged(testTag1)).to.equal(testEntity);
       expect(testWorld.getTagged(testTag2)).to.equal(null);
       expect(testWorld.getAllTagged(testTag1)[0]).to.equal(testEntity);
-
-      console.log(testWorld.dev.entities);
     });
 
     it('Cleans up tags for entities that have been destroyed', () => {
@@ -174,4 +173,36 @@ describe('Entity', () => {
       expect(testWorld.getAllTagged(testTag1).length).to.equal(0);
     })
   });
+
+  describe('dev', () => {
+    it('toDevEntity', () => {
+      const testWorld = new World<CompTypes>();
+
+      function firstSystem() { /* */ }
+      createSystem(testWorld, [FirstComponent], firstSystem);
+
+      const firstComp = new FirstComponent('id1');
+      const testTag = 'testTag1';
+      const testEntity = testWorld.createEntity()
+        .add(firstComp)
+        .addTag(testTag);
+
+      const devEntity = testEntity.toDevEntity();
+
+      expect(devEntity).to.be.instanceof(DevEntity);
+
+      expect(devEntity.id).to.equal(testEntity.id);
+
+      // components
+      expect(devEntity.components.FirstComponent).to.eql({ id: firstComp.id });
+
+      // tags
+      expect(devEntity.tags.length).to.equal(1);
+      expect(devEntity.tags[0]).to.equal(testTag);
+
+      //systems
+      expect(devEntity.systems.length).to.equal(1);
+      expect(devEntity.systems[0]).to.equal(firstSystem.name);
+    });
+  })
 });

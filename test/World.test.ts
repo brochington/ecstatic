@@ -207,8 +207,6 @@ describe("World", () => {
 
       expect(third.entity.id).to.equal(entity3.id);
       expect(third.component.id).to.equal("c");
-
-      console.log(world.dev.entities);
     });
 
     it('get', () => {

@@ -95,6 +95,64 @@ export class Entity<CT extends Class<any>> {
    * Detroy an entity.
    */
   destroy(): void;
+
+  toDevEntity(): DevEntity<CT>;
+}
+
+export interface DevEntityTableRow {
+  id: string;
+  components: string;
+  tags: string;
+  systems: string;
+}
+
+export class DevEntity<CT extends Class<any>> {
+  id: string;
+
+  components: Record<string, InstanceType<CT>>;
+
+  tags: Tag[];
+
+  systems: string[];
+
+  constructor(entity: Entity<CT>, world: World<CT>);
+
+  toTableRow(): DevEntityTableRow;
+}
+
+interface DevSystemComps {
+  system: string;
+  components: string;
+}
+
+declare class DevTools<CT extends Class<any>> {
+  world: World<CT>;
+
+  constructor(world: World<CT>);
+
+  /**
+   * display the all systems of the world, and the components required by each system.
+   * Super helpful to use with console.table()
+   * @example
+   * ```
+   * console.table(world.dev.systemComponents);
+   * ```
+   */
+  get systemComponents(): DevSystemComps[];
+
+  /**
+   * Create an array of DevEntites. Can be very helpful for things like inspecting component state,
+   * and which systems will be called on an entity.
+   * @example
+   * ```
+   * console.table(world.dev.entities);
+   *
+   * // Pro tip! try displaying a table of entities with console.table and DevEntity.toTableRow().
+   * console.table(world.dev.entities.map(devEntity => devEntity.toTableRow()));
+   * ```
+   */
+
+  get entities(): DevEntity<CT>[];
 }
 
 export function createEntity<CT extends Class<any>>(
@@ -150,6 +208,8 @@ export class ComponentCollection<CT extends Class<any>> {
    * Get the current number of components that are in the collection.
    */
   get size(): number;
+
+  toDevComponents(): Record<string, InstanceType<CT>>;
 }
 
 export type System = () => void;
@@ -175,6 +235,11 @@ export function createSystem<CT extends Class<any>>(
 ): System;
 
 declare class World<CT extends Class<any>> {
+  /**
+   * Lots of cool things to help view the state of the world. Check it out!
+   */
+  dev: DevTools<CT>;
+
   /**
    * "finds" a single entity based on a predicate
    */
