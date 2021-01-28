@@ -58,7 +58,6 @@ export default class World<CT extends Class<any>> {
    */
   locate = (cl: CT | CT[]): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
-      // console.log("entity?", entity.components, cl.name);
       if (entity.components.has(cl)) {
         return entity;
       }
@@ -239,16 +238,11 @@ export default class World<CT extends Class<any>> {
 
     this.componentCollections.set(eid, cc);
 
-    console.log("pre", this.entitiesByCTypes);
-
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      console.log('ctArr', ctArr, entitySet);
       if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
-
-    console.log("post", this.entitiesByCTypes);
 
     return this;
   };
@@ -290,7 +284,6 @@ export default class World<CT extends Class<any>> {
   }
 
   registerEntity(entity: Entity<CT>): World<CT> {
-    console.log('registerEntity');
     const cc = new ComponentCollection<CT>();
 
     this.componentCollections.set(entity.id, cc);

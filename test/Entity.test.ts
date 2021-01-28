@@ -22,7 +22,7 @@ type CompTypes =
   | typeof FirstComponent
   | typeof SecondComponent
 
-describe.only('Entity', () => {
+describe('Entity', () => {
   it('exists', () => {
     const testWorld = new World<CompTypes>();
     const testEntity = new Entity<CompTypes>(testWorld);
@@ -50,7 +50,7 @@ describe.only('Entity', () => {
       expect(cc.has(FirstComponent)).to.equal(true);
     });
 
-    it.only('remove', () => {
+    it('remove', () => {
       const testWorld = new World<CompTypes>();
       const testEntity = new Entity<CompTypes>(testWorld);
 
@@ -65,42 +65,42 @@ describe.only('Entity', () => {
 
 
       // Testing to make sure World.entitiesByCType is dealt with correctly.
-      // let entitySet1 = new Set();
+      let entitySet1 = new Set();
 
-      // for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-      //   //@ts-ignore
-      //   if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
-      //     entitySet1 = entitySet;
-      //   }
-      // }
+      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+        //@ts-ignore
+        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+          entitySet1 = entitySet;
+        }
+      }
 
-      // expect(entitySet1.size).to.equal(1);
-      // expect(entitySet1.has(testEntity.id)).to.equal(true);
+      expect(entitySet1.size).to.equal(1);
+      expect(entitySet1.has(testEntity.id)).to.equal(true);
 
-      // testEntity.remove(FirstComponent);
+      testEntity.remove(FirstComponent);
 
-      // expect(testEntity.has(FirstComponent)).to.equal(false);
-      // expect(testEntity.has(SecondComponent)).to.equal(true);
+      expect(testEntity.has(FirstComponent)).to.equal(false);
+      expect(testEntity.has(SecondComponent)).to.equal(true);
 
-      // let entitySet2 = new Set();
-      // let entitySet3 = new Set();
-      // for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-      //   // @ts-ignore
-      //   if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
-      //     entitySet2 = entitySet;
-      //     return;
-      //   }
+      let entitySet2 = new Set();
+      let entitySet3 = new Set();
+      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+        // @ts-ignore
+        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+          entitySet2 = entitySet;
+          return;
+        }
 
-      //   // @ts-ignore
-      //   if (ctArr.includes(SecondComponent.name)) {
-      //     entitySet3 = entitySet;
-      //   }
-      // }
+        // @ts-ignore
+        if (ctArr.includes(SecondComponent.name)) {
+          entitySet3 = entitySet;
+        }
+      }
 
-      // expect(entitySet2.size).to.equal(0);
-      // expect(entitySet2.has(testEntity.id)).to.equal(false);
-      // expect(entitySet3.size).to.equal(1);
-      // expect(entitySet3.has(testEntity.id)).to.equal(true);
+      expect(entitySet2.size).to.equal(0);
+      expect(entitySet2.has(testEntity.id)).to.equal(false);
+      expect(entitySet3.size).to.equal(1);
+      expect(entitySet3.has(testEntity.id)).to.equal(true);
     });
   });
 

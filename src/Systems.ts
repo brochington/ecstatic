@@ -1,4 +1,4 @@
-import Entity from "./Entity";
+import Entity, { EntityId } from "./Entity";
 import World, { Class } from "./World";
 import ComponentCollection from "./ComponentCollection";
 
@@ -59,7 +59,6 @@ export default class Systems<CT extends Class<any>> {
   add(cTypes: CT[], systemFunc: SystemFunc<CT>): this {
     const cNames = cTypes.map((ct) => ct.name);
 
-
     // Super brute force, and might lead to errors in the future, but for now
     // using the stringified system function if the function doesn't already have a name.
     // This is useful for anonymous functions used as a system function.
@@ -68,6 +67,8 @@ export default class Systems<CT extends Class<any>> {
 
     this.systemFuncBySystemName.set(name, systemFunc);
     this.compNamesBySystemName.set(name, [...cNames]);
+    this.world.entitiesByCTypes.set(cNames, new Set<EntityId>());
+
     return this;
   }
 
