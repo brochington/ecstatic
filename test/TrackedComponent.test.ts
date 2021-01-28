@@ -17,10 +17,10 @@ describe('LifeCycleComponent', () => {
 
     const TrackedMyComp = track(MyComponent, {
       onAdd(...args) {
-        console.log('external onAdd!', args);
+        // console.log('external onAdd!', args);
       },
       onUpdate() {
-        console.log('external onUpdate!');
+        // console.log('external onUpdate!');
       },
     });
 
@@ -31,7 +31,7 @@ describe('LifeCycleComponent', () => {
     
     world.createEntity().add(myComp);
 
-    console.log('myComp', myComp);
+    // console.log('myComp', myComp);
   });
 });
 

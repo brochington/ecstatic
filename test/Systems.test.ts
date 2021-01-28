@@ -43,7 +43,18 @@ describe("System", () => {
   it("Run System with Anonymous function", (done) => {
     const world = new World<CompTypes>();
 
+    // function testSystem(args) {
+    //   console.log('innnn')
+    //   const { components } = args;
+
+    //   const firstComp = components.get(FirstComponent);
+
+    //   expect(firstComp.id).to.equal("first");
+    //   done();
+    // }
+
     world.addSystem([FirstComponent], (args) => {
+      console.log('innnn')
       const { components } = args;
 
       const firstComp = components.get(FirstComponent);
@@ -66,10 +77,10 @@ describe("System", () => {
     const fake4 = sinon.fake();
 
     world
-      .addSystem([FirstComponent], fake1)
-      .addSystem([SecondComponent], fake2)
-      .addSystem([ThirdComponent], fake3)
-      .addSystem([FirstComponent, SecondComponent], fake4);
+      .addSystem([FirstComponent], fake1, "fake1")
+      .addSystem([SecondComponent], fake2, "fake2")
+      .addSystem([ThirdComponent], fake3, "fake3")
+      .addSystem([FirstComponent, SecondComponent], fake4, "fake4");
 
     // entity 1;
     createEntity(world).add(new FirstComponent("first"));

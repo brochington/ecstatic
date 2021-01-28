@@ -2,7 +2,6 @@
 import { expect } from "chai";
 import noop from "lodash/noop";
 import World from "../src/World";
-import { createSystem } from "../src/System";
 import Entity, { createEntity } from "../src/Entity";
 import ComponentCollection from "../src/ComponentCollection";
 
@@ -36,7 +35,7 @@ describe("World", () => {
         const testWorld = new World<CompTypes>();
         const cTypes = [FirstComponent];
 
-        testWorld.createSystem(cTypes, noop);
+        testWorld.addSystem(cTypes, noop);
 
         const t = [...testWorld.entitiesByCTypes.entries()];
 
@@ -63,30 +62,6 @@ describe("World", () => {
         expect(cc.has(FirstComponent)).to.equal(true);
         expect(cc.has([FirstComponent, SecondComponent])).to.equal(false);
         expect(cc.get(FirstComponent).id).to.equal("test-comp-1");
-      });
-
-      it("Add entity to entitiesByCType in correct spot", () => {
-        const testWorld = new World<CompTypes>();
-        const cTypes1 = [FirstComponent];
-        const cTypes2 = [SecondComponent];
-
-        const ctNames1 = cTypes1.map((ct) => ct.name) as (keyof CompTypes)[];
-        const ctNames2 = cTypes2.map((ct) => ct.name) as (keyof CompTypes)[];
-
-        testWorld.registerSystem(ctNames1);
-        testWorld.registerSystem(ctNames2);
-
-        const entity = createEntity<CompTypes>(testWorld);
-
-        const firstComponet = new FirstComponent("test-comp-1");
-        entity.add(firstComponet);
-
-        expect(
-          testWorld.entitiesByCTypes.get(ctNames1).has(entity.id)
-        ).to.equal(true);
-        expect(
-          testWorld.entitiesByCTypes.get(ctNames2).has(entity.id)
-        ).to.equal(false);
       });
     });
 
@@ -137,7 +112,7 @@ describe("World", () => {
     it("locate", () => {
       const world = new World<CompTypes>();
 
-      createSystem(world, [FirstComponent], noop);
+      world.addSystem([FirstComponent], noop);
 
       const entity1 = createEntity(world).add(new FirstComponent("a"));
       createEntity(world).add(new FirstComponent("b"));
@@ -151,7 +126,7 @@ describe("World", () => {
     it("grab", () => {
       const world = new World<CompTypes>();
 
-      createSystem(world, [FirstComponent], noop);
+      world.addSystem([FirstComponent], noop);
 
       expect(world.grab(FirstComponent)).to.equal(null);
 
@@ -172,7 +147,7 @@ describe("World", () => {
         return comp.id === "b";
       };
 
-      createSystem(world, [FirstComponent], noop);
+      world.addSystem([FirstComponent], noop);
 
       expect(world.grabBy(FirstComponent, pred)).to.equal(null);
 
@@ -189,7 +164,7 @@ describe("World", () => {
     it("grabAll", () => {
       const world = new World<CompTypes>();
 
-      createSystem(world, [FirstComponent], noop);
+      world.addSystem([FirstComponent], noop);
 
       expect(world.grabAll(FirstComponent).length).to.equal(0);
 
@@ -212,7 +187,7 @@ describe("World", () => {
     it('get', () => {
       const world = new World<CompTypes>();
 
-      createSystem(world, [FirstComponent], noop);
+      world.addSystem([FirstComponent], noop);
 
       const entity1 = createEntity(world).add(new FirstComponent("a"));
 
@@ -247,10 +222,6 @@ describe("World", () => {
     context("set", () => {
       it("sets component in the correct entityId, and updates entitiesByCType", () => {
         const testWorld = new World<CompTypes>();
-        const cTypes = [FirstComponent];
-
-        const ctNames = cTypes.map((ct) => ct.name) as (keyof CompTypes)[];
-        testWorld.registerSystem(ctNames);
 
         const entity = createEntity<CompTypes>(testWorld);
 
@@ -264,9 +235,10 @@ describe("World", () => {
         expect(cc.has(FirstComponent)).to.equal(true);
         expect(cc.size).to.equal(1);
 
-        expect(testWorld.entitiesByCTypes.get(ctNames).has(entity.id)).to.equal(
-          true
-        );
+        for (const [key, val] of testWorld.entitiesByCTypes.entries()) {
+          expect(key[0]).to.equal('FirstComponent');
+          expect(val.has(entity.id)).to.equal(true);
+        }
       });
     });
   });

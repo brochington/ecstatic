@@ -56,17 +56,25 @@ export default class Systems<CT extends Class<any>> {
     this.compNamesBySystemName = new Map();
   }
 
-  add(cTypes: CT[], systemFunc: SystemFunc<CT>): this {
+  add(cTypes: CT[], systemFunc: SystemFunc<CT>, funcName?: string): this {
     const cNames = cTypes.map((ct) => ct.name);
 
-    // Super brute force, and might lead to errors in the future, but for now
-    // using the stringified system function if the function doesn't already have a name.
-    // This is useful for anonymous functions used as a system function.
-    // Might be good to figure out how to get a hash of the function string.
-    const name = systemFunc.name === '' ? systemFunc.toString() : systemFunc.name;
+    
+    let name = systemFunc.name;
+    if (systemFunc.name === '') {
+      // Super brute force, and might lead to errors in the future, but for now
+      // using the stringified system function if the function doesn't already have a name.
+      // This is useful for anonymous functions used as a system function.
+      // Might be good to figure out how to get a hash of the function string.
+      name = systemFunc.toString();
+    }
+
+    if (funcName) {
+      name = funcName;
+    }
 
     this.systemFuncBySystemName.set(name, systemFunc);
-    this.compNamesBySystemName.set(name, [...cNames]);
+    this.compNamesBySystemName.set(name, cNames);
     this.world.entitiesByCTypes.set(cNames, new Set<EntityId>());
 
     return this;
@@ -80,12 +88,9 @@ export default class Systems<CT extends Class<any>> {
       let index = 0;
       const size = this.world.entitiesByCTypes.size;
       const cNames = this.compNamesBySystemName.get(funcName) || [];
-
-      // this.world.entitiesByCTypes.get(cNames) is undefined...
       const cTypeArrs = this.world.entitiesByCTypes.get(cNames) || new Set();
 
       for (const eid of cTypeArrs) {
-        console.log("1");
         const args: SystemFuncArgs<CT> = {
           entity: this.world.entities.get(eid) || new Entity<CT>(this.world),
           components:

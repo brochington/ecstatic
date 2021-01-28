@@ -277,8 +277,8 @@ export default class World<CT extends Class<any>> {
   /**
    * Alternative method for adding systems.
    */
-  addSystem(cTypes: CT[], systemFunc: SystemFunc<CT>): this {
-    this.systems.add(cTypes, systemFunc);
+  addSystem(cTypes: CT[], systemFunc: SystemFunc<CT>, funcName?: string): this {
+    this.systems.add(cTypes, systemFunc, funcName);
 
     return this;
   }

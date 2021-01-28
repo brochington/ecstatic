@@ -214,7 +214,6 @@ describe('Entity', () => {
 
       class FirstLCComp extends Entity<CompTypes> {
         onCreate(): void {
-          console.log('hit onCreate!!!');
           onCreateFake();
         }
       }

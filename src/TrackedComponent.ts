@@ -35,7 +35,6 @@ export function track<T extends object>(
       classInstance[Symbol.for("ecs.trackedComponent.setWorld")] = (
         world: World<any>
       ) => {
-        console.log("gonna set the world!", world);
         classInstance[Symbol.for("ecs.trackedComponent.world")] = world;
       };
 

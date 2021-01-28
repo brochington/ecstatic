@@ -25,7 +25,7 @@ class DevEntity<CT extends Class<any>> {
 
     const compNames = Object.keys(this.components);
 
-    for (const [systemName, cNames] of world.compNamesBySystemName) {
+    for (const [systemName, cNames] of world.systems.compNamesBySystemName) {
       if (cNames.every((cName) => compNames.includes(cName))) {
         this.systems.push(systemName);
       }
