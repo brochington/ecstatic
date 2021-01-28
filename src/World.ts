@@ -1,8 +1,9 @@
 import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
-import { createSystem, System, SystemFunc } from "./System";
+import { SystemFunc } from "./Systems";
 import DevTools from "./DevTools";
+import Systems from './Systems';
 
 export type Class<T> = { new (...args: any[]): T };
 
@@ -15,12 +16,13 @@ export default class World<CT extends Class<any>> {
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
-  compNamesBySystemName: Map<string, string[]> = new Map();
+  systems: Systems<CT>;
 
   dev: DevTools<CT>;
 
   constructor() {
     this.dev = new DevTools(this);
+    this.systems = new Systems(this);
   }
 
   /**
@@ -237,11 +239,16 @@ export default class World<CT extends Class<any>> {
 
     this.componentCollections.set(eid, cc);
 
+    console.log("pre", this.entitiesByCTypes);
+
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
+      console.log('ctArr', ctArr, entitySet);
       if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
+
+    console.log("post", this.entitiesByCTypes);
 
     return this;
   };
@@ -274,25 +281,16 @@ export default class World<CT extends Class<any>> {
   };
 
   /**
-   * Internal method used in setting up a new system.
+   * Alternative method for adding systems.
    */
-  registerSystem(cNames: string[], systemName: string): this {
-    this.compNamesBySystemName.set(systemName, [...cNames]);
-    this.entitiesByCTypes.set(cNames, new Set<EntityId>());
+  addSystem(cTypes: CT[], systemFunc: SystemFunc<CT>): this {
+    this.systems.add(cTypes, systemFunc);
 
     return this;
   }
 
-  /**
-   * an alias for createSystem().
-   */
-  createSystem(cl: CT[], systemFunc: SystemFunc<CT>): System {
-    const system = createSystem<CT>(this, cl, systemFunc);
-
-    return system;
-  }
-
   registerEntity(entity: Entity<CT>): World<CT> {
+    console.log('registerEntity');
     const cc = new ComponentCollection<CT>();
 
     this.componentCollections.set(entity.id, cc);
@@ -324,6 +322,8 @@ export default class World<CT extends Class<any>> {
     const entity = new Entity(this);
 
     return entity;
+
+    // Register entity here....
   }
 
   /**

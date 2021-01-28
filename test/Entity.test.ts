@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expect } from 'chai';
+import sinon from 'sinon';
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
 import World from "../src/World";
 import Entity from "../src/Entity";
 import DevEntity from '../src/DevEntity';
-import { createSystem } from '../src/System'
 
 class FirstComponent {
   id: string;
@@ -22,7 +22,7 @@ type CompTypes =
   | typeof FirstComponent
   | typeof SecondComponent
 
-describe('Entity', () => {
+describe.only('Entity', () => {
   it('exists', () => {
     const testWorld = new World<CompTypes>();
     const testEntity = new Entity<CompTypes>(testWorld);
@@ -50,11 +50,11 @@ describe('Entity', () => {
       expect(cc.has(FirstComponent)).to.equal(true);
     });
 
-    it('remove', () => {
+    it.only('remove', () => {
       const testWorld = new World<CompTypes>();
       const testEntity = new Entity<CompTypes>(testWorld);
 
-      createSystem(testWorld, [FirstComponent, SecondComponent], noop);
+      testWorld.addSystem([FirstComponent, SecondComponent], noop);
 
       testEntity.add(new FirstComponent('test-comp-1'));
       testEntity.add(new SecondComponent());
@@ -65,42 +65,42 @@ describe('Entity', () => {
 
 
       // Testing to make sure World.entitiesByCType is dealt with correctly.
-      let entitySet1 = new Set();
+      // let entitySet1 = new Set();
 
-      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-        //@ts-ignore
-        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
-          entitySet1 = entitySet;
-        }
-      }
+      // for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+      //   //@ts-ignore
+      //   if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+      //     entitySet1 = entitySet;
+      //   }
+      // }
 
-      expect(entitySet1.size).to.equal(1);
-      expect(entitySet1.has(testEntity.id)).to.equal(true);
+      // expect(entitySet1.size).to.equal(1);
+      // expect(entitySet1.has(testEntity.id)).to.equal(true);
 
-      testEntity.remove(FirstComponent);
+      // testEntity.remove(FirstComponent);
 
-      expect(testEntity.has(FirstComponent)).to.equal(false);
-      expect(testEntity.has(SecondComponent)).to.equal(true);
+      // expect(testEntity.has(FirstComponent)).to.equal(false);
+      // expect(testEntity.has(SecondComponent)).to.equal(true);
 
-      let entitySet2 = new Set();
-      let entitySet3 = new Set();
-      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
-        // @ts-ignore
-        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
-          entitySet2 = entitySet;
-          return;
-        }
+      // let entitySet2 = new Set();
+      // let entitySet3 = new Set();
+      // for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+      //   // @ts-ignore
+      //   if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+      //     entitySet2 = entitySet;
+      //     return;
+      //   }
 
-        // @ts-ignore
-        if (ctArr.includes(SecondComponent.name)) {
-          entitySet3 = entitySet;
-        }
-      }
+      //   // @ts-ignore
+      //   if (ctArr.includes(SecondComponent.name)) {
+      //     entitySet3 = entitySet;
+      //   }
+      // }
 
-      expect(entitySet2.size).to.equal(0);
-      expect(entitySet2.has(testEntity.id)).to.equal(false);
-      expect(entitySet3.size).to.equal(1);
-      expect(entitySet3.has(testEntity.id)).to.equal(true);
+      // expect(entitySet2.size).to.equal(0);
+      // expect(entitySet2.has(testEntity.id)).to.equal(false);
+      // expect(entitySet3.size).to.equal(1);
+      // expect(entitySet3.has(testEntity.id)).to.equal(true);
     });
   });
 
@@ -179,7 +179,7 @@ describe('Entity', () => {
       const testWorld = new World<CompTypes>();
 
       function firstSystem() { /* */ }
-      createSystem(testWorld, [FirstComponent], firstSystem);
+      testWorld.addSystem([FirstComponent], firstSystem);
 
       const firstComp = new FirstComponent('id1');
       const testTag = 'testTag1';
@@ -204,5 +204,43 @@ describe('Entity', () => {
       expect(devEntity.systems.length).to.equal(1);
       expect(devEntity.systems[0]).to.equal(firstSystem.name);
     });
-  })
+  });
+
+  describe('lifecycle methods', () => {
+    it('onCreate', () => {
+      const world = new World<CompTypes>();
+
+      const onCreateFake = sinon.fake();
+
+      class FirstLCComp extends Entity<CompTypes> {
+        onCreate(): void {
+          console.log('hit onCreate!!!');
+          onCreateFake();
+        }
+      }
+
+      const firstLCComp = new FirstLCComp(world);
+
+      expect(onCreateFake.callCount).to.equal(1);
+
+    });
+
+    it('onDestroy', () => {
+      const world = new World<CompTypes>();
+
+      const onDestoryFake = sinon.fake();
+
+      class FirstLCComp extends Entity<CompTypes> {
+        onDestroy(): void {
+          onDestoryFake();
+        }
+      }
+
+      const firstLCComp = new FirstLCComp(world);
+
+      firstLCComp.destroy();
+
+      expect(onDestoryFake.callCount).to.equal(1);
+    })
+  });
 });

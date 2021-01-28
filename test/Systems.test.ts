@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { createSystem, SystemFuncArgs } from "../src/System";
+import { SystemFuncArgs } from "../src/Systems";
 import Entity, { createEntity } from "../src/Entity";
-import noop from "lodash/noop";
 import World from "../src/World";
 import ComponentCollection from "../src/ComponentCollection";
 
@@ -28,21 +27,23 @@ type CompTypes =
   | typeof SecondComponent
   | typeof ThirdComponent;
 
-function firstSystem() { /* */ }
+function firstSystem() {
+  /* */
+}
 
 describe("System", () => {
   it("create a system", () => {
     const world = new World<CompTypes>();
 
-    const system1 = createSystem(world, [FirstComponent], firstSystem);
+    world.addSystem([FirstComponent], firstSystem);
 
-    expect(system1).to.be.instanceof(Function);
+    expect(world.systems.systemFuncBySystemName.get(firstSystem.name)).to.equal(firstSystem);
   });
 
-  it("Basic System Run", (done) => {
+  it("Run System with Anonymous function", (done) => {
     const world = new World<CompTypes>();
 
-    const system = createSystem(world, [FirstComponent], (args) => {
+    world.addSystem([FirstComponent], (args) => {
       const { components } = args;
 
       const firstComp = components.get(FirstComponent);
@@ -51,9 +52,9 @@ describe("System", () => {
       done();
     });
 
-    createEntity(world).add(new FirstComponent("first"));
+    world.createEntity().add(new FirstComponent("first"));
 
-    system();
+    world.systems.run();
   });
 
   it("Correctly calls systems based on created entities", () => {
@@ -64,14 +65,11 @@ describe("System", () => {
     const fake3 = sinon.fake();
     const fake4 = sinon.fake();
 
-    const system1 = createSystem(world, [FirstComponent], fake1);
-    const system2 = createSystem(world, [SecondComponent], fake2);
-    const system3 = createSystem(world, [ThirdComponent], fake3);
-    const system4 = createSystem(
-      world,
-      [FirstComponent, SecondComponent],
-      fake4
-    );
+    world
+      .addSystem([FirstComponent], fake1)
+      .addSystem([SecondComponent], fake2)
+      .addSystem([ThirdComponent], fake3)
+      .addSystem([FirstComponent, SecondComponent], fake4);
 
     // entity 1;
     createEntity(world).add(new FirstComponent("first"));
@@ -81,10 +79,7 @@ describe("System", () => {
       .add(new FirstComponent("a"))
       .add(new SecondComponent("b"));
 
-    system1();
-    system2();
-    system3();
-    system4();
+    world.systems.run();
 
     expect(fake1.callCount).to.equal(2); // entity 1 and 2
     expect(fake2.callCount).to.equal(1); // entity 2
@@ -95,8 +90,7 @@ describe("System", () => {
   it("Correct args passed to system function", (done) => {
     const world = new World<CompTypes>();
 
-    const system = createSystem(
-      world,
+    world.addSystem(
       [FirstComponent],
       (args: SystemFuncArgs<CompTypes>) => {
         expect(args.entity).to.be.instanceof(Entity);
@@ -111,8 +105,8 @@ describe("System", () => {
       }
     );
 
-    createEntity(world).add(new FirstComponent('a'));
+    createEntity(world).add(new FirstComponent("a"));
 
-    system();
+    world.systems.run();
   });
 });

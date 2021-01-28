@@ -24,7 +24,7 @@ class DevTools<CT extends Class<any>> {
   get systemComponents(): DevSystemComps[] {
     const compsBySystems = [];
 
-    for (const [system, compNames] of this.world.compNamesBySystemName) {
+    for (const [system, compNames] of this.world.systems.compNamesBySystemName) {
       compsBySystems.push({ system, components: compNames.join(", ") });
     }
 

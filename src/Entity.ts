@@ -1,26 +1,84 @@
-import { v4 as uuidv4 } from 'uuid';
-import World from './World';
-import ComponentCollection from './ComponentCollection';
-import { Tag } from './Tag';
-import { CompTypes } from 'interfaces';
-import DevEntity from './DevEntity';
+import { v4 as uuidv4 } from "uuid";
+import World from "./World";
+import ComponentCollection from "./ComponentCollection";
+import { Tag } from "./Tag";
+// import { CompTypes } from 'interfaces';
+import DevEntity from "./DevEntity";
+
+import SimpleFSM from "./SimpleFSM";
 
 export type EntityId = string;
 
 type Class<T> = { new (...args: any[]): T };
 
+type EntityState =
+  | "creating"
+  | "created"
+  | "destroying"
+  | "destroyed"
+  | "error";
+
 export default class Entity<CT extends Class<any>> {
   private _id: string;
   private _world: World<CT>;
+
+  private _error: Error | null;
+
+  private _state: SimpleFSM<EntityState>;
 
   constructor(world: World<CT>) {
     this._id = uuidv4();
     this._world = world;
 
+    this._error = null;
+
+    this._state = new SimpleFSM<EntityState>("creating", {
+      creating: () => (this._error ? "error" : "created"),
+      created: () => "destroying",
+      destroying: () => (this._error ? "error" : "destroyed"),
+      destroyed: () => "destroyed",
+      error: () => "error",
+    });
+
     /*
     Registering with the World.
     */
     this._world.registerEntity(this);
+
+    this._state.next() // created
+
+    this.onCreate();
+
+  }
+
+  get state(): EntityState {
+    return this._state.current;
+  }
+
+  checkState(possibleState: EntityState): boolean {
+    return this._state.is(possibleState);
+  }
+
+  /* LifeCycle methods, meant to be overridden */
+
+  onCreate(): void {
+    // abstract
+  }
+
+  onDestroy(): void {
+    // abstract
+  }
+
+  onComponentAdd(): void {
+    // abstract
+  }
+
+  onComponentUpdate(): void {
+    // abstract
+  }
+
+  onComponentRemove(): void {
+    // abstract
   }
 
   /**
@@ -28,6 +86,12 @@ export default class Entity<CT extends Class<any>> {
    */
   add(component: InstanceType<CT>): this {
     this._world.set(this._id, component);
+
+    if (component[Symbol.for("ecs.trackedComponent.isTracked")]) {
+      component[Symbol.for("ecs.trackedComponent.setWorld")](this._world);
+
+      component[Symbol.for("ecs.trackedComponent.onAdd")](this._world, this);
+    }
 
     return this;
   }
@@ -52,7 +116,9 @@ export default class Entity<CT extends Class<any>> {
    * Determines if an entity has a component related to it.
    */
   has(cType: CT): boolean {
-    const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
+    const cc =
+      this._world.componentCollections.get(this._id) ||
+      new ComponentCollection<CT>();
 
     return cc.has(cType);
   }
@@ -75,7 +141,9 @@ export default class Entity<CT extends Class<any>> {
    * Get a component that belongs to an entity.
    */
   get<T>(cl: Class<T>): InstanceType<typeof cl> {
-    const cc = this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
+    const cc =
+      this._world.componentCollections.get(this._id) ||
+      new ComponentCollection<CT>();
 
     const component = cc.get<T>(cl);
 
@@ -86,7 +154,10 @@ export default class Entity<CT extends Class<any>> {
    * Get all components that have been added to an entity, via a ComponentCollection
    */
   getAll(): ComponentCollection<CT> {
-    return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
+    return (
+      this._world.componentCollections.get(this._id) ||
+      new ComponentCollection<CT>()
+    );
   }
 
   /**
@@ -105,7 +176,7 @@ export default class Entity<CT extends Class<any>> {
   removeTag(tag: Tag): this {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
-      
+
       if (entitySet) {
         entitySet.delete(this._id);
 
@@ -121,7 +192,7 @@ export default class Entity<CT extends Class<any>> {
   clear(): this {
     this._world.clearEntityComponents(this._id);
 
-    return this
+    return this;
   }
 
   /**
@@ -140,7 +211,24 @@ export default class Entity<CT extends Class<any>> {
   }
 
   destroy(): void {
-    this._world.destroyEntity(this._id);
+    if (!this._state.is("created")) {
+      throw new Error(
+        "Ecstatic: Unable to destroy if it isn't created, or already destroyed"
+      );
+    }
+
+    this._state.next(); // destroying
+
+    // This will probably be deferred so that Systems can work on it.
+    this._world.destroyEntity(this._id); // should return an error??
+
+    this.onDestroy(); // assuming for now that this is best done after actually removing the entity from the world.
+
+    if (this._state.is("destroying")) {
+      this._state.next(); // destroyed
+    } else if (this._state.is("error") && this._error) {
+      // Do something with error!!
+    }
   }
 
   get id(): string {
@@ -151,12 +239,20 @@ export default class Entity<CT extends Class<any>> {
     return this._world;
   }
 
+  destroyImmediately(): void {
+    // placeholder for method that doesn't wait for entity to go through the normal
+    // destory pipeline and process.
+  }
+
   /**
    * Get all components that have been added to an entity, via a ComponentCollection.
    * Does the same thing as entityInstance.getAll().
    */
   get components(): ComponentCollection<CT> {
-    return this._world.componentCollections.get(this._id) || new ComponentCollection<CT>();
+    return (
+      this._world.componentCollections.get(this._id) ||
+      new ComponentCollection<CT>()
+    );
   }
 
   /**
@@ -173,17 +269,18 @@ export default class Entity<CT extends Class<any>> {
     return tags;
   }
 
+  /**
+   * Convert Entity to a DevEntity. Very helpful in for debugging.
+   */
   toDevEntity(): DevEntity<CT> {
     return new DevEntity<CT>(this, this._world);
   }
 }
 
 export function createEntity<CT extends Class<any>>(
-  world: World<CT>,
+  world: World<CT>
 ): Entity<CT> {
   const entity = new Entity<CT>(world);
 
   return entity;
 }
-
-

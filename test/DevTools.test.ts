@@ -1,8 +1,6 @@
 import { expect } from "chai";
 import DevTools from "../src/DevTools";
 import World from "../src/World";
-import { createSystem } from "../src/System";
-import noop from "lodash/noop";
 import DevEntity from "../src/DevEntity";
 
 class FirstComponent {
@@ -42,9 +40,10 @@ describe("DevTools", () => {
   it("dev.systemComponents", () => {
     const testWorld = new World<CompTypes>();
 
-    createSystem(testWorld, [FirstComponent], firstSystem);
-    createSystem(testWorld, [SecondComponent], secondSystem);
-    createSystem(testWorld, [FirstComponent, SecondComponent], thirdSystem);
+    testWorld
+      .addSystem([FirstComponent], firstSystem)
+      .addSystem([SecondComponent], secondSystem)
+      .addSystem([FirstComponent, SecondComponent], thirdSystem);
 
     testWorld.createEntity().add(new FirstComponent("first-1"));
     testWorld.createEntity().add(new SecondComponent("second-1"));
@@ -75,9 +74,10 @@ describe("DevTools", () => {
   it("dev.entities", () => {
     const testWorld = new World<CompTypes>();
 
-    createSystem(testWorld, [FirstComponent], firstSystem);
-    createSystem(testWorld, [SecondComponent], secondSystem);
-    createSystem(testWorld, [FirstComponent, SecondComponent], thirdSystem);
+    testWorld
+      .addSystem([FirstComponent], firstSystem)
+      .addSystem([SecondComponent], secondSystem)
+      .addSystem([FirstComponent, SecondComponent], thirdSystem);
 
     testWorld.createEntity().add(new FirstComponent("first-1"));
     testWorld.createEntity().add(new SecondComponent("second-1"));
