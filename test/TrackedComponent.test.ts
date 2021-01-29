@@ -1,7 +1,10 @@
-import { track } from '../src/TrackedComponent';
+import { expect } from "chai";
+import sinon from 'sinon';
+import { trackComponent } from '../src/TrackedComponent';
 import World from '../src/World';
+import Entity from '../src/Entity';
 
-describe('LifeCycleComponent', () => {
+describe('TrackedComponent', () => {
   it('Scratchpad', () => {
     class MyComponent {
       something = 'here';
@@ -15,7 +18,7 @@ describe('LifeCycleComponent', () => {
       }
     }
 
-    const TrackedMyComp = track(MyComponent, {
+    const TrackedMyComp = trackComponent(MyComponent, {
       onAdd(...args) {
         // console.log('external onAdd!', args);
       },
@@ -32,6 +35,56 @@ describe('LifeCycleComponent', () => {
     world.createEntity().add(myComp);
 
     // console.log('myComp', myComp);
+  });
+
+  describe('trackComponent()', () => {
+    it('add onAdd event handler to a component', (done) => {
+      class Component1 {}
+
+      const TrackedComp1 = trackComponent<typeof Component1, Component1>(Component1, {
+        onAdd: (args) => {
+          const { component, world, entity } = args;
+
+          expect(component).to.be.an.instanceof(Component1);
+          expect(world).to.be.an.instanceof(World);
+          expect(entity).to.be.an.instanceof(Entity);
+
+          done();
+        },
+      });
+
+      const world = new World<typeof Component1>();
+
+      world.createEntity().add(new TrackedComp1());
+    });
+
+    it('add onUpdate event handler to a component', (done) => {
+      class Component1 {
+        test = 1;
+      }
+
+      const TrackedComp1 = trackComponent<typeof Component1, Component1>(Component1, {
+        onUpdate: (args) => {
+          const { component, world, previousVal, property } = args;
+
+          expect(component).to.be.an.instanceof(Component1);
+          expect(world).to.be.an.instanceof(World);
+          expect(previousVal).to.equal(1);
+          expect(component.test).to.equal(2);
+          expect(property).to.equal('test');
+
+          done();
+        },
+      });
+
+      const world = new World<typeof Component1>();
+
+      const comp = new TrackedComp1();
+
+      world.createEntity().add(comp);
+
+      comp.test = 2;
+    });
   });
 });
 

@@ -1,59 +1,103 @@
-interface TrackedEventHandlers {
-  onUpdate?: () => void;
-  onAdd?: (classInstance, entity, world) => void;
+import World, { Class } from "./World";
+import Entity from "./Entity";
 
+interface AddEventArgs<T, CT extends Class> {
+  component: InstanceType<Class<T>>;
+  entity: Entity<CT>;
+  world: World<CT>;
 }
 
-function createClassInstanceProxyHandlers(trackedEventHandlers: TrackedEventHandlers): ProxyHandler<any> { 
+interface UpdateEventArgs<T, CT extends Class> {
+  component: InstanceType<Class<T>>;
+  world: World<CT>;
+  previousVal: T[keyof T];
+  property: keyof T;
+}
+
+interface RemoveEventArgs<T, CT extends Class> {
+  component: InstanceType<Class<T>>;
+  entity: Entity<CT>;
+  world: World<CT>;
+}
+
+interface TrackedEventHandlers<T, CT extends Class> {
+  onAdd?: (args: AddEventArgs<T, CT>) => void;
+  onUpdate?: (args: UpdateEventArgs<T, CT>) => void;
+  onRemove?: (args: RemoveEventArgs<T, CT>) => void;
+}
+
+function createClassInstanceProxyHandlers<T, CT extends Class>(
+  trackedEventHandlers: TrackedEventHandlers<T, CT>
+): ProxyHandler<any> {
   const updatedProps = new Set();
   return {
-    set(obj: any, prop: string, value: any) {
-      updatedProps.add(prop);
+    set(
+      component: InstanceType<Class<T>>,
+      property: keyof T,
+      value: T[keyof T]
+    ) {
+      updatedProps.add(property);
+
+      const world = component[
+        Symbol.for("ecs.trackedComponent.world")
+      ] as World<CT>;
+
+      
+      const previousVal = component[property];
+
+      component[property] = value;
 
       if (trackedEventHandlers.onUpdate) {
-        trackedEventHandlers.onUpdate();
+        trackedEventHandlers.onUpdate({
+          world,
+          component,
+          previousVal,
+          property,
+        });
       }
-      
-      obj[prop] = value;
 
       return true;
     },
   };
 }
 
-export function track<T extends object>(
-  CompClass: T,
-  trackedEventHandlers: TrackedEventHandlers
-): Proxy {
+export function trackComponent<CT extends Class<any>, T>(
+  CompClass: Class<T>,
+  trackedEventHandlers: TrackedEventHandlers<T, CT>
+): Class<T> {
   return new Proxy(CompClass, {
-    construct(target: any, args: any) {
-      const classInstance = new target(...args);
+    construct(Component: any, args: any) {
+      const component = new Component(...args) as InstanceType<Class<T>>;
 
       // For use in identifing a "tracked" class through the proxy.
-      classInstance[Symbol.for("ecs.trackedComponent.isTracked")] = true;
+      component[Symbol.for("ecs.trackedComponent.isTracked")] = true;
 
-      classInstance[Symbol.for("ecs.trackedComponent.setWorld")] = (
-        world: World<any>
+      component[Symbol.for("ecs.trackedComponent.setWorld")] = (
+        world: World<CT>
       ) => {
-        classInstance[Symbol.for("ecs.trackedComponent.world")] = world;
+        component[Symbol.for("ecs.trackedComponent.world")] = world;
       };
 
-      classInstance[Symbol.for("ecs.trackedComponent.onAdd")] = (
-        world: World<any>,
-        entity: Entity<any>
+      component[Symbol.for("ecs.trackedComponent.onAdd")] = (
+        world: World<CT>,
+        entity: Entity<CT>
       ) => {
         if (trackedEventHandlers.onAdd) {
-          trackedEventHandlers.onAdd(classInstance, entity, world);
+          trackedEventHandlers.onAdd({ component, world, entity });
         }
       };
 
-      classInstance[Symbol.for('ecs.trackedComponent.onRemove')] = () => {
-        console.log('onRemove!');
-      }
-
+      component[Symbol.for("ecs.trackedComponent.onRemove")] = (
+        world: World<CT>,
+        entity: Entity<CT>
+      ) => {
+        if (trackedEventHandlers.onRemove) {
+          trackedEventHandlers.onRemove({ component, world, entity });
+        }
+      };
 
       return new Proxy(
-        classInstance,
+        component,
         createClassInstanceProxyHandlers(trackedEventHandlers)
       );
     },

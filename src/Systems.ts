@@ -66,7 +66,7 @@ export default class Systems<CT extends Class<any>> {
       // using the stringified system function if the function doesn't already have a name.
       // This is useful for anonymous functions used as a system function.
       // Might be good to figure out how to get a hash of the function string.
-      name = systemFunc.toString();
+      name = systemFunc.toString().slice(0, 30);
     }
 
     if (funcName) {
@@ -81,6 +81,9 @@ export default class Systems<CT extends Class<any>> {
   }
 
   run(): void {
+
+    // TODO: Might be cool to add a way to stop the systems loop when in dev.
+    //       Maybe something like world.dev.stop() or pause().
     for (const [
       funcName,
       systemFunc,

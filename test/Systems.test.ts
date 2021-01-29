@@ -43,16 +43,6 @@ describe("System", () => {
   it("Run System with Anonymous function", (done) => {
     const world = new World<CompTypes>();
 
-    // function testSystem(args) {
-    //   console.log('innnn')
-    //   const { components } = args;
-
-    //   const firstComp = components.get(FirstComponent);
-
-    //   expect(firstComp.id).to.equal("first");
-    //   done();
-    // }
-
     world.addSystem([FirstComponent], (args) => {
       console.log('innnn')
       const { components } = args;

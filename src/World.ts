@@ -5,7 +5,7 @@ import { SystemFunc } from "./Systems";
 import DevTools from "./DevTools";
 import Systems from './Systems';
 
-export type Class<T> = { new (...args: any[]): T };
+export type Class<T = any> = { new (...args: any[]): T };
 
 export default class World<CT extends Class<any>> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
