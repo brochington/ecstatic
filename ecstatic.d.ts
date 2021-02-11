@@ -46,15 +46,6 @@ export class Entity<CT extends Class<any>> {
   get<T>(cl: Class<T>): InstanceType<typeof cl>;
 
   /**
-   * Find and get the first instance of a component, without any associated entities.
-   * Helpful is you know that only one instance of a component exists across all entities.
-   * @param cl Component Class Contructor
-   * @param defaultValue A default component instance if no components are found.
-   */
-  getComponent<T>(cl: Class<T>): InstanceType<typeof cl> | null;
-  getComponent<T>(cl: Class<T>, defaultValue?: InstanceType<typeof cl>): InstanceType<typeof cl>;
-
-  /**
    * Get all components that have been added to an entity, via a ComponentCollection
    */
   getAll(): ComponentCollection<CT>;
@@ -295,6 +286,15 @@ declare class World<CT extends Class<any>> {
    * Given an entity id and componentType, returns component
    */
   get: <T>(eid: EntityId, cl: Class<T>) => InstanceType<typeof cl>;
+
+  /**
+   * Find and get the first instance of a component, without any associated entities.
+   * Helpful is you know that only one instance of a component exists across all entities.
+   * @param cl Component Class Contructor
+   * @param defaultValue A default component instance if no components are found.
+   */
+  getComponent<T>(cl: Class<T>): InstanceType<typeof cl> | null;
+  getComponent<T>(cl: Class<T>, defaultValue?: InstanceType<typeof cl>): InstanceType<typeof cl>;
 
   /**
    * Get an entity that has been tagged with the given tag, or return null;
