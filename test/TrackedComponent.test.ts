@@ -18,7 +18,9 @@ describe('TrackedComponent', () => {
       }
     }
 
-    const TrackedMyComp = trackComponent(MyComponent, {
+    type CompTypes = typeof MyComponent;
+
+    const TrackedMyComp = trackComponent<CompTypes, MyComponent>(MyComponent, {
       onAdd(...args) {
         // console.log('external onAdd!', args);
       },
@@ -30,7 +32,7 @@ describe('TrackedComponent', () => {
     const myComp = new TrackedMyComp("hahaha");
 
     
-    const world = new World<typeof MyComponent>();
+    const world = new World<CompTypes>();
     
     world.createEntity().add(myComp);
 

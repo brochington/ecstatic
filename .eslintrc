@@ -59,7 +59,8 @@
         "no-undef-init": 1,
         "no-undef": 1,
         "no-undefined": 1,
-        "brace-style": [2, "1tbs", { "allowSingleLine": true }]
+        "brace-style": [2, "1tbs", { "allowSingleLine": true }],
+        "@typescript-eslint/ban-ts-comment": 0
     },
     "env": {
         "browser": true,
