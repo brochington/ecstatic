@@ -1,22 +1,31 @@
 import World, { Class } from "./World";
 import Entity from "./Entity";
 
-// Waiting for Typescript 4.2 to come out so that Suymbols are supporded keys.
+// Waiting for Typescript 4.2 to come out so that Symbols are supporded keys.
+export const TrackedCompSymbolKeys = {
+  isTracked: Symbol.for("ecs.trackedComponent.isTracked"),
+  world: Symbol.for("ecs.trackedComponent.world"),
+  setWorld: Symbol.for("ecs.trackedComponent.setWorld"),
+  onAdd: Symbol.for("ecs.trackedComponent.onAdd"),
+  onUpdate: Symbol.for("ecs.trackedComponent.onUpdate"),
+  onRemove: Symbol.for("ecs.trackedComponent.onRemove"),
+} as const;
+
 //@ts-ignore
 type TrackedComponent<CT extends Class> = {
   //@ts-ignore
-  [Symbol.for("ecs.trackedComponent.isTracked")]: boolean;
+  [TrackedCompSymbolKeys.isTracked]: boolean;
   //@ts-ignore
-  [Symbol.for("ecs.trackedComponent.setWorld")]: (world: World<CT>) => void;
+  [TrackedCompSymbolKeys.setWorld]: (world: World<CT>) => void;
   //@ts-ignore
-  [Symbol.for("ecs.trackedComponent.world")]: World<CT>;
+  [TrackedCompSymbolKeys.world]: World<CT>;
   //@ts-ignore
-  [Symbol.for("ecs.trackedComponent.onAdd")]: (
+  [TrackedCompSymbolKeys.onAdd]: (
     world: World<CT>,
     entity: Entity<CT>
   ) => void;
   //@ts-ignore
-  [Symbol.for("ecs.trackedComponent.onRemove")]: (
+  [TrackedCompSymbolKeys.onRemove]: (
     world: World<CT>,
     entity: Entity<CT>
   ) => void;
@@ -61,7 +70,7 @@ function createClassInstanceProxyHandlers<T, CT extends Class>(
 
       //@ts-ignore
       const world = component[
-        Symbol.for("ecs.trackedComponent.world")
+        TrackedCompSymbolKeys.world
       ] as World<CT>;
 
       const previousVal = component[property];
@@ -93,18 +102,18 @@ export function trackComponent<CT extends Class<any>, T>(
 
       // For use in identifing a "tracked" class through the proxy.
       //@ts-ignore
-      component[Symbol.for("ecs.trackedComponent.isTracked")] = true;
+      component[TrackedCompSymbolKeys.isTracked] = true;
 
       //@ts-ignore
-      component[Symbol.for("ecs.trackedComponent.setWorld")] = (
+      component[TrackedCompSymbolKeys.setWorld] = (
         world: World<CT>
       ) => {
         //@ts-ignore
-        component[Symbol.for("ecs.trackedComponent.world")] = world;
+        component[TrackedCompSymbolKeys.world] = world;
       };
 
       //@ts-ignore
-      component[Symbol.for("ecs.trackedComponent.onAdd")] = (
+      component[TrackedCompSymbolKeys.onAdd] = (
         world: World<CT>,
         entity: Entity<CT>
       ) => {
@@ -114,7 +123,7 @@ export function trackComponent<CT extends Class<any>, T>(
       };
 
       //@ts-ignore
-      component[Symbol.for("ecs.trackedComponent.onRemove")] = (
+      component[TrackedCompSymbolKeys.onRemove] = (
         world: World<CT>,
         entity: Entity<CT>
       ) => {

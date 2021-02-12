@@ -307,9 +307,9 @@ declare class World<CT extends Class<any>> {
   getAllTagged(tag: Tag): Entity<CT>[];
 
   /**
-   * Set a component on the given entity
+   * Add a component on the given entity
    */
-  set: (eid: EntityId, component: InstanceType<CT>) => this;
+  add: (eid: EntityId, component: InstanceType<CT>) => this;
 
   /**
    * Remove a component from the given entity.

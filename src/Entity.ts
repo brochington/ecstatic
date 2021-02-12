@@ -6,6 +6,7 @@ import { Tag } from "./Tag";
 import DevEntity from "./DevEntity";
 
 import SimpleFSM from "./SimpleFSM";
+import { TrackedCompSymbolKeys } from './TrackedComponent';
 
 export type EntityId = string;
 
@@ -85,13 +86,7 @@ export default class Entity<CT extends Class<any>> {
    * Add a component to an Entity, doh.
    */
   add(component: InstanceType<CT>): this {
-    this._world.set(this._id, component);
-
-    if (component[Symbol.for("ecs.trackedComponent.isTracked")]) {
-      component[Symbol.for("ecs.trackedComponent.setWorld")](this._world);
-
-      component[Symbol.for("ecs.trackedComponent.onAdd")](this._world, this);
-    }
+    this._world.add(this._id, component);
 
     return this;
   }

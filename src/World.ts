@@ -4,6 +4,7 @@ import { Tag } from "./Tag";
 import { SystemFunc } from "./Systems";
 import DevTools from "./DevTools";
 import Systems from './Systems';
+import { TrackedCompSymbolKeys } from './TrackedComponent';
 
 export type Class<T = any> = { new (...args: any[]): T };
 
@@ -158,6 +159,8 @@ export default class World<CT extends Class<any>> {
     });
   };
 
+  // TODO: Add grabAllBy method
+
   /**
    * Given an entity id and componentType, returns component
    */
@@ -228,9 +231,9 @@ export default class World<CT extends Class<any>> {
   };
 
   /**
-   * Set a component on the given entity
+   * Add a component on the given entity
    */
-  set = (eid: EntityId, component: InstanceType<CT>): this => {
+  add = (eid: EntityId, component: InstanceType<CT>): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -244,6 +247,18 @@ export default class World<CT extends Class<any>> {
       }
     }
 
+    if (component[TrackedCompSymbolKeys.isTracked]) {
+      component[TrackedCompSymbolKeys.setWorld](this);
+
+      const entity = this.entities.get(eid);
+
+      if (!entity) {
+        throw new Error(`world.add: Unable to locate entity. eid: ${eid}`);
+      }
+
+      component[TrackedCompSymbolKeys.onAdd](this, entity);
+    }
+
     return this;
   };
 
@@ -254,6 +269,19 @@ export default class World<CT extends Class<any>> {
   remove = (eid: EntityId, cType: CT): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
+
+    // need to get component instance...
+    const component = cc.get(cType);
+
+    if (component[TrackedCompSymbolKeys.isTracked]) {
+      const entity = this.entities.get(eid);
+
+      if (!entity) {
+        throw new Error(`world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`);
+      }
+
+      component[TrackedCompSymbolKeys.onRemove](this, entity);
+    }
 
     // remove entity from current entitiesByCTypes
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {

@@ -227,7 +227,7 @@ describe("World", () => {
 
         const component = new FirstComponent("test-comp-1");
 
-        testWorld.set(entity.id, component);
+        testWorld.add(entity.id, component);
 
         const cc = testWorld.componentCollections.get(entity.id);
 

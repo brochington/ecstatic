@@ -1,35 +1,34 @@
 export type State = string | number | symbol;
 
-export type Transitions<S extends State> = Record<S, (current: S) => S>;
+export type Transitions<S extends State, D> = Record<
+  S,
+  (data: D | undefined, current: S) => S
+>;
 
-export default class SimpleFSM<S extends State> {
+export default class SimpleFSM<S extends State, D = undefined> {
   current: S;
 
-  initial: S;
+  inital: S;
 
-  transitions: Transitions<S>;
+  transitions: Transitions<S, D>;
 
-  constructor(initialState: S, transitions: Transitions<S>) {
-    this.initial = initialState;
+  constructor(initialState: S, transitions: Transitions<S, D>) {
+    this.inital = initialState;
     this.current = initialState;
     this.transitions = transitions;
   }
 
-  next(): void {
+  next(data?: D): void {
     if (this.transitions[this.current]) {
-      this.current = this.transitions[this.current](this.current);
+      this.current = this.transitions[this.current](data, this.current);
     }
   }
 
   reset(): void {
-    this.current = this.initial;
+    this.current = this.inital;
   }
 
   is(checkState: S): boolean {
     return this.current === checkState;
-  }
-
-  includes(checkStateArr: S[]): boolean {
-    return checkStateArr.some(s => this.current === s);
   }
 }
