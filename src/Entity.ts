@@ -28,6 +28,18 @@ export default class Entity<CT> {
 
   private _state: SimpleFSM<EntityState, EntityState>;
 
+  get id(): string {
+    return this._id;
+  }
+
+  get world(): World<CT> {
+    return this._world;
+  }
+
+  get state(): EntityState {
+    return this._state.current;
+  }
+
   constructor(world: World<CT>) {
     this._id = uuidv4();
     this._world = world;
@@ -59,14 +71,6 @@ export default class Entity<CT> {
     }
   }
 
-  get state(): EntityState {
-    return this._state.current;
-  }
-
-  checkState(possibleState: EntityState): boolean {
-    return this._state.is(possibleState);
-  }
-
   /* LifeCycle methods, meant to be overridden */
 
   onCreate(world: World<CT>): void {
@@ -92,7 +96,7 @@ export default class Entity<CT> {
   /**
    * Add a component to an Entity, doh.
    */
-  add(component: CT): this {
+  add<T extends CT>(component: T): this {
     this._world.add(this._id, component);
 
     return this;
@@ -117,7 +121,7 @@ export default class Entity<CT> {
   /**
    * Determines if an entity has a component related to it.
    */
-  has(cType: ClassConstructor<CT>): boolean {
+  has<T extends CT>(cType: ClassConstructor<T>): boolean {
     const cc =
       this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
@@ -142,7 +146,7 @@ export default class Entity<CT> {
   /**
    * Get a component that belongs to an entity.
    */
-  get<T extends CT>(cl: ClassConstructor<T>): InstanceType<typeof cl> {
+  get<T extends CT>(cl: ClassConstructor<T>): T {
     const cc =
       this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
@@ -212,10 +216,17 @@ export default class Entity<CT> {
     return this;
   }
 
+  /**
+   * Sets the state of the entity to 'created'. that's it.
+   */
   finishCreation(): void {
     this._state.next('created');
   }
 
+  /**
+   * Destroy an entity. Actual destruction is deferred until after the next pass of systems.
+   * This gives the systems a chance to do any cleanup that might be needed.
+   */
   destroy(): void {
     // If no systems are added, the destroy immediately.
     if (this._world.systems.compNamesBySystemName.size === 0) {
@@ -223,22 +234,8 @@ export default class Entity<CT> {
       return;
     }
 
-    if (!this._state.is("created")) {
-      throw new Error(
-        "Ecstatic: Unable to destroy if it isn't created, or already destroyed"
-      );
-    }
-
     // Mark as "destroying" so that systems can act on it before actually being destroyed.
     this._state.next('destroying');
-  }
-
-  get id(): string {
-    return this._id;
-  }
-
-  get world(): World<CT> {
-    return this._world;
   }
 
   destroyImmediately(): void {

@@ -51,6 +51,14 @@ class MyEntity extends Entity<Components> {
   afterSystemRun() {  /* ... */ }
 }
 
+// or use some type of events.
+const entity = world.createEntity();
+
+entity.on('addcomponent', () => {})
+
+
+// maybe a "TrackedEntity"?
+
 const TrackedEntity = trackEntity(MyEntity /*, { events... } */);
 
 // Might be nice to do something like:

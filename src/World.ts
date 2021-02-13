@@ -331,12 +331,12 @@ export default class World<CT> {
   /**
    * Remove all components that belong to an entity.
    */
-  clearEntityComponents(eid: EntityId): this {
-    this.componentCollections.set(eid, new ComponentCollection<CT>());
+  clearEntityComponents(entityId: EntityId): this {
+    this.componentCollections.set(entityId, new ComponentCollection<CT>());
 
     for (const entitySet of this.entitiesByCTypes.values()) {
-      if (entitySet.has(eid)) {
-        entitySet.delete(eid);
+      if (entitySet.has(entityId)) {
+        entitySet.delete(entityId);
       }
     }
 
@@ -359,20 +359,26 @@ export default class World<CT> {
    * Destroys an entity.
    * Same as entity.destroy().
    */
-  destroyEntity(eid: EntityId): World<CT> {
-    this.componentCollections.delete(eid);
-    this.entities.delete(eid);
+  destroyEntity(entityId: EntityId): World<CT> {
+    this.componentCollections.delete(entityId);
+    const entity = this.entities.get(entityId);
+
+    if (!entity) {
+      throw new Error(`world.destroyEntity: No entity found. entity id: ${entityId}`);
+    }
+
+    this.entities.delete(entityId);
 
     for (const entitySet of this.entitiesByCTypes.values()) {
-      if (entitySet.has(eid)) {
-        entitySet.delete(eid);
+      if (entitySet.has(entityId)) {
+        entitySet.delete(entityId);
       }
     }
 
     // remove any tag associations with destroyed entities.
     for (const [tag, entitySet] of this.entitiesByTags) {
-      if (entitySet.has(eid)) {
-        entitySet.delete(eid);
+      if (entitySet.has(entityId)) {
+        entitySet.delete(entityId);
       }
 
       if (entitySet.size === 0) {

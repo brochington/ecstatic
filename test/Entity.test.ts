@@ -242,7 +242,98 @@ describe('Entity', () => {
 
       expect(onDestoryFake.callCount).to.equal(1);
     });
+  });
 
-    // it('')
+  describe('Creation', () => {
+    it('Setting of created state on entity is immediate if no systems added to world', () => {
+      const world = new World<CompTypes>();
+
+      const entity = world.createEntity();
+
+      expect(entity.state).equals('created');
+    });
+
+    it('Setting of created state on entity is deferred until after systems are run', () => {
+      const world = new World<CompTypes>();
+
+      const systemFake = sinon.fake();
+
+      world.addSystem([FirstComponent], (args) => {
+        const { entity: _entity } = args;
+
+        systemFake();
+        expect(_entity.state).to.equal('creating');
+      }, 'testSystem');
+
+
+      const entity = world.createEntity().add(new FirstComponent('testEntity'));
+
+      expect(entity.state).to.equal('creating');
+
+      world.systems.run();
+
+      expect(systemFake.callCount).to.equal(1);
+      expect(entity.state).to.equal('created');
+    });
+  });
+
+  describe('Destruction', () => {
+    it('Entity is destroyed immediately if no systems are added to the world.', () => {
+      const world = new World<CompTypes>();
+  
+      const entity = world.createEntity();
+  
+      expect(entity.state).to.equal('created');
+  
+      entity.destroy();
+  
+      expect(entity.state).to.equal('destroyed');
+    });
+
+    it('Entity destruction is defered if systems are added to the world', () => {
+      const world = new World<CompTypes>();
+
+      const systemFake = sinon.fake();
+
+      world.addSystem([FirstComponent], (args) => {
+        const { entity: _entity } = args;
+
+        systemFake();
+
+        expect(_entity.state).to.equal('destroying');
+      }, 'testSystem');
+
+      const entity = world.createEntity().add(new FirstComponent('testEntity'));
+
+      entity.destroy()
+
+      expect(entity.state).to.equal('destroying')
+
+      world.systems.run();
+
+      expect(systemFake.callCount).to.equal(1);
+      expect(entity.state).to.equal('destroyed');
+    });
+
+    it('entity.destoryImmediately(): Entity destruction is immediate', () => {
+      const world = new World<CompTypes>();
+
+      const systemFake = sinon.fake();
+
+      world.addSystem([FirstComponent], () => {
+        systemFake();
+      }, 'testSystem');
+
+      const entity = world.createEntity().add(new FirstComponent('testEntity'));
+
+      entity.destroyImmediately()
+
+      expect(entity.state).to.equal('destroyed')
+
+      world.systems.run();
+
+      expect(systemFake.callCount).to.equal(0);
+      expect(entity.state).to.equal('destroyed');
+    });
   });
 });

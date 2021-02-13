@@ -53,18 +53,6 @@ export default class ComponentCollection<CT> {
     }
   };
 
-  // Possible other way to write a get method that maintains the type of the
-  // Component throughout. Keeping around for now are a reference.
-  // get<U extends CT>(compClass: Class<U>): U {
-  //   if (!this.components.has(compClass.name)) {
-  //     throw new Error(
-  //       `ComponentCollection does not have component of type ${compClass.name}`
-  //     );
-  //   }
-
-  //   return this.components.get(compClass.name)! as unknown as U;
-  // }
-
   /**
    * Test to see if the collection contains a specific Class or Classes.
    * @param cType component Class, or array of component Classes.
