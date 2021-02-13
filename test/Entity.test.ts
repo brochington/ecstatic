@@ -19,8 +19,8 @@ class FirstComponent {
 class SecondComponent {}
 
 type CompTypes =
-  | typeof FirstComponent
-  | typeof SecondComponent
+  | FirstComponent
+  | SecondComponent
 
 describe('Entity', () => {
   it('exists', () => {

@@ -55,10 +55,10 @@
 					<a href="../modules.html">@brochington/ecstatic</a>
 				</li>
 				<li>
-					<a href="../modules/deventity.html">DevEntity</a>
+					<a href="../modules/systems.html">Systems</a>
 				</li>
 				<li>
-					<a href="deventity.default.html">default</a>
+					<a href="systems.default.html">default</a>
 				</li>
 			</ul>
 			<h1>Class default&lt;CT&gt;</h1>
@@ -91,22 +91,22 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter"><a href="deventity.default.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter"><a href="systems.default.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="deventity.default.html#components" class="tsd-kind-icon">components</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="deventity.default.html#id" class="tsd-kind-icon">id</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="deventity.default.html#systems" class="tsd-kind-icon">systems</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="deventity.default.html#tags" class="tsd-kind-icon">tags</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="systems.default.html#compnamesbysystemname" class="tsd-kind-icon">comp<wbr>Names<wbr>BySystem<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="systems.default.html#systemfuncbysystemname" class="tsd-kind-icon">system<wbr>Func<wbr>BySystem<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="systems.default.html#world" class="tsd-kind-icon">world</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="deventity.default.html#totablerow" class="tsd-kind-icon">to<wbr>Table<wbr>Row</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="systems.default.html#add" class="tsd-kind-icon">add</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="systems.default.html#run" class="tsd-kind-icon">run</a></li>
 							</ul>
 						</section>
 					</div>
@@ -118,13 +118,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">new default&lt;CT&gt;<span class="tsd-signature-symbol">(</span>entity<span class="tsd-signature-symbol">: </span><a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span>, world<span class="tsd-signature-symbol">: </span><a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="deventity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">new default&lt;CT&gt;<span class="tsd-signature-symbol">(</span>world<span class="tsd-signature-symbol">: </span><a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="systems.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L19">DevEntity.ts:19</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L51">Systems.ts:51</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -136,13 +136,10 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>entity: <a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
-								</li>
-								<li>
 									<h5>world: <a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="deventity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="systems.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -150,42 +147,32 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="components" class="tsd-anchor"></a>
-					<h3>components</h3>
-					<div class="tsd-signature tsd-kind-icon">components<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<a name="compnamesbysystemname" class="tsd-anchor"></a>
+					<h3>comp<wbr>Names<wbr>BySystem<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">comp<wbr>Names<wbr>BySystem<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L15">DevEntity.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L51">Systems.ts:51</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="id" class="tsd-anchor"></a>
-					<h3>id</h3>
-					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="systemfuncbysystemname" class="tsd-anchor"></a>
+					<h3>system<wbr>Func<wbr>BySystem<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">system<wbr>Func<wbr>BySystem<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../modules/systems.html#systemfunc" class="tsd-signature-type" data-tsd-kind="Type alias">SystemFunc</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L13">DevEntity.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L49">Systems.ts:49</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="systems" class="tsd-anchor"></a>
-					<h3>systems</h3>
-					<div class="tsd-signature tsd-kind-icon">systems<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = ...</span></div>
+					<a name="world" class="tsd-anchor"></a>
+					<h3>world</h3>
+					<div class="tsd-signature tsd-kind-icon">world<span class="tsd-signature-symbol">:</span> <a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L19">DevEntity.ts:19</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="tags" class="tsd-anchor"></a>
-					<h3>tags</h3>
-					<div class="tsd-signature tsd-kind-icon">tags<span class="tsd-signature-symbol">:</span> <a href="../modules/tag.html#tag-1" class="tsd-signature-type" data-tsd-kind="Type alias">Tag</a><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L17">DevEntity.ts:17</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L47">Systems.ts:47</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -193,19 +180,48 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="totablerow" class="tsd-anchor"></a>
-					<h3>to<wbr>Table<wbr>Row</h3>
+					<a name="add" class="tsd-anchor"></a>
+					<h3>add</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">to<wbr>Table<wbr>Row<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DevEntityTableRow</span></li>
+						<li class="tsd-signature tsd-kind-icon">add<span class="tsd-signature-symbol">(</span>cTypes<span class="tsd-signature-symbol">: </span><a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span>, systemFunc<span class="tsd-signature-symbol">: </span><a href="../modules/systems.html#systemfunc" class="tsd-signature-type" data-tsd-kind="Type alias">SystemFunc</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span>, funcName<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="systems.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/DevEntity.ts#L35">DevEntity.ts:35</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L59">Systems.ts:59</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">DevEntityTableRow</span></h4>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>cTypes: <a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+								<li>
+									<h5>systemFunc: <a href="../modules/systems.html#systemfunc" class="tsd-signature-type" data-tsd-kind="Type alias">SystemFunc</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> funcName: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="systems.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="run" class="tsd-anchor"></a>
+					<h3>run</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">run<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Systems.ts#L83">Systems.ts:83</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -220,7 +236,7 @@
 					<li class=" tsd-kind-module">
 						<a href="../modules/componentcollection.html">Component<wbr>Collection</a>
 					</li>
-					<li class="current tsd-kind-module">
+					<li class=" tsd-kind-module">
 						<a href="../modules/deventity.html">Dev<wbr>Entity</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -232,7 +248,7 @@
 					<li class=" tsd-kind-module">
 						<a href="../modules/simplefsm.html">SimpleFSM</a>
 					</li>
-					<li class=" tsd-kind-module">
+					<li class="current tsd-kind-module">
 						<a href="../modules/systems.html">Systems</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -257,30 +273,36 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-module tsd-has-type-parameter">
-						<a href="deventity.default.html" class="tsd-kind-icon">default</a>
+						<a href="systems.default.html" class="tsd-kind-icon">default</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter">
-								<a href="deventity.default.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="systems.default.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="deventity.default.html#components" class="tsd-kind-icon">components</a>
+								<a href="systems.default.html#compnamesbysystemname" class="tsd-kind-icon">comp<wbr>Names<wbr>BySystem<wbr>Name</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="deventity.default.html#id" class="tsd-kind-icon">id</a>
+								<a href="systems.default.html#systemfuncbysystemname" class="tsd-kind-icon">system<wbr>Func<wbr>BySystem<wbr>Name</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="deventity.default.html#systems" class="tsd-kind-icon">systems</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="deventity.default.html#tags" class="tsd-kind-icon">tags</a>
+								<a href="systems.default.html#world" class="tsd-kind-icon">world</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="deventity.default.html#totablerow" class="tsd-kind-icon">to<wbr>Table<wbr>Row</a>
+								<a href="systems.default.html#add" class="tsd-kind-icon">add</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="systems.default.html#run" class="tsd-kind-icon">run</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="../interfaces/systems.systemfuncargs.html" class="tsd-kind-icon">System<wbr>Func<wbr>Args</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="../modules/systems.html#systemfunc" class="tsd-kind-icon">System<wbr>Func</a>
+					</li>
 				</ul>
 			</nav>
 		</div>

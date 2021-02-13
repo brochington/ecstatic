@@ -18,7 +18,7 @@ class SecondComponent {
   }
 }
 
-type CompTypes = typeof FirstComponent | typeof SecondComponent;
+type CompTypes = FirstComponent | SecondComponent;
 
 function firstSystem() {
   /* */

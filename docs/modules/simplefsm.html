@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Tag | @brochington/ecstatic</title>
+	<title>SimpleFSM | @brochington/ecstatic</title>
 	<meta name="description" content="Documentation for @brochington/ecstatic">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,10 +55,10 @@
 					<a href="../modules.html">@brochington/ecstatic</a>
 				</li>
 				<li>
-					<a href="tag.html">Tag</a>
+					<a href="simplefsm.html">SimpleFSM</a>
 				</li>
 			</ul>
-			<h1>Module Tag</h1>
+			<h1>Module SimpleFSM</h1>
 		</div>
 	</div>
 </header>
@@ -70,9 +70,16 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
+							<h3>Classes</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-class tsd-parent-kind-module tsd-has-type-parameter"><a href="../classes/simplefsm.default.html" class="tsd-kind-icon">default</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
 							<h3>Type aliases</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-type-alias tsd-parent-kind-module"><a href="tag.html#tag-1" class="tsd-kind-icon">Tag</a></li>
+								<li class="tsd-kind-type-alias tsd-parent-kind-module"><a href="simplefsm.html#state" class="tsd-kind-icon">State</a></li>
+								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="simplefsm.html#transitions" class="tsd-kind-icon">Transitions</a></li>
 							</ul>
 						</section>
 					</div>
@@ -81,14 +88,33 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Type aliases</h2>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module">
-					<a name="tag-1" class="tsd-anchor"></a>
-					<h3>Tag</h3>
-					<div class="tsd-signature tsd-kind-icon">Tag<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
+					<a name="state" class="tsd-anchor"></a>
+					<h3>State</h3>
+					<div class="tsd-signature tsd-kind-icon">State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">symbol</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Tag.ts#L1">Tag.ts:1</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/SimpleFSM.ts#L1">SimpleFSM.ts:1</a></li>
 						</ul>
 					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+					<a name="transitions" class="tsd-anchor"></a>
+					<h3>Transitions</h3>
+					<div class="tsd-signature tsd-kind-icon">Transitions&lt;S, D&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">S</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">D</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span>, current<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">S</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">S</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/SimpleFSM.ts#L3">SimpleFSM.ts:3</a></li>
+						</ul>
+					</aside>
+					<h4 class="tsd-type-parameters-title">Type parameters</h4>
+					<ul class="tsd-type-parameters">
+						<li>
+							<h4>S<span class="tsd-signature-symbol">: </span><a href="simplefsm.html#state" class="tsd-signature-type" data-tsd-kind="Type alias">State</a></h4>
+						</li>
+						<li>
+							<h4>D</h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -110,13 +136,13 @@
 					<li class=" tsd-kind-module">
 						<a href="entity.html">Entity</a>
 					</li>
-					<li class=" tsd-kind-module">
+					<li class="current tsd-kind-module">
 						<a href="simplefsm.html">SimpleFSM</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="systems.html">Systems</a>
 					</li>
-					<li class="current tsd-kind-module">
+					<li class=" tsd-kind-module">
 						<a href="tag.html">Tag</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -135,8 +161,14 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-class tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="../classes/simplefsm.default.html" class="tsd-kind-icon">default</a>
+					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-module">
-						<a href="tag.html#tag-1" class="tsd-kind-icon">Tag</a>
+						<a href="simplefsm.html#state" class="tsd-kind-icon">State</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="simplefsm.html#transitions" class="tsd-kind-icon">Transitions</a>
 					</li>
 				</ul>
 			</nav>

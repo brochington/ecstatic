@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import noop from "lodash/noop";
 import World from "../src/World";
-import Entity, { createEntity } from "../src/Entity";
+import Entity from "../src/Entity";
 import ComponentCollection from "../src/ComponentCollection";
 
 class FirstComponent {
@@ -20,7 +20,7 @@ class SecondComponent {
   }
 }
 
-type CompTypes = typeof FirstComponent | typeof SecondComponent;
+type CompTypes = FirstComponent | SecondComponent;
 
 describe("World", () => {
   it("exists", () => {
@@ -69,9 +69,9 @@ describe("World", () => {
       it("finds correct entity", () => {
         const world = new World<CompTypes>();
 
-        const entity1 = createEntity(world).add(new FirstComponent("a"));
+        const entity1 = world.createEntity().add(new FirstComponent("a"));
 
-        createEntity(world).add(new FirstComponent("b"));
+        world.createEntity().add(new FirstComponent("b"));
 
         const foundEntity = world.find((entity) => {
           const comp = entity.components.get(FirstComponent);
@@ -87,10 +87,10 @@ describe("World", () => {
       it("finds all filtered entities", () => {
         const world = new World<CompTypes>();
 
-        const entity1 = createEntity(world).add(new FirstComponent("a"));
-        const entity2 = createEntity(world).add(new FirstComponent("a"));
-        const entity3 = createEntity(world).add(new FirstComponent("b"));
-        createEntity(world).add(new SecondComponent("c"));
+        const entity1 = world.createEntity().add(new FirstComponent("a"));
+        const entity2 = world.createEntity().add(new FirstComponent("a"));
+        const entity3 = world.createEntity().add(new FirstComponent("b"));
+        world.createEntity().add(new SecondComponent("c"));
 
         const foundEntities = world.findAll((entity) => {
           if (entity.components.has(FirstComponent)) {
@@ -114,9 +114,9 @@ describe("World", () => {
 
       world.addSystem([FirstComponent], noop);
 
-      const entity1 = createEntity(world).add(new FirstComponent("a"));
-      createEntity(world).add(new FirstComponent("b"));
-      createEntity(world).add(new FirstComponent("c"));
+      const entity1 = world.createEntity().add(new FirstComponent("a"));
+      world.createEntity().add(new FirstComponent("b"));
+      world.createEntity().add(new FirstComponent("c"));
 
       const l = world.locate(FirstComponent);
 
@@ -130,9 +130,9 @@ describe("World", () => {
 
       expect(world.grab(FirstComponent)).to.equal(null);
 
-      const entity1 = createEntity(world).add(new FirstComponent("a"));
-      createEntity(world).add(new FirstComponent("b"));
-      createEntity(world).add(new FirstComponent("c"));
+      const entity1 = world.createEntity().add(new FirstComponent("a"));
+      world.createEntity().add(new FirstComponent("b"));
+      world.createEntity().add(new FirstComponent("c"));
 
       const { entity, component } = world.grab(FirstComponent);
 
@@ -151,9 +151,9 @@ describe("World", () => {
 
       expect(world.grabBy(FirstComponent, pred)).to.equal(null);
 
-      createEntity(world).add(new FirstComponent("a"));
-      const entity2 = createEntity(world).add(new FirstComponent("b"));
-      createEntity(world).add(new FirstComponent("c"));
+      world.createEntity().add(new FirstComponent("a"));
+      const entity2 = world.createEntity().add(new FirstComponent("b"));
+      world.createEntity().add(new FirstComponent("c"));
 
       const { entity, component } = world.grabBy(FirstComponent, pred);
 
@@ -168,9 +168,9 @@ describe("World", () => {
 
       expect(world.grabAll(FirstComponent).length).to.equal(0);
 
-      const entity1 = createEntity(world).add(new FirstComponent("a"));
-      const entity2 = createEntity(world).add(new FirstComponent("b"));
-      const entity3 = createEntity(world).add(new FirstComponent("c"));
+      const entity1 = world.createEntity().add(new FirstComponent("a"));
+      const entity2 = world.createEntity().add(new FirstComponent("b"));
+      const entity3 = world.createEntity().add(new FirstComponent("c"));
 
       const [first, second, third] = world.grabAll(FirstComponent);
 
@@ -189,7 +189,7 @@ describe("World", () => {
 
       world.addSystem([FirstComponent], noop);
 
-      const entity1 = createEntity(world).add(new FirstComponent("a"));
+      const entity1 = world.createEntity().add(new FirstComponent("a"));
 
       const comp = world.get(entity1.id, FirstComponent);
 
@@ -200,7 +200,7 @@ describe("World", () => {
       it('getComponent no default value', () => {
         const world = new World<CompTypes>();
   
-        createEntity(world).add(new FirstComponent("a"));
+        world.createEntity().add(new FirstComponent("a"));
   
         const comp1 = world.getComponent(FirstComponent);
         const comp2 = world.getComponent(SecondComponent);
@@ -223,7 +223,7 @@ describe("World", () => {
       it("sets component in the correct entityId, and updates entitiesByCType", () => {
         const testWorld = new World<CompTypes>();
 
-        const entity = createEntity<CompTypes>(testWorld);
+        const entity = testWorld.createEntity();
 
         const component = new FirstComponent("test-comp-1");
 

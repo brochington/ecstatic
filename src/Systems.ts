@@ -1,5 +1,5 @@
 import Entity, { EntityId } from "./Entity";
-import World, { Class } from "./World";
+import World, { ClassConstructor } from "./World";
 import ComponentCollection from "./ComponentCollection";
 
 /**
@@ -8,7 +8,7 @@ import ComponentCollection from "./ComponentCollection";
  * as well as some other helpful params like if the entity is the first or last entity
  * in the group of entities that being iterated over.
  */
-export interface SystemFuncArgs<CT extends Class<any>> {
+export interface SystemFuncArgs<CT> {
   /**
    * The current entity being iterated.
    */
@@ -39,11 +39,11 @@ export interface SystemFuncArgs<CT extends Class<any>> {
 /**
  * Function that is called when a system is run.
  */
-export type SystemFunc<CT extends Class<CT>> = (
+export type SystemFunc<CT> = (
   sytemFuncArgs: SystemFuncArgs<CT>
 ) => void;
 
-export default class Systems<CT extends Class<any>> {
+export default class Systems<CT> {
   world: World<CT>;
 
   systemFuncBySystemName: Map<string, SystemFunc<CT>>; // double check to make sure that maps are ordered.
@@ -56,7 +56,7 @@ export default class Systems<CT extends Class<any>> {
     this.compNamesBySystemName = new Map();
   }
 
-  add(cTypes: CT[], systemFunc: SystemFunc<CT>, funcName?: string): this {
+  add(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
     const cNames = cTypes.map((ct) => ct.name);
 
     

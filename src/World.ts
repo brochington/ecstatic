@@ -6,9 +6,9 @@ import DevTools from "./DevTools";
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 
-export type Class<T = any> = { new (...args: any[]): T };
+export type ClassConstructor<T> = { new (...args: any[]): T };
 
-export default class World<CT extends Class<any>> {
+export default class World<CT> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
 
   entities: Map<EntityId, Entity<CT>> = new Map();
@@ -57,7 +57,7 @@ export default class World<CT extends Class<any>> {
   /**
    * "locates" a single entity based on its Components.
    */
-  locate = (cl: CT | CT[]): Entity<CT> | null => {
+  locate = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (entity.components.has(cl)) {
         return entity;
@@ -70,7 +70,7 @@ export default class World<CT extends Class<any>> {
   /**
    * Locates all entities that contain the components named
    */
-  locateAll = (cl: CT | CT[]): Entity<CT>[] => {
+  locateAll = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
@@ -89,11 +89,10 @@ export default class World<CT extends Class<any>> {
    * const { entity, component } = world.grab(MyComponent);
    * ```
    */
-  grab = <T>(
-    cl: Class<T>
-  ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
-    // const entity = this.locate((cl as unknown) as CT[keyof CT]);
-    const entity = this.locate((cl as unknown) as CT);
+  grab = <T extends CT>(
+    cl: ClassConstructor<T>
+  ): { entity: Entity<CT>; component: T } | null => {
+    const entity = this.locate(cl);
 
     if (entity) {
       const cc =
@@ -119,11 +118,12 @@ export default class World<CT extends Class<any>> {
    * const { entity, component } = world.grabBy(FirstComponent, (comp) => comp.id == 'awesome')
    * ```
    */
-  grabBy = <T>(
-    cl: Class<T>,
-    predicate: (comp: InstanceType<typeof cl>) => boolean
-  ): { entity: Entity<CT>; component: InstanceType<typeof cl> } | null => {
-    const entities = this.locateAll((cl as unknown) as CT);
+  grabBy = <T extends CT>(
+    cl: ClassConstructor<T>,
+    predicate: (comp: T) => boolean
+  ): { entity: Entity<CT>; component: T } | null => {
+    const entities = this.locateAll(cl);
+    // const entities = this.locateAll((cl as unknown) as CT);
 
     for (const entity of entities) {
       const cc =
@@ -146,10 +146,10 @@ export default class World<CT extends Class<any>> {
   /**
    * Grab all the components primarily, and the entities if needed
    */
-  grabAll = <T>(
-    cl: Class<T>
-  ): { entity: Entity<CT>; component: InstanceType<typeof cl> }[] => {
-    const entities = this.locateAll((cl as unknown) as CT);
+  grabAll = <T extends CT>(
+    cl: ClassConstructor<T>
+  ): { entity: Entity<CT>; component: T }[] => {
+    const entities = this.locateAll(cl);
 
     return entities.map((entity) => {
       return {
@@ -164,7 +164,7 @@ export default class World<CT extends Class<any>> {
   /**
    * Given an entity id and componentType, returns component
    */
-  get = <T>(eid: EntityId, cl: Class<T>): InstanceType<typeof cl> => {
+  get = <T extends CT>(eid: EntityId, cl: ClassConstructor<T>): T => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -177,10 +177,10 @@ export default class World<CT extends Class<any>> {
    * @param cl Component Class Contructor
    * @param defaultValue A default component instance if no components are found.
    */
-  getComponent = <T>(
-    cl: Class<T>,
-    defaultValue?: InstanceType<typeof cl>
-  ): InstanceType<typeof cl> | null => {
+  getComponent = <T extends CT>(
+    cl: ClassConstructor<T>,
+    defaultValue?: T
+  ): T | null => {
     const result = this.grab(cl);
 
     if (!result) {
@@ -233,7 +233,7 @@ export default class World<CT extends Class<any>> {
   /**
    * Add a component on the given entity
    */
-  add = (eid: EntityId, component: InstanceType<CT>): this => {
+  add = <T extends CT>(eid: EntityId, component: T): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
@@ -247,7 +247,9 @@ export default class World<CT extends Class<any>> {
       }
     }
 
+    // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
+      // @ts-ignore
       component[TrackedCompSymbolKeys.setWorld](this);
 
       const entity = this.entities.get(eid);
@@ -256,6 +258,7 @@ export default class World<CT extends Class<any>> {
         throw new Error(`world.add: Unable to locate entity. eid: ${eid}`);
       }
 
+      // @ts-ignore
       component[TrackedCompSymbolKeys.onAdd](this, entity);
     }
 
@@ -266,13 +269,14 @@ export default class World<CT extends Class<any>> {
    * Remove a component from the given entity.
    * NOTE: This will change what systems will be called on the entity.
    */
-  remove = (eid: EntityId, cType: CT): this => {
+  remove = (eid: EntityId, cType: ClassConstructor<CT>): this => {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
     // need to get component instance...
     const component = cc.get(cType);
 
+    // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
       const entity = this.entities.get(eid);
 
@@ -280,6 +284,7 @@ export default class World<CT extends Class<any>> {
         throw new Error(`world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`);
       }
 
+      // @ts-ignore
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
@@ -305,7 +310,7 @@ export default class World<CT extends Class<any>> {
   /**
    * Alternative method for adding systems.
    */
-  addSystem(cTypes: CT[], systemFunc: SystemFunc<CT>, funcName?: string): this {
+  addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
     this.systems.add(cTypes, systemFunc, funcName);
 
     return this;

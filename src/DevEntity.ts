@@ -1,4 +1,4 @@
-import World, { Class } from "./World";
+import World from "./World";
 import Entity from "./Entity";
 import { Tag } from "./Tag";
 
@@ -9,10 +9,10 @@ interface DevEntityTableRow {
   systems: string;
 }
 
-class DevEntity<CT extends Class<any>> {
+class DevEntity<CT> {
   id: string;
 
-  components: Record<string, InstanceType<CT>>;
+  components: Record<string, CT>;
 
   tags: Tag[];
 

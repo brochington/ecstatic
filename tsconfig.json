@@ -15,7 +15,7 @@
   },
   "include": [
     "src",
-    "interfaces.d.ts"
+    "ecstatic.d.ts"
   ],
   "exclude": [
     "src/test"

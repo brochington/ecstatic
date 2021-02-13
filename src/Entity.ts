@@ -1,16 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import World from "./World";
+import World, { ClassConstructor } from "./World";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 // import { CompTypes } from 'interfaces';
 import DevEntity from "./DevEntity";
 
 import SimpleFSM from "./SimpleFSM";
-import { TrackedCompSymbolKeys } from './TrackedComponent';
 
 export type EntityId = string;
-
-type Class<T> = { new (...args: any[]): T };
 
 type EntityState =
   | "creating"
@@ -19,7 +16,7 @@ type EntityState =
   | "destroyed"
   | "error";
 
-export default class Entity<CT extends Class<any>> {
+export default class Entity<CT> {
   private _id: string;
   private _world: World<CT>;
 
@@ -85,7 +82,7 @@ export default class Entity<CT extends Class<any>> {
   /**
    * Add a component to an Entity, doh.
    */
-  add(component: InstanceType<CT>): this {
+  add(component: CT): this {
     this._world.add(this._id, component);
 
     return this;
@@ -110,7 +107,7 @@ export default class Entity<CT extends Class<any>> {
   /**
    * Determines if an entity has a component related to it.
    */
-  has(cType: CT): boolean {
+  has(cType: ClassConstructor<CT>): boolean {
     const cc =
       this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
@@ -135,7 +132,7 @@ export default class Entity<CT extends Class<any>> {
   /**
    * Get a component that belongs to an entity.
    */
-  get<T>(cl: Class<T>): InstanceType<typeof cl> {
+  get<T extends CT>(cl: ClassConstructor<T>): InstanceType<typeof cl> {
     const cc =
       this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
@@ -159,7 +156,7 @@ export default class Entity<CT extends Class<any>> {
    * Remove a component from an entity.
    * @param cType A component class, eg MyComponent
    */
-  remove(cType: CT): this {
+  remove(cType: ClassConstructor<CT>): this {
     this._world.remove(this._id, cType);
 
     return this;
@@ -270,12 +267,4 @@ export default class Entity<CT extends Class<any>> {
   toDevEntity(): DevEntity<CT> {
     return new DevEntity<CT>(this, this._world);
   }
-}
-
-export function createEntity<CT extends Class<any>>(
-  world: World<CT>
-): Entity<CT> {
-  const entity = new Entity<CT>(world);
-
-  return entity;
 }

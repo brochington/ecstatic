@@ -16,7 +16,7 @@ class SecondComponent {
   }
 }
 
-type CompTypes = typeof FirstComponent | typeof SecondComponent;
+type CompTypes = FirstComponent | SecondComponent;
 
 describe("Component Collection (internal)", () => {
   it("Can be created", () => {

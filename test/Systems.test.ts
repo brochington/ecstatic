@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { SystemFuncArgs } from "../src/Systems";
-import Entity, { createEntity } from "../src/Entity";
+import Entity from "../src/Entity";
 import World from "../src/World";
 import ComponentCollection from "../src/ComponentCollection";
 
@@ -23,9 +23,9 @@ class SecondComponent {
 class ThirdComponent {}
 
 type CompTypes =
-  | typeof FirstComponent
-  | typeof SecondComponent
-  | typeof ThirdComponent;
+  | FirstComponent
+  | SecondComponent
+  | ThirdComponent;
 
 function firstSystem() {
   /* */
@@ -73,10 +73,10 @@ describe("System", () => {
       .addSystem([FirstComponent, SecondComponent], fake4, "fake4");
 
     // entity 1;
-    createEntity(world).add(new FirstComponent("first"));
+    world.createEntity().add(new FirstComponent("first"));
 
     // entity 2;
-    createEntity(world)
+    world.createEntity()
       .add(new FirstComponent("a"))
       .add(new SecondComponent("b"));
 
@@ -106,7 +106,7 @@ describe("System", () => {
       }
     );
 
-    createEntity(world).add(new FirstComponent("a"));
+    world.createEntity().add(new FirstComponent("a"));
 
     world.systems.run();
   });

@@ -1,4 +1,4 @@
-import World, { Class } from "./World";
+import World, { ClassConstructor } from "./World";
 import Entity from "./Entity";
 
 // Waiting for Typescript 4.2 to come out so that Symbols are supporded keys.
@@ -12,7 +12,9 @@ export const TrackedCompSymbolKeys = {
 } as const;
 
 //@ts-ignore
-type TrackedComponent<CT extends Class> = {
+type TrackedComponent<CT> = {
+  new (...args: any[]): CT;
+
   //@ts-ignore
   [TrackedCompSymbolKeys.isTracked]: boolean;
   //@ts-ignore
@@ -31,40 +33,40 @@ type TrackedComponent<CT extends Class> = {
   ) => void;
 };
 
-interface AddEventArgs<T, CT extends Class> {
-  component: InstanceType<Class<T>>;
+interface AddEventArgs<CT> {
+  component: CT;
   entity: Entity<CT>;
   world: World<CT>;
 }
 
-interface UpdateEventArgs<T, CT extends Class> {
-  component: InstanceType<Class<T>>;
+interface UpdateEventArgs<CT> {
+  component: CT;
   world: World<CT>;
-  previousVal: T[keyof T];
-  property: keyof T;
+  previousVal: CT[keyof CT];
+  property: keyof CT;
 }
 
-interface RemoveEventArgs<T, CT extends Class> {
-  component: InstanceType<Class<T>>;
+interface RemoveEventArgs<CT> {
+  component: CT;
   entity: Entity<CT>;
   world: World<CT>;
 }
 
-interface TrackedEventHandlers<T, CT extends Class> {
-  onAdd?: (args: AddEventArgs<T, CT>) => void;
-  onUpdate?: (args: UpdateEventArgs<T, CT>) => void;
-  onRemove?: (args: RemoveEventArgs<T, CT>) => void;
+interface TrackedEventHandlers<CT> {
+  onAdd?: (args: AddEventArgs<CT>) => void;
+  onUpdate?: (args: UpdateEventArgs<CT>) => void;
+  onRemove?: (args: RemoveEventArgs<CT>) => void;
 }
 
-function createClassInstanceProxyHandlers<T, CT extends Class>(
-  trackedEventHandlers: TrackedEventHandlers<T, CT>
+function createClassInstanceProxyHandlers<CT>(
+  trackedEventHandlers: TrackedEventHandlers<CT>
 ): ProxyHandler<any> {
   const updatedProps = new Set();
   return {
     set(
-      component: InstanceType<Class<T>>,
-      property: keyof T,
-      value: T[keyof T]
+      component: CT,
+      property: keyof CT,
+      value: CT[keyof CT]
     ) {
       updatedProps.add(property);
 
@@ -91,13 +93,14 @@ function createClassInstanceProxyHandlers<T, CT extends Class>(
   };
 }
 
-export function trackComponent<CT extends Class<any>, T>(
-  CompClass: Class<T>,
-  trackedEventHandlers: TrackedEventHandlers<T, CT>
-): Class<T> & TrackedComponent<CT> {
+export function trackComponent<CT>(
+  CompClass: ClassConstructor<CT>,
+  trackedEventHandlers: TrackedEventHandlers<CT>
+): TrackedComponent<CT> {
   return new Proxy(CompClass, {
     construct(Component: any, args: any) {
-      const component = new Component(...args) as T & TrackedComponent<CT>;
+      const component = new Component(...args) as CT & TrackedComponent<CT>;
+      // const component = new Component(...args) as T & TrackedComponent<Class<T>>;
       // const component = new Component(...args) as InstanceType<Class<T>>;
 
       // For use in identifing a "tracked" class through the proxy.

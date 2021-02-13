@@ -1,7 +1,7 @@
 import World from './World';
-// import { createEntity } from './Entity';
+import { trackComponent } from './TrackedComponent';
 
 export {
   World,
-  // createEntity,
+  trackComponent,
 };

@@ -1,26 +1,27 @@
 import { isComponentInstance } from "./guards";
 
-type Class<T> = { new (...args: any[]): T };
+type CompName = string;
+type ClassConstructor<T> = { new (...args: any[]): T };
 
-// CT is a Union, like `type = typeof FirstComponent | typeof SecondComponent`.
-export default class ComponentCollection<CT extends Class<any>> {
-  components: Map<string, InstanceType<CT>> = new Map();
+// CT is a Union, like `type = FirstComponent | SecondComponent`.
+export default class ComponentCollection<CT> {
+  components: Map<CompName, CT> = new Map();
 
   // instance of a component
   // add = (component: InstanceType<CT[keyof CT]>): void => {
-  add = (component: InstanceType<CT>): void => {
-    this.components.set(component.constructor.name, component);
+  add = (component: CT): void => {
+    this.components.set((<any>component).constructor.name, component);
   };
 
-  update = <T>(
-    cl: Class<T>,
-    func: (c: InstanceType<typeof cl>) => InstanceType<typeof cl>
+  update = <T extends CT>(
+    cl: ClassConstructor<T>,
+    func: (c: T) => T
   ): void => {
     const c = this.components.get(cl.name);
 
     if (isComponentInstance(cl, c)) {
       const updatedComponent = func(c);
-      this.components.set(cl.name, updatedComponent as InstanceType<CT>);
+      this.components.set(cl.name, updatedComponent);
     }
   };
 
@@ -28,7 +29,7 @@ export default class ComponentCollection<CT extends Class<any>> {
    * Remove a component.
    * @param cType Class of component to remove.
    */
-  remove = (cType: CT): void => {
+  remove = (cType: ClassConstructor<CT>): void => {
     this.components.delete(cType.name);
   };
 
@@ -40,7 +41,7 @@ export default class ComponentCollection<CT extends Class<any>> {
    * You have been warned.
    * @param cl component Class reference.
    */
-  get = <T>(cl: Class<T>): InstanceType<typeof cl> => {
+  get = <T extends CT>(cl: ClassConstructor<T>): T => {
     const comp = this.components.get(cl.name);
 
     if (isComponentInstance<T>(cl, comp)) {
@@ -68,7 +69,7 @@ export default class ComponentCollection<CT extends Class<any>> {
    * Test to see if the collection contains a specific Class or Classes.
    * @param cType component Class, or array of component Classes.
    */
-  has = (cType: CT | CT[]): boolean => {
+  has = (cType: ClassConstructor<CT> | ClassConstructor<CT>[]): boolean => {
     return Array.isArray(cType)
       ? cType.every((ct) => this.components.has(ct.name) === true)
       : this.components.has(cType.name);
@@ -100,8 +101,8 @@ export default class ComponentCollection<CT extends Class<any>> {
     return this.components.size;
   }
 
-  toDevComponents(): Record<string, InstanceType<CT>> {
-    const obj: Record<string, InstanceType<CT>> = {};
+  toDevComponents(): Record<string, CT> {
+    const obj: Record<string, CT> = {};
     for (const [compName, comp] of this.components) {
       obj[compName] = comp;
     }

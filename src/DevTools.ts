@@ -1,4 +1,4 @@
-import World, { Class } from './World';
+import World from './World';
 import DevEntity from './DevEntity';
 
 interface DevSystemComps {
@@ -7,7 +7,7 @@ interface DevSystemComps {
 }
 
 
-class DevTools<CT extends Class<any>> {
+class DevTools<CT> {
   world: World<CT>;
 
   constructor(world: World<CT>) {

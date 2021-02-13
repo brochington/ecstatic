@@ -146,17 +146,15 @@ declare class DevTools<CT extends Class<any>> {
   get entities(): DevEntity<CT>[];
 }
 
-export function createEntity<CT extends Class<any>>(
-  world: World<CT>
-): Entity<CT>;
+export type ClassConstructor<T> = { new (...args: any[]): T };
 
-export class ComponentCollection<CT extends Class<any>> {
-  components: Map<string, InstanceType<CT>>;
+export class ComponentCollection<CT> {
+  components: Map<string, CT>;
 
-  add(component: InstanceType<CT>): void;
+  add(component: CT): void;
 
-  update<T>(
-    cl: Class<T>,
+  update(
+    cl: ClassConstructor<CT>,
     func: (c: InstanceType<typeof cl>) => InstanceType<typeof cl>
   ): void;
 
@@ -164,7 +162,7 @@ export class ComponentCollection<CT extends Class<any>> {
    * Remove a component.
    * @param cType Class of component to remove.
    */
-  remove(cType: CT): void;
+  remove(cType: ClassConstructor<CT>): void;
 
   /**
    * Get a component that matches the passed class.
@@ -174,13 +172,13 @@ export class ComponentCollection<CT extends Class<any>> {
    * You have been warned.
    * @param cl component Class reference.
    */
-  get<T>(cl: Class<T>): InstanceType<typeof cl>;
+  get(cl: ClassConstructor<CT>): CT;
 
   /**
    * Test to see if the collection contains a specific Class or Classes.
    * @param cType component Class, or array of component Classes.
    */
-  has(cType: CT | CT[]): boolean;
+  has(cType: ClassConstructor<CT> | ClassConstructor<CT>[]): boolean;
 
   /**
    * Test to see if the collection has a component instance based on a
@@ -200,7 +198,7 @@ export class ComponentCollection<CT extends Class<any>> {
    */
   get size(): number;
 
-  toDevComponents(): Record<string, InstanceType<CT>>;
+  toDevComponents(): Record<string, CT>;
 }
 
 export type System = () => void;

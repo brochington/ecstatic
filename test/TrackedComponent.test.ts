@@ -1,43 +1,9 @@
 import { expect } from "chai";
-import sinon from 'sinon';
 import { trackComponent } from '../src/TrackedComponent';
 import World from '../src/World';
 import Entity from '../src/Entity';
 
 describe('TrackedComponent', () => {
-  // it('Scratchpad', () => {
-  //   class MyComponent {
-  //     something = 'here';
-
-  //     hello: string;
-  //     thisIsStuff: string;
-
-  //     constructor(stuff: string) {
-  //       this.hello = 'someone';
-  //       this.thisIsStuff = stuff;
-  //     }
-  //   }
-
-  //   type CompTypes = typeof MyComponent;
-
-  //   const TrackedMyComp = trackComponent<CompTypes, MyComponent>(MyComponent, {
-  //     onAdd(...args) {
-  //       // console.log('external onAdd!', args);
-  //     },
-  //     onUpdate() {
-  //       // console.log('external onUpdate!');
-  //     },
-  //   });
-
-  //   const myComp = new TrackedMyComp("hahaha");
-
-    
-  //   const world = new World<CompTypes>();
-    
-  //   world.createEntity().add(myComp);
-
-  //   // console.log('myComp', myComp);
-  // });
   it('returns a wrapped component class constructor', () => {
     class Component1 {}
 
@@ -46,13 +12,13 @@ describe('TrackedComponent', () => {
     const comp = new TrackedComp1();
 
     expect(comp).is.an.instanceof(Component1);
-  })
+  });
 
   describe('trackComponent()', () => {
     it('add onAdd event handler to a component', (done) => {
       class Component1 {}
 
-      const TrackedComp1 = trackComponent<typeof Component1, Component1>(Component1, {
+      const TrackedComp1 = trackComponent(Component1, {
         onAdd: (args) => {
           const { component, world, entity } = args;
 
@@ -64,7 +30,7 @@ describe('TrackedComponent', () => {
         },
       });
 
-      const world = new World<typeof Component1>();
+      const world = new World<Component1>();
 
       world.createEntity().add(new TrackedComp1());
     });
@@ -74,7 +40,7 @@ describe('TrackedComponent', () => {
         test = 1;
       }
 
-      const TrackedComp1 = trackComponent<typeof Component1, Component1>(Component1, {
+      const TrackedComp1 = trackComponent(Component1, {
         onUpdate: (args) => {
           const { component, world, previousVal, property } = args;
 
@@ -88,13 +54,15 @@ describe('TrackedComponent', () => {
         },
       });
 
-      const world = new World<typeof Component1>();
+      const world = new World<Component1>();
 
       const comp = new TrackedComp1();
 
       world.createEntity().add(comp);
 
       comp.test = 2;
+
+      console.log(comp);
     });
 
     it('add onRemove event handler to component', (done) => {
@@ -120,7 +88,7 @@ describe('TrackedComponent', () => {
         },
       });
   
-      const world = new World<typeof Component1>();
+      const world = new World<Component1>();
       
       const entity = world.createEntity().add(new TrackedComp1());
 

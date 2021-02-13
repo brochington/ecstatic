@@ -72,7 +72,7 @@
 				<h3>Type parameters</h3>
 				<ul class="tsd-type-parameters">
 					<li>
-						<h4>CT<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Class</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4>CT</h4>
 					</li>
 				</ul>
 			</section>
@@ -97,7 +97,9 @@
 						<section class="tsd-index-section tsd-is-private tsd-is-private-protected">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="entity.default.html#_error" class="tsd-kind-icon">_error</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="entity.default.html#_id" class="tsd-kind-icon">_id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="entity.default.html#_state" class="tsd-kind-icon">_state</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="entity.default.html#_world" class="tsd-kind-icon">_world</a></li>
 							</ul>
 						</section>
@@ -106,6 +108,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="entity.default.html#components" class="tsd-kind-icon">components</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="entity.default.html#id" class="tsd-kind-icon">id</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="entity.default.html#state" class="tsd-kind-icon">state</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="entity.default.html#tags" class="tsd-kind-icon">tags</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="entity.default.html#world" class="tsd-kind-icon">world</a></li>
 							</ul>
@@ -115,13 +118,20 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#add" class="tsd-kind-icon">add</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#addtag" class="tsd-kind-icon">add<wbr>Tag</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#checkstate" class="tsd-kind-icon">check<wbr>State</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#clear" class="tsd-kind-icon">clear</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#cleartags" class="tsd-kind-icon">clear<wbr>Tags</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#destroy" class="tsd-kind-icon">destroy</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#destroyimmediately" class="tsd-kind-icon">destroy<wbr>Immediately</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="entity.default.html#get" class="tsd-kind-icon">get</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#getall" class="tsd-kind-icon">get<wbr>All</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#has" class="tsd-kind-icon">has</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#hastag" class="tsd-kind-icon">has<wbr>Tag</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#oncomponentadd" class="tsd-kind-icon">on<wbr>Component<wbr>Add</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#oncomponentremove" class="tsd-kind-icon">on<wbr>Component<wbr>Remove</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#oncomponentupdate" class="tsd-kind-icon">on<wbr>Component<wbr>Update</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#oncreate" class="tsd-kind-icon">on<wbr>Create</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#ondestroy" class="tsd-kind-icon">on<wbr>Destroy</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#remove" class="tsd-kind-icon">remove</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#removetag" class="tsd-kind-icon">remove<wbr>Tag</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="entity.default.html#todeventity" class="tsd-kind-icon">to<wbr>Dev<wbr>Entity</a></li>
@@ -142,13 +152,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L14">Entity.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L25">Entity.ts:25</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>CT<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Class</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+									<h4>CT</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -165,12 +175,32 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-private tsd-is-private-protected">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="_error" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _error</h3>
+					<div class="tsd-signature tsd-kind-icon">_error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L23">Entity.ts:23</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="_id" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _id</h3>
 					<div class="tsd-signature tsd-kind-icon">_id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L13">Entity.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L20">Entity.ts:20</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="_state" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _state</h3>
+					<div class="tsd-signature tsd-kind-icon">_state<span class="tsd-signature-symbol">:</span> <a href="simplefsm.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">EntityState</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L25">Entity.ts:25</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -180,7 +210,7 @@
 					<div class="tsd-signature tsd-kind-icon">_world<span class="tsd-signature-symbol">:</span> <a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L14">Entity.ts:14</a></li>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L21">Entity.ts:21</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -197,7 +227,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L158">Entity.ts:158</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L243">Entity.ts:243</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -220,10 +250,27 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L146">Entity.ts:146</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L226">Entity.ts:226</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
+					<a name="state" class="tsd-anchor"></a>
+					<h3>state</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> state<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">EntityState</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L52">Entity.ts:52</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">EntityState</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -237,7 +284,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L165">Entity.ts:165</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L253">Entity.ts:253</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -259,7 +306,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L150">Entity.ts:150</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L230">Entity.ts:230</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="world.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -273,13 +320,13 @@
 					<a name="add" class="tsd-anchor"></a>
 					<h3>add</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">add<span class="tsd-signature-symbol">(</span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">add<span class="tsd-signature-symbol">(</span>component<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L29">Entity.ts:29</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L85">Entity.ts:85</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -290,7 +337,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>component: <span class="tsd-signature-type">InstanceType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>component: <span class="tsd-signature-type">CT</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -307,7 +354,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L38">Entity.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L94">Entity.ts:94</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -326,6 +373,29 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="checkstate" class="tsd-anchor"></a>
+					<h3>check<wbr>State</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">check<wbr>State<span class="tsd-signature-symbol">(</span>possibleState<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">EntityState</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L56">Entity.ts:56</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>possibleState: <span class="tsd-signature-type">EntityState</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="clear" class="tsd-anchor"></a>
 					<h3>clear</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -335,7 +405,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L121">Entity.ts:121</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L184">Entity.ts:184</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -357,7 +427,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L130">Entity.ts:130</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L193">Entity.ts:193</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -379,7 +449,24 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L142">Entity.ts:142</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L205">Entity.ts:205</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="destroyimmediately" class="tsd-anchor"></a>
+					<h3>destroy<wbr>Immediately</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">destroy<wbr>Immediately<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L234">Entity.ts:234</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -390,13 +477,13 @@
 					<a name="get" class="tsd-anchor"></a>
 					<h3>get</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">get&lt;T&gt;<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Class</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
+						<li class="tsd-signature tsd-kind-icon">get&lt;T&gt;<span class="tsd-signature-symbol">(</span>cl<span class="tsd-signature-symbol">: </span><a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L77">Entity.ts:77</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L135">Entity.ts:135</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -413,7 +500,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cl: <span class="tsd-signature-type">Class</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5>cl: <a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
@@ -430,7 +517,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L88">Entity.ts:88</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L148">Entity.ts:148</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -446,13 +533,13 @@
 					<a name="has" class="tsd-anchor"></a>
 					<h3>has</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">has<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+						<li class="tsd-signature tsd-kind-icon">has<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L54">Entity.ts:54</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L110">Entity.ts:110</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -463,7 +550,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cType: <a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -480,7 +567,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L63">Entity.ts:63</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L121">Entity.ts:121</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -499,16 +586,101 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="remove" class="tsd-anchor"></a>
-					<h3>remove</h3>
+					<a name="oncomponentadd" class="tsd-anchor"></a>
+					<h3>on<wbr>Component<wbr>Add</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Component<wbr>Add<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L96">Entity.ts:96</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L70">Entity.ts:70</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="oncomponentremove" class="tsd-anchor"></a>
+					<h3>on<wbr>Component<wbr>Remove</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Component<wbr>Remove<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L78">Entity.ts:78</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="oncomponentupdate" class="tsd-anchor"></a>
+					<h3>on<wbr>Component<wbr>Update</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Component<wbr>Update<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L74">Entity.ts:74</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="oncreate" class="tsd-anchor"></a>
+					<h3>on<wbr>Create</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Create<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L62">Entity.ts:62</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="ondestroy" class="tsd-anchor"></a>
+					<h3>on<wbr>Destroy</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Destroy<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L66">Entity.ts:66</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="remove" class="tsd-anchor"></a>
+					<h3>remove</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>cType<span class="tsd-signature-symbol">: </span><a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="entity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L159">Entity.ts:159</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -519,7 +691,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cType: <span class="tsd-signature-type">CT</span></h5>
+									<h5>cType: <a href="../modules/world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>A component class, eg MyComponent</p>
 									</div>
@@ -539,7 +711,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L105">Entity.ts:105</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L168">Entity.ts:168</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -567,9 +739,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/78cb2a3/src/Entity.ts#L176">Entity.ts:176</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/Entity.ts#L267">Entity.ts:267</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Convert Entity to a DevEntity. Very helpful in for debugging.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <a href="deventity.default.html" class="tsd-signature-type" data-tsd-kind="Class">default</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
@@ -595,10 +772,16 @@
 						<a href="../modules/entity.html">Entity</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/system.html">System</a>
+						<a href="../modules/simplefsm.html">SimpleFSM</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/systems.html">Systems</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/tag.html">Tag</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/trackedcomponent.html">Tracked<wbr>Component</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/world.html">World</a>
@@ -622,7 +805,13 @@
 								<a href="entity.default.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="entity.default.html#_error" class="tsd-kind-icon">_error</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="entity.default.html#_id" class="tsd-kind-icon">_id</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="entity.default.html#_state" class="tsd-kind-icon">_state</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="entity.default.html#_world" class="tsd-kind-icon">_world</a>
@@ -632,6 +821,9 @@
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
 								<a href="entity.default.html#id" class="tsd-kind-icon">id</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+								<a href="entity.default.html#state" class="tsd-kind-icon">state</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
 								<a href="entity.default.html#tags" class="tsd-kind-icon">tags</a>
@@ -646,6 +838,9 @@
 								<a href="entity.default.html#addtag" class="tsd-kind-icon">add<wbr>Tag</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#checkstate" class="tsd-kind-icon">check<wbr>State</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="entity.default.html#clear" class="tsd-kind-icon">clear</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
@@ -653,6 +848,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="entity.default.html#destroy" class="tsd-kind-icon">destroy</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#destroyimmediately" class="tsd-kind-icon">destroy<wbr>Immediately</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 								<a href="entity.default.html#get" class="tsd-kind-icon">get</a>
@@ -665,6 +863,21 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="entity.default.html#hastag" class="tsd-kind-icon">has<wbr>Tag</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#oncomponentadd" class="tsd-kind-icon">on<wbr>Component<wbr>Add</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#oncomponentremove" class="tsd-kind-icon">on<wbr>Component<wbr>Remove</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#oncomponentupdate" class="tsd-kind-icon">on<wbr>Component<wbr>Update</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#oncreate" class="tsd-kind-icon">on<wbr>Create</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="entity.default.html#ondestroy" class="tsd-kind-icon">on<wbr>Destroy</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="entity.default.html#remove" class="tsd-kind-icon">remove</a>
@@ -682,9 +895,6 @@
 					<li class=" tsd-kind-type-alias tsd-parent-kind-module">
 						<a href="../modules/entity.html#entityid" class="tsd-kind-icon">Entity<wbr>Id</a>
 					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-						<a href="../modules/entity.html#createentity" class="tsd-kind-icon">create<wbr>Entity</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
@@ -695,6 +905,7 @@
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
 			<ul class="tsd-legend">
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
 				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>

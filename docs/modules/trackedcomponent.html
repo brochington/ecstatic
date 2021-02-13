@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>guards | @brochington/ecstatic</title>
+	<title>TrackedComponent | @brochington/ecstatic</title>
 	<meta name="description" content="Documentation for @brochington/ecstatic">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,10 +55,10 @@
 					<a href="../modules.html">@brochington/ecstatic</a>
 				</li>
 				<li>
-					<a href="guards.html">guards</a>
+					<a href="trackedcomponent.html">TrackedComponent</a>
 				</li>
 			</ul>
-			<h1>Module guards</h1>
+			<h1>Module TrackedComponent</h1>
 		</div>
 	</div>
 </header>
@@ -70,63 +70,87 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
+							<h3>Variables</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-variable tsd-parent-kind-module"><a href="trackedcomponent.html#trackedcompsymbolkeys" class="tsd-kind-icon">Tracked<wbr>Comp<wbr>Symbol<wbr>Keys</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="guards.html#iscomponentinstance" class="tsd-kind-icon">is<wbr>Component<wbr>Instance</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="trackedcomponent.html#trackcomponent" class="tsd-kind-icon">track<wbr>Component</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Variables</h2>
+				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
+					<a name="trackedcompsymbolkeys" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagConst">Const</span> Tracked<wbr>Comp<wbr>Symbol<wbr>Keys</h3>
+					<div class="tsd-signature tsd-kind-icon">Tracked<wbr>Comp<wbr>Symbol<wbr>Keys<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>isTracked<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>onAdd<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>onRemove<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>onUpdate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>setWorld<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>world<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> = ...</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/TrackedComponent.ts#L5">TrackedComponent.ts:5</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>is<wbr>Tracked<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>on<wbr>Add<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>on<wbr>Remove<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>on<wbr>Update<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>set<wbr>World<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>world<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">symbol</span></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-					<a name="iscomponentinstance" class="tsd-anchor"></a>
-					<h3>is<wbr>Component<wbr>Instance</h3>
+					<a name="trackcomponent" class="tsd-anchor"></a>
+					<h3>track<wbr>Component</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">is<wbr>Component<wbr>Instance&lt;T&gt;<span class="tsd-signature-symbol">(</span>Class<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">T</span>, comp<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">comp</span><span class="tsd-signature-symbol"> is </span><span class="tsd-signature-type">T</span></li>
+						<li class="tsd-signature tsd-kind-icon">track<wbr>Component&lt;CT&gt;<span class="tsd-signature-symbol">(</span>CompClass<span class="tsd-signature-symbol">: </span><a href="world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span>, trackedEventHandlers<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TrackedEventHandlers</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TrackedComponent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/guards.ts#L7">guards.ts:7</a></li>
+									<li>Defined in <a href="https://github.com/brochington/ecstatic/blob/c051cdd/src/TrackedComponent.ts#L96">TrackedComponent.ts:96</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>T</h4>
+									<h4>CT</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>Class: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">T</span></h5>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter-signature">
-											<ul class="tsd-signatures tsd-kind-constructor">
-												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
-											</ul>
-											<ul class="tsd-descriptions">
-												<li class="tsd-description">
-													<h4 class="tsd-parameters-title">Parameters</h4>
-													<ul class="tsd-parameters">
-														<li>
-															<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>args: <span class="tsd-signature-type">any</span></h5>
-														</li>
-													</ul>
-													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
-												</li>
-											</ul>
-										</li>
-									</ul>
+									<h5>CompClass: <a href="world.html#classconstructor" class="tsd-signature-type" data-tsd-kind="Type alias">ClassConstructor</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 								<li>
-									<h5>comp: <span class="tsd-signature-type">any</span></h5>
+									<h5>trackedEventHandlers: <span class="tsd-signature-type">TrackedEventHandlers</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">comp</span><span class="tsd-signature-symbol"> is </span><span class="tsd-signature-type">T</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">TrackedComponent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">CT</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -159,13 +183,13 @@
 					<li class=" tsd-kind-module">
 						<a href="tag.html">Tag</a>
 					</li>
-					<li class=" tsd-kind-module">
+					<li class="current tsd-kind-module">
 						<a href="trackedcomponent.html">Tracked<wbr>Component</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="world.html">World</a>
 					</li>
-					<li class="current tsd-kind-module">
+					<li class=" tsd-kind-module">
 						<a href="guards.html">guards</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -175,8 +199,11 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-variable tsd-parent-kind-module">
+						<a href="trackedcomponent.html#trackedcompsymbolkeys" class="tsd-kind-icon">Tracked<wbr>Comp<wbr>Symbol<wbr>Keys</a>
+					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-						<a href="guards.html#iscomponentinstance" class="tsd-kind-icon">is<wbr>Component<wbr>Instance</a>
+						<a href="trackedcomponent.html#trackcomponent" class="tsd-kind-icon">track<wbr>Component</a>
 					</li>
 				</ul>
 			</nav>
