@@ -4,12 +4,6 @@ export type Tag = string | number;
 
 export type ClassConstructor<T> = { new (...args: any[]): T };
 
-// export interface CompTypes<CT> {
-//   [key: string]: Class<CT>;
-// }
-
-export type Key<C extends CompTypes<C>> = C[keyof C];
-
 export type EntityId = string;
 
 
@@ -20,7 +14,7 @@ export type EntityState =
   | "destroyed"
   | "error";
 
-export class Entity<CT extends Class<any>> {
+export class Entity<CT> {
   get id(): string;
   get world(): World<CT>;
 
@@ -136,7 +130,7 @@ interface DevSystemComps {
   components: string;
 }
 
-declare class DevTools<CT extends Class<any>> {
+declare class DevTools<CT> {
   world: World<CT>;
 
   constructor(world: World<CT>);
@@ -347,12 +341,17 @@ declare class World<CT> {
    * Remove a component from the given entity.
    * NOTE: This will change what systems will be called on the entity.
    */
-  remove: (eid: EntityId, cType: CT) => this;
+  remove: (eid: EntityId, cType: ClassConstructor<CT>) => this;
 
   /**
    * an alias for createSystem().
    */
-  createSystem(cl: CT[], systemFunc: SystemFunc<CT>): System;
+  addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this;
+
+  /**
+   * 
+   */
+  registerEntity(entity: Entity<CT>): World<CT>;
 
   /**
    * Remove all components from a given entity
