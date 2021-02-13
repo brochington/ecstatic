@@ -93,6 +93,20 @@ export default class Systems<CT> {
       const cNames = this.compNamesBySystemName.get(funcName) || [];
       const cTypeArrs = this.world.entitiesByCTypes.get(cNames) || new Set();
 
+      const entitiesInCreatingState = [];
+      const entitiesInDestroyingState = []
+
+      for (const entity of this.world.entities.values()) {
+        if (entity.state === 'creating') {
+          entitiesInCreatingState.push(entity);
+        }
+
+        if (entity.state === 'destroying') {
+          entitiesInDestroyingState.push(entity);
+        }
+      }
+
+
       for (const eid of cTypeArrs) {
         const args: SystemFuncArgs<CT> = {
           entity: this.world.entities.get(eid) || new Entity<CT>(this.world),
@@ -109,6 +123,13 @@ export default class Systems<CT> {
         systemFunc(args);
 
         index += 1;
+      }
+
+      for (const entity of entitiesInCreatingState) {
+        entity.finishCreation();
+      }
+      for (const entity of entitiesInDestroyingState) {
+        entity.destroyImmediately();
       }
     }
   }

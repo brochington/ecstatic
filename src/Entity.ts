@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from "uuid";
 import World, { ClassConstructor } from "./World";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
-// import { CompTypes } from 'interfaces';
 import DevEntity from "./DevEntity";
 
 import SimpleFSM from "./SimpleFSM";
@@ -16,13 +15,18 @@ type EntityState =
   | "destroyed"
   | "error";
 
+export interface EntityCompEventArgs<CT> {
+  world: World<CT>;
+  component: CT;
+}
+
 export default class Entity<CT> {
   private _id: string;
   private _world: World<CT>;
 
   private _error: Error | null;
 
-  private _state: SimpleFSM<EntityState>;
+  private _state: SimpleFSM<EntityState, EntityState>;
 
   constructor(world: World<CT>) {
     this._id = uuidv4();
@@ -30,10 +34,17 @@ export default class Entity<CT> {
 
     this._error = null;
 
-    this._state = new SimpleFSM<EntityState>("creating", {
-      creating: () => (this._error ? "error" : "created"),
-      created: () => "destroying",
-      destroying: () => (this._error ? "error" : "destroyed"),
+    const fsmTransition = (
+      ns: EntityState
+    ): EntityState => {
+      if (ns === "error" || this._error) return "error";
+      return ns;
+    };
+
+    this._state = new SimpleFSM<EntityState, EntityState>("creating", {
+      creating: fsmTransition,
+      created: fsmTransition,
+      destroying: fsmTransition,
       destroyed: () => "destroyed",
       error: () => "error",
     });
@@ -43,10 +54,9 @@ export default class Entity<CT> {
     */
     this._world.registerEntity(this);
 
-    this._state.next() // created
-
-    this.onCreate();
-
+    if (this._world.systems.compNamesBySystemName.size === 0) {
+      this._state.next('created');
+    }
   }
 
   get state(): EntityState {
@@ -59,23 +69,23 @@ export default class Entity<CT> {
 
   /* LifeCycle methods, meant to be overridden */
 
-  onCreate(): void {
+  onCreate(world: World<CT>): void {
     // abstract
   }
 
-  onDestroy(): void {
+  onDestroy(world: World<CT>): void {
     // abstract
   }
 
-  onComponentAdd(): void {
+  onComponentAdd(args: EntityCompEventArgs<CT>): void {
     // abstract
   }
 
-  onComponentUpdate(): void {
+  onTrackedComponentUpdate(args: EntityCompEventArgs<CT>): void {
     // abstract
   }
 
-  onComponentRemove(): void {
+  onComponentRemove(args: EntityCompEventArgs<CT>): void {
     // abstract
   }
 
@@ -202,25 +212,25 @@ export default class Entity<CT> {
     return this;
   }
 
+  finishCreation(): void {
+    this._state.next('created');
+  }
+
   destroy(): void {
+    // If no systems are added, the destroy immediately.
+    if (this._world.systems.compNamesBySystemName.size === 0) {
+      this.destroyImmediately();
+      return;
+    }
+
     if (!this._state.is("created")) {
       throw new Error(
         "Ecstatic: Unable to destroy if it isn't created, or already destroyed"
       );
     }
 
-    this._state.next(); // destroying
-
-    // This will probably be deferred so that Systems can work on it.
-    this._world.destroyEntity(this._id); // should return an error??
-
-    this.onDestroy(); // assuming for now that this is best done after actually removing the entity from the world.
-
-    if (this._state.is("destroying")) {
-      this._state.next(); // destroyed
-    } else if (this._state.is("error") && this._error) {
-      // Do something with error!!
-    }
+    // Mark as "destroying" so that systems can act on it before actually being destroyed.
+    this._state.next('destroying');
   }
 
   get id(): string {
@@ -232,8 +242,14 @@ export default class Entity<CT> {
   }
 
   destroyImmediately(): void {
-    // placeholder for method that doesn't wait for entity to go through the normal
-    // destory pipeline and process.
+    // Right now calling before the actual destorying of the entity.
+    // Might want to change this to post destruction in the future, who knows.
+    this.onDestroy(this._world);
+
+    // Actually destroy entity.
+    this._world.destroyEntity(this._id); // should return an error??
+
+    this._state.next('destroyed');
   }
 
   /**

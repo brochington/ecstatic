@@ -167,7 +167,7 @@ describe('Entity', () => {
 
       testEntity.addTag(testTag1);
 
-      testEntity.destroy();
+      testEntity.destroyImmediately();
 
       expect(testWorld.getTagged(testTag1)).to.equal(null);
       expect(testWorld.getAllTagged(testTag1).length).to.equal(0);
@@ -213,7 +213,8 @@ describe('Entity', () => {
       const onCreateFake = sinon.fake();
 
       class FirstLCComp extends Entity<CompTypes> {
-        onCreate(): void {
+        onCreate(world): void {
+          expect(world).to.be.instanceof(World);
           onCreateFake();
         }
       }
@@ -221,7 +222,6 @@ describe('Entity', () => {
       const firstLCComp = new FirstLCComp(world);
 
       expect(onCreateFake.callCount).to.equal(1);
-
     });
 
     it('onDestroy', () => {
@@ -230,7 +230,8 @@ describe('Entity', () => {
       const onDestoryFake = sinon.fake();
 
       class FirstLCComp extends Entity<CompTypes> {
-        onDestroy(): void {
+        onDestroy(world): void {
+          expect(world).to.be.instanceof(World);
           onDestoryFake();
         }
       }
@@ -240,6 +241,8 @@ describe('Entity', () => {
       firstLCComp.destroy();
 
       expect(onDestoryFake.callCount).to.equal(1);
-    })
+    });
+
+    // it('')
   });
 });

@@ -1,8 +1,8 @@
 export type State = string | number | symbol;
 
-export type Transitions<S extends State, D> = Record<
+export type Transitions<S extends State, D = undefined> = Record<
   S,
-  (data: D | undefined, current: S) => S
+  (data: D, current: S) => S
 >;
 
 export default class SimpleFSM<S extends State, D = undefined> {
@@ -18,7 +18,7 @@ export default class SimpleFSM<S extends State, D = undefined> {
     this.transitions = transitions;
   }
 
-  next(data?: D): void {
+  next(data: D): void {
     if (this.transitions[this.current]) {
       this.current = this.transitions[this.current](data, this.current);
     }

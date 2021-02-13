@@ -316,11 +316,14 @@ export default class World<CT> {
     return this;
   }
 
+
   registerEntity(entity: Entity<CT>): World<CT> {
     const cc = new ComponentCollection<CT>();
 
     this.componentCollections.set(entity.id, cc);
     this.entities.set(entity.id, entity);
+
+    entity.onCreate(this);
 
     return this;
   }

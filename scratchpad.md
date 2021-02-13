@@ -79,17 +79,15 @@ const trackComp = new TrackedComponent();
 
 const world = new World<Components>();
 
-class BoxEntity extends Entity<Components> {}
-
-class Position3D extends LifeCycleSystem {
-  onEntityUpdate() {
-
-  }
+class BoxEntity extends Entity<Components> {
+  onCreate() {}
+ // and such...
 }
+
 
 const boxPosition = new Position3D(1, 1, 1);
 
-const boxEntiy = new BoxEntity();
+const boxEntity = new BoxEntity();
 
 world.createEntity(boxEntity)
   .add(boxPosition); // trigger entity.onComponentAdd(), and component.onAdd()
