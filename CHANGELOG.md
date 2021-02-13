@@ -32,5 +32,15 @@ const firstLCComp = new EntityWithLifecycle(world);
 
 - `createEntity(world)` is removed. Use `world.createEntity` or `new Entity(world)` to create an entity.
 
+- deferred completion of entity creation and destruction until after the next pass of the systems.
+  - this will be bypassed if no systems are added.
+  - If needed, entities can be destroyed by calling `entity.destroyImmediately()`.
+
+- Entity Lifecycle methods
+  - `class LCEntity extends Entity<CompTypes> { onCreate() {} onDestory() {} }`
+  - entity.onCreate()
+  - entity.onDestory()
+  - lifecycle methods related to components on entities coming soon.
+
 ### Coming Soon
-- 
+- Update ecstatic.d.ts!!!
