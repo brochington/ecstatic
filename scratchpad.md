@@ -115,11 +115,6 @@ Note: Can use a State Machine for Enity and Component states, like:
 Created, Adding, Added, Updating, Updated, Destroyed, etc...
 
 ### TODO
-- Moving systems to internal
-  -  world.systems.run()
-  - world.systems.register()
-- Components
-  - types of Components classes: 
-    - `Component`
-    - `LifeCycleComponent`
-    - `TrackedComponent` // might be the same as LifeCycleComponent, bucause of onUpdate().
+- implement entity.OnTrackedComponentUpdate().
+- docs!
+- examples!

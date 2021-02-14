@@ -44,7 +44,6 @@ describe("System", () => {
     const world = new World<CompTypes>();
 
     world.addSystem([FirstComponent], (args) => {
-      console.log('innnn')
       const { components } = args;
 
       const firstComp = components.get(FirstComponent);

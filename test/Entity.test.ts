@@ -5,8 +5,9 @@ import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
 import World from "../src/World";
-import Entity from "../src/Entity";
+import Entity, { EntityCompEventArgs } from "../src/Entity";
 import DevEntity from '../src/DevEntity';
+import { trackComponent } from '../src/TrackedComponent';
 
 class FirstComponent {
   id: string;
@@ -222,6 +223,71 @@ describe('Entity', () => {
       const firstLCComp = new FirstLCComp(world);
 
       expect(onCreateFake.callCount).to.equal(1);
+    });
+
+    it('onComponentAdd', () => {
+      const world = new World<CompTypes>();
+
+      const onCompAddFake = sinon.fake();
+
+      class LCEntity extends Entity<CompTypes> {
+        onComponentAdd({ world: _world, component }: EntityCompEventArgs<CompTypes>): void {
+          expect(_world).to.be.instanceof(World);
+          expect(component).to.be.instanceof(FirstComponent);
+          onCompAddFake();
+        }
+      }
+
+      const entity = new LCEntity(world);
+
+      entity.add(new FirstComponent('testComp'));
+
+      expect(onCompAddFake.callCount).to.equal(1);
+    });
+
+    it('onTrackedComponentUpdate', (done) => {
+      const world = new World<CompTypes>();
+
+      const TrackedComp = trackComponent(FirstComponent, {});
+
+      class LCEntity extends Entity<CompTypes> {
+        onTrackedComponentUpdate({ world: _world, component }) {
+          expect(_world).to.be.instanceof(World);
+          expect(component).to.be.instanceof(FirstComponent);
+          expect(component).to.be.instanceof(TrackedComp);
+          done();
+        }
+      }
+
+      const lcEntity = new LCEntity(world);
+
+      const comp = new TrackedComp('1'); // contsructor args is broken here...
+
+      lcEntity.add(comp);
+
+      comp.id = '2';
+    })
+
+    it('onComponentRemove', () => {
+      const world = new World<CompTypes>();
+
+      const onCompAddFake = sinon.fake();
+
+      class LCEntity extends Entity<CompTypes> {
+        onComponentRemove({ world: _world, component }: EntityCompEventArgs<CompTypes>): void {
+          expect(_world).to.be.instanceof(World);
+          expect(component).to.be.instanceof(FirstComponent);
+          onCompAddFake();
+        }
+      }
+
+      const entity = new LCEntity(world);
+
+      entity.add(new FirstComponent('testComp'));
+
+      entity.remove(FirstComponent);
+
+      expect(onCompAddFake.callCount).to.equal(1);
     });
 
     it('onDestroy', () => {

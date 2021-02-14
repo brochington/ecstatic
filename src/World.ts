@@ -1,4 +1,4 @@
-import Entity, { EntityId } from "./Entity";
+import Entity, { EntityId, EntityCompEventArgs } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 import { SystemFunc } from "./Systems";
@@ -237,6 +237,12 @@ export default class World<CT> {
     const cc =
       this.componentCollections.get(eid) || new ComponentCollection<CT>();
 
+    const entity = this.entities.get(eid);
+
+    if (!entity) {
+      throw new Error(`world.add: Unable to locate entity with id ${eid}`);
+    }
+
     cc.add(component);
 
     this.componentCollections.set(eid, cc);
@@ -251,16 +257,13 @@ export default class World<CT> {
     if (component[TrackedCompSymbolKeys.isTracked]) {
       // @ts-ignore
       component[TrackedCompSymbolKeys.setWorld](this);
-
-      const entity = this.entities.get(eid);
-
-      if (!entity) {
-        throw new Error(`world.add: Unable to locate entity. eid: ${eid}`);
-      }
-
+      // @ts-ignore
+      component[TrackedCompSymbolKeys.entityIDs].add(eid);
       // @ts-ignore
       component[TrackedCompSymbolKeys.onAdd](this, entity);
     }
+
+    entity.onComponentAdd({ world: this, component });
 
     return this;
   };
@@ -285,6 +288,9 @@ export default class World<CT> {
       }
 
       // @ts-ignore
+      component[TrackedCompSymbolKeys.entityIDs].delete(eid);
+
+      // @ts-ignore
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
@@ -302,6 +308,11 @@ export default class World<CT> {
       if ((ctArr as string[]).every(cc.hasByName)) {
         entitySet.add(eid);
       }
+    }
+
+    const entity = this.entities.get(eid);
+    if (entity) {
+      entity.onComponentRemove({ world: this, component });
     }
 
     return this;
