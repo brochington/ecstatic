@@ -8,15 +8,11 @@ export default class ComponentCollection<CT> {
   components: Map<CompName, CT> = new Map();
 
   // instance of a component
-  // add = (component: InstanceType<CT[keyof CT]>): void => {
   add = (component: CT): void => {
     this.components.set((<any>component).constructor.name, component);
   };
 
-  update = <T extends CT>(
-    cl: ClassConstructor<T>,
-    func: (c: T) => T
-  ): void => {
+  update = <T extends CT>(cl: ClassConstructor<T>, func: (c: T) => T): void => {
     const c = this.components.get(cl.name);
 
     if (isComponentInstance(cl, c)) {
@@ -71,7 +67,7 @@ export default class ComponentCollection<CT> {
    */
   hasByName = (cName: string | string[]): boolean => {
     return Array.isArray(cName)
-      ? cName.every(ct => this.components.has(ct) === true)
+      ? cName.every((ct) => this.components.has(ct) === true)
       : this.components.has(cName);
   };
 

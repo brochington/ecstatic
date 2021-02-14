@@ -42,7 +42,7 @@ class UnusedComponent {}
   This type lets Ecstatic know the available component types.
   Unneeded if you are using vanilla JS.
 */ 
-type Components = typeof AwesomeComponent | typeof UnusedComponent
+type Components = AwesomeComponent | UnusedComponent
 
 /*
   Create an instance of the world, which contains all ECS state, 
@@ -52,7 +52,7 @@ type Components = typeof AwesomeComponent | typeof UnusedComponent
 const world = new World<Components>();
 
 /* Create a system */
-const system = world.createSystem(
+const system = world.addSystem(
   /* 
     Note that you pass in the Component Class definition here.
     No need to use other keys such as strings.
@@ -67,7 +67,8 @@ const system = world.createSystem(
     const comp = components.get(AwesomeComponent);
 
     comp.count += 1;
-  }
+  },
+  `AwesomeSystem` // Add an optional name if passing an anonymous function.
 );
 
 /* Create a component instance */

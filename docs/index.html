@@ -102,7 +102,7 @@
 <span style="color: #008000">  This type lets Ecstatic know the available component types.</span>
 <span style="color: #008000">  Unneeded if you are using vanilla JS.</span>
 <span style="color: #008000">*/</span><span style="color: #000000"> </span>
-<span style="color: #0000FF">type</span><span style="color: #000000"> </span><span style="color: #267F99">Components</span><span style="color: #000000"> = </span><span style="color: #0000FF">typeof</span><span style="color: #000000"> </span><span style="color: #267F99">AwesomeComponent</span><span style="color: #000000"> | </span><span style="color: #0000FF">typeof</span><span style="color: #000000"> </span><span style="color: #267F99">UnusedComponent</span>
+<span style="color: #0000FF">type</span><span style="color: #000000"> </span><span style="color: #267F99">Components</span><span style="color: #000000"> = </span><span style="color: #267F99">AwesomeComponent</span><span style="color: #000000"> | </span><span style="color: #267F99">UnusedComponent</span>
 
 <span style="color: #008000">/*</span>
 <span style="color: #008000">  Create an instance of the world, which contains all ECS state, </span>
@@ -112,7 +112,7 @@
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">world</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #267F99">World</span><span style="color: #000000">&lt;</span><span style="color: #267F99">Components</span><span style="color: #000000">&gt;();</span>
 
 <span style="color: #008000">/* Create a system */</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">system</span><span style="color: #000000"> = </span><span style="color: #001080">world</span><span style="color: #000000">.</span><span style="color: #795E26">createSystem</span><span style="color: #000000">(</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">system</span><span style="color: #000000"> = </span><span style="color: #001080">world</span><span style="color: #000000">.</span><span style="color: #795E26">addSystem</span><span style="color: #000000">(</span>
 <span style="color: #000000">  </span><span style="color: #008000">/* </span>
 <span style="color: #008000">    Note that you pass in the Component Class definition here.</span>
 <span style="color: #008000">    No need to use other keys such as strings.</span>
@@ -127,7 +127,8 @@
 <span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">comp</span><span style="color: #000000"> = </span><span style="color: #001080">components</span><span style="color: #000000">.</span><span style="color: #795E26">get</span><span style="color: #000000">(</span><span style="color: #001080">AwesomeComponent</span><span style="color: #000000">);</span>
 
 <span style="color: #000000">    </span><span style="color: #001080">comp</span><span style="color: #000000">.</span><span style="color: #001080">count</span><span style="color: #000000"> += </span><span style="color: #098658">1</span><span style="color: #000000">;</span>
-<span style="color: #000000">  }</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  </span><span style="color: #A31515">`AwesomeSystem`</span><span style="color: #000000"> </span><span style="color: #008000">// Add an optional name if passing an anonymous function.</span>
 <span style="color: #000000">);</span>
 
 <span style="color: #008000">/* Create a component instance */</span>

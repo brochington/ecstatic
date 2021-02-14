@@ -25,27 +25,29 @@ describe("Component Collection (internal)", () => {
     expect(cc).to.be.instanceof(ComponentCollection);
   });
   context("Instance Methods", () => {
-    it("add", () => {
-      const cc = new ComponentCollection<CompTypes>();
-
-      // Adding componenents
-      cc.add(new FirstComponent("first-comp"));
-      cc.add(new SecondComponent("second-comp"));
-
-      const firstComp = cc.get(FirstComponent);
-
-      expect(firstComp.id).to.equal("first-comp");
-      expect(cc.size).to.equal(2);
-      expect(cc.has(FirstComponent)).to.equal(true);
-      expect(cc.has(SecondComponent)).to.equal(true);
-
-      // Replacing a component
-      cc.add(new FirstComponent("next-first-comp"));
-
-      expect(cc.size).to.equal(2);
-      expect(cc.has(FirstComponent)).to.equal(true);
-      expect(cc.get(FirstComponent).id).to.equal("next-first-comp");
-      expect(cc.has(SecondComponent)).to.equal(true);
+    describe('add', () => {
+      it("Class Instance", () => {
+        const cc = new ComponentCollection<CompTypes>();
+  
+        // Adding componenents
+        cc.add(new FirstComponent("first-comp"));
+        cc.add(new SecondComponent("second-comp"));
+  
+        const firstComp = cc.get(FirstComponent);
+  
+        expect(firstComp.id).to.equal("first-comp");
+        expect(cc.size).to.equal(2);
+        expect(cc.has(FirstComponent)).to.equal(true);
+        expect(cc.has(SecondComponent)).to.equal(true);
+  
+        // Replacing a component
+        cc.add(new FirstComponent("next-first-comp"));
+  
+        expect(cc.size).to.equal(2);
+        expect(cc.has(FirstComponent)).to.equal(true);
+        expect(cc.get(FirstComponent).id).to.equal("next-first-comp");
+        expect(cc.has(SecondComponent)).to.equal(true);
+      });
     });
 
     it("get", () => {
