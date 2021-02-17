@@ -1,4 +1,4 @@
-import Entity, { EntityId, EntityCompEventArgs } from "./Entity";
+import Entity, { EntityId } from "./Entity";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 import { SystemFunc } from "./Systems";
@@ -328,6 +328,9 @@ export default class World<CT> {
   }
 
 
+  /**
+   * Setup an entity to exist in the given world. This is mostly an internal method, but exposed just in case.
+   */
   registerEntity(entity: Entity<CT>): World<CT> {
     const cc = new ComponentCollection<CT>();
 
@@ -399,4 +402,8 @@ export default class World<CT> {
 
     return this;
   }
+
+  /*
+  TODO: world.destroy() and world.destroyImmediately() methods.
+  */
 }

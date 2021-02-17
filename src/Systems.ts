@@ -39,9 +39,7 @@ export interface SystemFuncArgs<CT> {
 /**
  * Function that is called when a system is run.
  */
-export type SystemFunc<CT> = (
-  sytemFuncArgs: SystemFuncArgs<CT>
-) => void;
+export type SystemFunc<CT> = (sytemFuncArgs: SystemFuncArgs<CT>) => void;
 
 export default class Systems<CT> {
   world: World<CT>;
@@ -56,12 +54,15 @@ export default class Systems<CT> {
     this.compNamesBySystemName = new Map();
   }
 
-  add(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
+  add(
+    cTypes: ClassConstructor<CT>[],
+    systemFunc: SystemFunc<CT>,
+    funcName?: string
+  ): this {
     const cNames = cTypes.map((ct) => ct.name);
 
-    
     let name = systemFunc.name;
-    if (systemFunc.name === '') {
+    if (systemFunc.name === "") {
       // Super brute force, and might lead to errors in the future, but for now
       // using the stringified system function if the function doesn't already have a name.
       // This is useful for anonymous functions used as a system function.
@@ -81,9 +82,6 @@ export default class Systems<CT> {
   }
 
   run(): void {
-
-    // TODO: Might be cool to add a way to stop the systems loop when in dev.
-    //       Maybe something like world.dev.stop() or pause().
     for (const [
       funcName,
       systemFunc,
@@ -94,18 +92,17 @@ export default class Systems<CT> {
       const cTypeArrs = this.world.entitiesByCTypes.get(cNames) || new Set();
 
       const entitiesInCreatingState = [];
-      const entitiesInDestroyingState = []
+      const entitiesInDestroyingState = [];
 
       for (const entity of this.world.entities.values()) {
-        if (entity.state === 'creating') {
+        if (entity.state === "creating") {
           entitiesInCreatingState.push(entity);
         }
 
-        if (entity.state === 'destroying') {
+        if (entity.state === "destroying") {
           entitiesInDestroyingState.push(entity);
         }
       }
-
 
       for (const eid of cTypeArrs) {
         const args: SystemFuncArgs<CT> = {
@@ -133,4 +130,13 @@ export default class Systems<CT> {
       }
     }
   }
+
+  /*
+    TODO: Nice to have options here:
+      - systems.activeSystems = new Set(); // if not in set, system doesn't run.
+      - systems.deactivateSystem('systemName') // remove system from activeSystems
+      - systems.activateSystem('systemName) // adds system back to activeSystems
+      - systems.pause() // pauses running of systems. basically return immediately on run().
+      - systems.resume() // resume running of systems.
+  */
 }

@@ -253,6 +253,12 @@ declare class World<CT> {
   entitiesByTags: Map<Tag, Set<EntityId>>;
 
   /**
+   * Provides access to systems added to the world.
+   * Exposes the all important `world.systems.run()` method, so you can run your systems.
+   */
+  systems: Systems<CT>;
+
+  /**
    * Lots of cool things to help view the state of the world. Check it out!
    */
   dev: DevTools<CT>;
@@ -344,12 +350,12 @@ declare class World<CT> {
   remove: (eid: EntityId, cType: ClassConstructor<CT>) => this;
 
   /**
-   * an alias for createSystem().
+   * Add a system to the world.
    */
   addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this;
 
   /**
-   * 
+   * Setup an entity to exist in the given world. This is mostly an internal method, but exposed just in case.
    */
   registerEntity(entity: Entity<CT>): World<CT>;
 

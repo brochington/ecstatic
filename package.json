@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.2.0-beta-0",
+  "version": "0.2.0",
   "description": "a damn fine ECS library",
   "main": "dist/bundle.js",
   "scripts": {
