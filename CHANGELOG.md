@@ -137,7 +137,3 @@ const compTypes = Component1 | Component2;
 ```
 
 this makes internal types much easier
-
-- Systems are now added directly to the world. 
-
-- Entities may now have basic lifecycle events
