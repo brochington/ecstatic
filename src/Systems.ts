@@ -82,27 +82,28 @@ export default class Systems<CT> {
   }
 
   run(): void {
+    const size = this.world.entitiesByCTypes.size;
+    
+    const entitiesInCreatingState = [];
+    const entitiesInDestroyingState = [];
+
+    for (const entity of this.world.entities.values()) {
+      if (entity.state === "creating") {
+        entitiesInCreatingState.push(entity);
+      }
+
+      if (entity.state === "destroying") {
+        entitiesInDestroyingState.push(entity);
+      }
+    }
+
     for (const [
       funcName,
       systemFunc,
     ] of this.systemFuncBySystemName.entries()) {
       let index = 0;
-      const size = this.world.entitiesByCTypes.size;
       const cNames = this.compNamesBySystemName.get(funcName) || [];
       const cTypeArrs = this.world.entitiesByCTypes.get(cNames) || new Set();
-
-      const entitiesInCreatingState = [];
-      const entitiesInDestroyingState = [];
-
-      for (const entity of this.world.entities.values()) {
-        if (entity.state === "creating") {
-          entitiesInCreatingState.push(entity);
-        }
-
-        if (entity.state === "destroying") {
-          entitiesInDestroyingState.push(entity);
-        }
-      }
 
       for (const eid of cTypeArrs) {
         const args: SystemFuncArgs<CT> = {
@@ -122,12 +123,14 @@ export default class Systems<CT> {
         index += 1;
       }
 
-      for (const entity of entitiesInCreatingState) {
-        entity.finishCreation();
-      }
-      for (const entity of entitiesInDestroyingState) {
-        entity.destroyImmediately();
-      }
+    }
+
+    for (const entity of entitiesInCreatingState) {
+      entity.finishCreation();
+    }
+
+    for (const entity of entitiesInDestroyingState) {
+      entity.destroyImmediately();
     }
   }
 
