@@ -8,7 +8,7 @@ import SimpleFSM from "./SimpleFSM";
 
 export type EntityId = string;
 
-type EntityState =
+export type EntityState =
   | "creating"
   | "created"
   | "destroying"
