@@ -18,12 +18,17 @@ export class Entity<CT> {
   get id(): string;
   get world(): World<CT>;
 
+  /**
+   * Get the current state of the entity.
+   */
+  get state(): EntityState;
+
   constructor(world: World<CT>);
 
   /**
    * Add a component to an Entity
    */
-  add(component: CT): this;
+  add<T extends CT>(component: T): this;
 
   /**
    * Add a tag to a component
@@ -33,7 +38,7 @@ export class Entity<CT> {
   /**
    * Check to see if the entity has a specific component.
    */
-  has(cType: ClassConstructor<CT>): boolean;
+  has<T extends CT>(cType: ClassConstructor<T>): boolean;
 
   /**
    * Check to see if an entity tagged with a given tag.
@@ -43,7 +48,7 @@ export class Entity<CT> {
   /**
    * Get a component that belongs to an entity.
    */
-  get<T>(cl: ClassConstructor<T>): T;
+  get<T extends CT>(cl: ClassConstructor<T>): T;
 
   /**
    * Get all components that have been added to an entity, via a ComponentCollection
