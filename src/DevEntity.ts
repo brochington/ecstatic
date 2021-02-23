@@ -1,6 +1,7 @@
 import World from "./World";
 import Entity from "./Entity";
 import { Tag } from "./Tag";
+import { EntityState } from "ecstatic";
 
 interface DevEntityTableRow {
   id: string;
@@ -18,10 +19,13 @@ class DevEntity<CT> {
 
   systems: string[] = [];
 
+  state: EntityState;
+
   constructor(entity: Entity<CT>, world: World<CT>) {
     this.id = entity.id;
     this.components = entity.components.toDevComponents(),
     this.tags = [...entity.tags];
+    this.state = entity.state;
 
     const compNames = Object.keys(this.components);
 
