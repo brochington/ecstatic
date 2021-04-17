@@ -319,7 +319,7 @@ export default class World<CT> {
   };
 
   /**
-   * Alternative method for adding systems.
+   * Method for adding systems.
    */
   addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
     this.systems.add(cTypes, systemFunc, funcName);

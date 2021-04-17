@@ -52,7 +52,7 @@ type Components = AwesomeComponent | UnusedComponent
 const world = new World<Components>();
 
 /* Create a system */
-const system = world.addSystem(
+world.addSystem(
   /* 
     Note that you pass in the Component Class definition here.
     No need to use other keys such as strings.
@@ -81,7 +81,7 @@ const awesomeEntity = new Entity<Components>(world)
 awesomeEntity.add(awesomeComponent);
 
 /* Run system */
-system.run();
+world.systems.run();
 
 /* find entities by component, which is this case is the same instance as awesomeEntity above. */
 const stillAwesomeEntity = world.locate([AwesomeComponent]);
