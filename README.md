@@ -2,9 +2,9 @@
 #### Ecstatic is a straightforward Javascript implementation of the ECS pattern commonly found in the games. 
 
 
-[API Documentation](https://brochington.github.io/ecstatic/)
+Lots more info on the [Documentation Site](https://brochington.github.io/ecstatic-doc-site/docs/getting_started/what-is-ecs/)
 
-[Getting Started](Getting_Started.md)
+[API Documentation](https://brochington.github.io/ecstatic/)
 
 ```
 $ npm install @brochington/estatic

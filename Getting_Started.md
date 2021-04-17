@@ -1,5 +1,7 @@
 # Getting Started
 
+Lots more info on the [Documentation Site](https://brochington.github.io/ecstatic-doc-site/docs/getting_started/what-is-ecs/)
+
 ## What is ECS?
 ECS stands for `Entity, Component, System`, and is a way to organize logic and state in your code. Although the definition of each of these parts can vary greatly with the implementation,  the way that Ecstatic defines these is:
 
@@ -48,13 +50,13 @@ const systemFunction = (args) => {
 // Register the components and system function together on the world.
 // This will return a function that should be called in a loop along with
 // all other systems, usually once each "tick".
-const firstSystem = world.createSystem(systemComponents, systemFunction)
+const firstSystem = world.addSystem(systemComponents, systemFunction)
 
 
 // Running every system in a loop allows for changes in components to be picked up, adding
 // a degree of declarativity, but is not required.
 (function run() {
-  firstSystem();
+  world.systems.run()
 
   window.requestAnimationFrame(run);
 })()
