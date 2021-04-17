@@ -67,6 +67,11 @@ interface TrackedEventHandlers<CT> {
   onRemove?: (args: RemoveEventArgs<CT>) => void;
 }
 
+
+// NOTE: Really need to get symbols working as keys in Typescript.
+//       Until then will have to cast to keyof CT.
+// https://stackoverflow.com/questions/54324323/typescript-type-string-is-not-assignable-to-type-keyof
+// https://github.com/microsoft/TypeScript/pull/26797
 function createClassInstanceProxyHandlers<CT>(
   trackedEventHandlers: TrackedEventHandlers<CT>
 ): ProxyHandler<any> {
@@ -74,7 +79,7 @@ function createClassInstanceProxyHandlers<CT>(
   return {
     set(
       component: CT,
-      property: keyof CT,
+      property: string,
       value: CT[keyof CT]
     ) {
       updatedProps.add(property);
@@ -84,9 +89,9 @@ function createClassInstanceProxyHandlers<CT>(
         TrackedCompSymbolKeys.world
       ] as World<CT>;
 
-      const previousVal = component[property];
+      const previousVal = component[property as keyof CT];
 
-      component[property] = value;
+      component[property as keyof CT] = value;
 
       //@ts-ignore
       const entities = component[TrackedCompSymbolKeys.getEntities](world) as Map<EntityId, Entity<CT>>;
@@ -101,7 +106,7 @@ function createClassInstanceProxyHandlers<CT>(
           world,
           component,
           previousVal,
-          property,
+          property: property as keyof CT,
         });
       }
 
