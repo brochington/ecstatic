@@ -116,6 +116,7 @@ export default [
       'dist/**',
       'docs/**',
       'node_modules/**',
+      'benchmarks/**',
       '*.config.js',
       '*.config.mjs',
     ],

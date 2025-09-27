@@ -222,7 +222,7 @@ export default class World<CT> {
   };
 
   /**
-   * Gett all entities that have been tagged with the given tag.
+   * Get all entities that have been tagged with the given tag.
    * @param tag A string or number.
    */
   getAllTagged = (tag: Tag): Entity<CT>[] => {
@@ -312,13 +312,9 @@ export default class World<CT> {
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
-    // --- START OPTIMIZED REMOVAL ---
-
-    // 1. Find all system queries that depended on the component being removed.
     const affectedQueryKeys =
       this.componentToSystemQueries.get(componentName) || [];
 
-    // 2. Remove the entity from each of those systems' entity sets.
     for (const queryKey of affectedQueryKeys) {
       const entitySet = this.entitiesByCTypes.get(queryKey);
       if (entitySet) {
@@ -326,20 +322,14 @@ export default class World<CT> {
       }
     }
 
-    // --- END OPTIMIZED REMOVAL ---
-
-    // 3. Physically remove the component from the entity's collection.
     cc.remove(cType);
 
-    // 4. Re-evaluate which systems the entity now belongs to.
-    //    This adds the entity back to any sets that still match.
     for (const [canonicalKey, entitySet] of this.entitiesByCTypes.entries()) {
       if (canonicalKey.split(',').every(name => cc.hasByName(name))) {
         entitySet.add(eid);
       }
     }
 
-    // 5. Trigger the entity's onComponentRemove lifecycle hook.
     const entity = this.entities.get(eid);
     if (entity) {
       entity.onComponentRemove({ world: this, component });
@@ -356,11 +346,10 @@ export default class World<CT> {
     systemFunc: SystemFunc<CT>,
     funcName?: string
   ): this {
-    // --- START NEW LOGIC ---
     const cNames = cTypes.map(ct => ct.name).sort(); // Sort for consistency
     const canonicalKey = cNames.join(','); // Create a stable string key
 
-    // Populate the inverted index
+    // Populate an inverted index for quick lookup of systems by component type.
     for (const componentName of cNames) {
       const existingQueries =
         this.componentToSystemQueries.get(componentName) || [];
@@ -372,7 +361,6 @@ export default class World<CT> {
 
     // Pass the canonical key to the Systems manager
     this.systems.add(cTypes, systemFunc, canonicalKey, funcName);
-    // --- END NEW LOGIC ---
 
     return this;
   }

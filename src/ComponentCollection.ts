@@ -88,6 +88,14 @@ export default class ComponentCollection<CT> {
     return this.components.size;
   }
 
+  /**
+   * Make ComponentCollection iterable by delegating to the internal Map's iterator.
+   * This allows for...of loops, spreading [...collection], and Array.from(collection).
+   */
+  [Symbol.iterator](): IterableIterator<CT> {
+    return this.components.values();
+  }
+
   toDevComponents(): Record<string, CT> {
     const obj: Record<string, CT> = {};
     for (const [compName, comp] of this.components) {

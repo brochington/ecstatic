@@ -24,8 +24,8 @@ class DevEntity<CT> {
 
   constructor(entity: Entity<CT>, world: World<CT>) {
     this.id = entity.id;
-    ((this.components = entity.components.toDevComponents()),
-      (this.tags = [...entity.tags]));
+    this.components = entity.components.toDevComponents();
+    this.tags = [...entity.tags];
     this.state = entity.state;
 
     const compNames = Object.keys(this.components);

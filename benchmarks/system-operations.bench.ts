@@ -67,10 +67,11 @@ describe('System Operations', () => {
     }
 
     world.addSystem([Position], args => {
-      args.components.forEach(component => {
-        component.x += 1;
-        component.y += 1;
-      });
+      const { entity } = args;
+      const position = entity.get(Position);
+
+      position.x += 1;
+      position.y += 1;
     });
 
     world.systems.run();
@@ -88,10 +89,12 @@ describe('System Operations', () => {
     }
 
     world.addSystem([Position], args => {
-      args.components.forEach(component => {
-        component.x += 1;
-        component.y += 1;
-      });
+      Array.from(args.components)
+        .filter(component => component instanceof Position)
+        .forEach(component => {
+          component.x += 1;
+          component.y += 1;
+        });
     });
 
     world.systems.run();
@@ -120,32 +123,36 @@ describe('System Operations', () => {
 
     // Movement system
     world.addSystem([Position, Velocity], args => {
-      args.components.forEach((component, entity) => {
-        const position = entity.get(Position);
-        const velocity = entity.get(Velocity);
-        if (position && velocity) {
-          position.x += velocity.vx;
-          position.y += velocity.vy;
-        }
-      });
+      const { entity } = args;
+
+      const position = entity.get(Position);
+      const velocity = entity.get(Velocity);
+      if (position && velocity) {
+        position.x += velocity.vx;
+        position.y += velocity.vy;
+      }
     });
 
     // Health system
     world.addSystem([Health], args => {
-      args.components.forEach(component => {
-        component.value = Math.min(component.value + 1, component.max);
-      });
+      const { entity } = args;
+
+      const health = entity.get(Health);
+      if (health) {
+        health.value = Math.min(health.value + 1, health.max);
+      }
     });
 
     // Render system
     world.addSystem([Position, Renderable], args => {
-      args.components.forEach((component, entity) => {
-        // Simulate rendering
-        const position = entity.get(Position);
-        if (position) {
-          // Do nothing - just component access
-        }
-      });
+      const { entity } = args;
+
+      // Simulate rendering
+      const position = entity.get(Position);
+      const renderable = entity.get(Renderable);
+      if (position) {
+        // Do nothing - just component access
+      }
     });
 
     world.systems.run();
@@ -171,16 +178,16 @@ describe('System Operations', () => {
 
     // System that requires specific component combinations
     world.addSystem([Position, Velocity, Health], args => {
-      args.components.forEach((component, entity) => {
-        const position = entity.get(Position);
-        const velocity = entity.get(Velocity);
-        const health = entity.get(Health);
+      const { entity } = args;
 
-        if (position && velocity && health) {
-          position.x += velocity.vx * (health.value / health.max);
-          position.y += velocity.vy * (health.value / health.max);
-        }
-      });
+      const position = entity.get(Position);
+      const velocity = entity.get(Velocity);
+      const health = entity.get(Health);
+
+      if (position && velocity && health) {
+        position.x += velocity.vx * (health.value / health.max);
+        position.y += velocity.vy * (health.value / health.max);
+      }
     });
 
     world.systems.run();

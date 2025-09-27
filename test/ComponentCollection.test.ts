@@ -126,9 +126,100 @@ describe('Component Collection (internal)', () => {
     });
   });
 
+  describe('iteration', () => {
+    it('supports for...of iteration', () => {
+      const cc = new ComponentCollection<CompTypes>();
+      const firstComp = new FirstComponent('first');
+      const secondComp = new SecondComponent('second');
+
+      cc.add(firstComp);
+      cc.add(secondComp);
+
+      const iteratedComponents: CompTypes[] = [];
+      for (const comp of cc) {
+        iteratedComponents.push(comp);
+      }
+
+      expect(iteratedComponents).to.have.length(2);
+      expect(iteratedComponents).to.include(firstComp);
+      expect(iteratedComponents).to.include(secondComp);
+    });
+
+    it('supports Array.from conversion', () => {
+      const cc = new ComponentCollection<CompTypes>();
+      const firstComp = new FirstComponent('first');
+      const secondComp = new SecondComponent('second');
+
+      cc.add(firstComp);
+      cc.add(secondComp);
+
+      const componentsArray = Array.from(cc);
+
+      expect(componentsArray).to.have.length(2);
+      expect(componentsArray).to.include(firstComp);
+      expect(componentsArray).to.include(secondComp);
+    });
+
+    it('supports spreading', () => {
+      const cc = new ComponentCollection<CompTypes>();
+      const firstComp = new FirstComponent('first');
+      const secondComp = new SecondComponent('second');
+
+      cc.add(firstComp);
+      cc.add(secondComp);
+
+      const componentsArray = [...cc];
+
+      expect(componentsArray).to.have.length(2);
+      expect(componentsArray).to.include(firstComp);
+      expect(componentsArray).to.include(secondComp);
+    });
+
+    it('supports array methods via Array.from', () => {
+      const cc = new ComponentCollection<CompTypes>();
+      const firstComp = new FirstComponent('first');
+      const secondComp = new SecondComponent('second');
+
+      cc.add(firstComp);
+      cc.add(secondComp);
+
+      // Test forEach
+      const forEachResults: string[] = [];
+      Array.from(cc).forEach(comp => {
+        if (comp instanceof FirstComponent) {
+          forEachResults.push(comp.id);
+        } else if (comp instanceof SecondComponent) {
+          forEachResults.push(comp.otherId);
+        }
+      });
+      expect(forEachResults).to.deep.equal(['first', 'second']);
+
+      // Test map
+      const ids = Array.from(cc).map(comp =>
+        comp instanceof FirstComponent ? comp.id : comp.otherId
+      );
+      expect(ids).to.deep.equal(['first', 'second']);
+
+      // Test filter
+      const firstComponents = Array.from(cc).filter(comp => comp instanceof FirstComponent);
+      expect(firstComponents).to.have.length(1);
+      expect(firstComponents[0]).to.equal(firstComp);
+    });
+  });
+
   describe('dev', () => {
     it('toDevComponents', () => {
-      /* TODO! */
+      const cc = new ComponentCollection<CompTypes>();
+      const firstComp = new FirstComponent('first');
+      const secondComp = new SecondComponent('second');
+
+      cc.add(firstComp);
+      cc.add(secondComp);
+
+      const devComponents = cc.toDevComponents();
+
+      expect(devComponents).to.have.property('FirstComponent', firstComp);
+      expect(devComponents).to.have.property('SecondComponent', secondComp);
     });
   });
 });

@@ -85,9 +85,6 @@ export default class Systems<CT> {
   }
 
   run(): void {
-    // 1. EFFICIENTLY GATHER ENTITIES NEEDING LIFECYCLE CHANGES
-    // Instead of multiple loops, we find all entities to be created or
-    // destroyed in a single pass over the world's entities.
     const entitiesToCreate: Entity<CT>[] = [];
     const entitiesToDestroy: Entity<CT>[] = [];
 
@@ -99,61 +96,48 @@ export default class Systems<CT> {
       }
     }
 
-    // 2. RUN ALL SYSTEMS
-    // We iterate over the system map, which now contains the function and the correct key.
     for (const {
       func,
       key: canonicalKey,
     } of this.systemFuncBySystemName.values()) {
-      // Use the canonicalKey to get the precise set of entities for this system.
       const entityIdSet =
         this.world.entitiesByCTypes.get(canonicalKey) || new Set();
       const size = entityIdSet.size;
 
-      // A small optimization: if no entities match this system, skip it.
       if (size === 0) {
         continue;
       }
 
       let index = 0;
       for (const eid of entityIdSet) {
-        // Retrieve the entity and its components for this iteration.
         const entity = this.world.entities.get(eid);
 
-        // Defensive check: if entity was removed mid-loop, skip.
         if (!entity) continue;
 
         const components =
           this.world.componentCollections.get(eid) ||
           new ComponentCollection<CT>();
 
-        // Construct the arguments object for the system function.
         const args: SystemFuncArgs<CT> = {
           entity,
           components,
           world: this.world,
           index,
-          size, // Pass the correct size of the current entity set.
+          size,
           isFirst: index === 0,
           isLast: index + 1 === size,
         };
 
-        // Execute the system's logic.
         func(args);
 
         index++;
       }
     }
 
-    // 3. FINALIZE LIFECYCLE CHANGES
-    // This happens *after* all systems have had a chance to run.
-
-    // Finalize the creation of all new entities.
     for (const entity of entitiesToCreate) {
       entity.finishCreation();
     }
 
-    // Finalize the destruction of all marked entities.
     for (const entity of entitiesToDestroy) {
       entity.destroyImmediately();
     }
