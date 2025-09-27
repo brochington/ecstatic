@@ -1,6 +1,6 @@
-import Entity, { EntityId } from "./Entity";
-import World, { ClassConstructor } from "./World";
-import ComponentCollection from "./ComponentCollection";
+import Entity, { EntityId } from './Entity';
+import World, { ClassConstructor } from './World';
+import ComponentCollection from './ComponentCollection';
 
 /**
  * Arguments that are passed into a System function on each iteration.
@@ -39,12 +39,13 @@ export interface SystemFuncArgs<CT> {
 /**
  * Function that is called when a system is run.
  */
+// eslint-disable-next-line no-unused-vars
 export type SystemFunc<CT> = (sytemFuncArgs: SystemFuncArgs<CT>) => void;
 
 export default class Systems<CT> {
   world: World<CT>;
 
-  systemFuncBySystemName: Map<string, SystemFunc<CT>>; // double check to make sure that maps are ordered.
+  systemFuncBySystemName: Map<string, { func: SystemFunc<CT>; key: string }>;
 
   compNamesBySystemName: Map<string, string[]>;
 
@@ -57,60 +58,69 @@ export default class Systems<CT> {
   add(
     cTypes: ClassConstructor<CT>[],
     systemFunc: SystemFunc<CT>,
+    canonicalKey: string, // Accept the pre-computed key
     funcName?: string
   ): this {
-    const cNames = cTypes.map((ct) => ct.name);
+    const cNames = cTypes.map(ct => ct.name);
 
-    let name = systemFunc.name;
-    if (systemFunc.name === "") {
-      // Super brute force, and might lead to errors in the future, but for now
-      // using the stringified system function if the function doesn't already have a name.
-      // This is useful for anonymous functions used as a system function.
-      // Might be good to figure out how to get a hash of the function string.
-      name = systemFunc.toString().slice(0, 30);
+    let name = funcName || systemFunc.name;
+    if (name === '' || !name) {
+      // Use a more robust way to get a unique name if needed,
+      // for now we'll use the canonical key if no name is available.
+      name = canonicalKey;
     }
 
-    if (funcName) {
-      name = funcName;
-    }
-
-    this.systemFuncBySystemName.set(name, systemFunc);
+    this.systemFuncBySystemName.set(name, {
+      func: systemFunc,
+      key: canonicalKey,
+    });
     this.compNamesBySystemName.set(name, cNames);
-    this.world.entitiesByCTypes.set(cNames, new Set<EntityId>());
+
+    // Use the canonicalKey passed from the World
+    if (!this.world.entitiesByCTypes.has(canonicalKey)) {
+      this.world.entitiesByCTypes.set(canonicalKey, new Set<EntityId>());
+    }
 
     return this;
   }
 
   run(): void {
-    const size = this.world.entitiesByCTypes.size;
-    
-    const entitiesInCreatingState = [];
-    const entitiesInDestroyingState = [];
+    const entitiesToCreate: Entity<CT>[] = [];
+    const entitiesToDestroy: Entity<CT>[] = [];
 
     for (const entity of this.world.entities.values()) {
-      if (entity.state === "creating") {
-        entitiesInCreatingState.push(entity);
-      }
-
-      if (entity.state === "destroying") {
-        entitiesInDestroyingState.push(entity);
+      if (entity.state === 'creating') {
+        entitiesToCreate.push(entity);
+      } else if (entity.state === 'destroying') {
+        entitiesToDestroy.push(entity);
       }
     }
 
-    for (const [
-      funcName,
-      systemFunc,
-    ] of this.systemFuncBySystemName.entries()) {
-      let index = 0;
-      const cNames = this.compNamesBySystemName.get(funcName) || [];
-      const cTypeArrs = this.world.entitiesByCTypes.get(cNames) || new Set();
+    for (const {
+      func,
+      key: canonicalKey,
+    } of this.systemFuncBySystemName.values()) {
+      const entityIdSet =
+        this.world.entitiesByCTypes.get(canonicalKey) || new Set();
+      const size = entityIdSet.size;
 
-      for (const eid of cTypeArrs) {
+      if (size === 0) {
+        continue;
+      }
+
+      let index = 0;
+      for (const eid of entityIdSet) {
+        const entity = this.world.entities.get(eid);
+
+        if (!entity) continue;
+
+        const components =
+          this.world.componentCollections.get(eid) ||
+          new ComponentCollection<CT>();
+
         const args: SystemFuncArgs<CT> = {
-          entity: this.world.entities.get(eid) || new Entity<CT>(this.world),
-          components:
-            this.world.componentCollections.get(eid) ||
-            new ComponentCollection<CT>(),
+          entity,
+          components,
           world: this.world,
           index,
           size,
@@ -118,18 +128,17 @@ export default class Systems<CT> {
           isLast: index + 1 === size,
         };
 
-        systemFunc(args);
+        func(args);
 
-        index += 1;
+        index++;
       }
-
     }
 
-    for (const entity of entitiesInCreatingState) {
+    for (const entity of entitiesToCreate) {
       entity.finishCreation();
     }
 
-    for (const entity of entitiesInDestroyingState) {
+    for (const entity of entitiesToDestroy) {
       entity.destroyImmediately();
     }
   }

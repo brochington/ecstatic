@@ -1,19 +1,19 @@
-import { v4 as uuidv4 } from "uuid";
-import World, { ClassConstructor } from "./World";
-import ComponentCollection from "./ComponentCollection";
-import { Tag } from "./Tag";
-import DevEntity from "./DevEntity";
+import { v4 as uuidv4 } from 'uuid';
 
-import SimpleFSM from "./SimpleFSM";
+import World, { ClassConstructor } from './World';
+import ComponentCollection from './ComponentCollection';
+import { Tag } from './Tag';
+import DevEntity from './DevEntity';
+import SimpleFSM from './SimpleFSM';
 
 export type EntityId = string;
 
 export type EntityState =
-  | "creating"
-  | "created"
-  | "destroying"
-  | "destroyed"
-  | "error";
+  | 'creating'
+  | 'created'
+  | 'destroying'
+  | 'destroyed'
+  | 'error';
 
 export interface EntityCompEventArgs<CT> {
   world: World<CT>;
@@ -46,19 +46,17 @@ export default class Entity<CT> {
 
     this._error = null;
 
-    const fsmTransition = (
-      ns: EntityState
-    ): EntityState => {
-      if (ns === "error" || this._error) return "error";
+    const fsmTransition = (ns: EntityState): EntityState => {
+      if (ns === 'error' || this._error) return 'error';
       return ns;
     };
 
-    this._state = new SimpleFSM<EntityState, EntityState>("creating", {
+    this._state = new SimpleFSM<EntityState, EntityState>('creating', {
       creating: fsmTransition,
       created: fsmTransition,
       destroying: fsmTransition,
-      destroyed: () => "destroyed",
-      error: () => "error",
+      destroyed: () => 'destroyed',
+      error: () => 'error',
     });
 
     /*
@@ -73,22 +71,27 @@ export default class Entity<CT> {
 
   /* LifeCycle methods, meant to be overridden */
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onCreate(world: World<CT>): void {
     // abstract
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onDestroy(world: World<CT>): void {
     // abstract
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onComponentAdd(args: EntityCompEventArgs<CT>): void {
     // abstract
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onTrackedComponentUpdate(args: EntityCompEventArgs<CT>): void {
     // abstract
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onComponentRemove(args: EntityCompEventArgs<CT>): void {
     // abstract
   }

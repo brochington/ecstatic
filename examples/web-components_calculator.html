@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -29,7 +29,7 @@
         align-items: center;
         justify-content: center;
         color: white;
-        font-family: "Roboto Mono", monospace;
+        font-family: 'Roboto Mono', monospace;
       }
 
       calc-screen {
@@ -37,7 +37,7 @@
         grid-column-start: 1;
         grid-column-end: 5;
         background-color: silver;
-        font-family: "VT323", monospace;
+        font-family: 'VT323', monospace;
         font-size: 30px;
         overflow: hidden;
         display: flex;
@@ -118,8 +118,8 @@
         constructor() {
           super();
 
-          this.currentValue = "";
-          this.currentTotal = "";
+          this.currentValue = '';
+          this.currentTotal = '';
           this.algo = [];
 
           this.calculatorEntity = world.createEntity().add(this);
@@ -129,8 +129,8 @@
       class CalcBtn extends HTMLElement {
         constructor() {
           super();
-          this.addEventListener("click", () => {
-            const { calculatorEntity } = this.closest("ecs-calculator");
+          this.addEventListener('click', () => {
+            const { calculatorEntity } = this.closest('ecs-calculator');
 
             calculatorEntity.add(this);
 
@@ -142,7 +142,7 @@
       class CalcScreen extends HTMLElement {
         constructor() {
           super();
-          const { calculatorEntity } = this.closest("ecs-calculator");
+          const { calculatorEntity } = this.closest('ecs-calculator');
 
           calculatorEntity.add(this);
         }
@@ -158,12 +158,12 @@
 
       /* Define Components as Custom Elements */
 
-      customElements.define("ecs-calculator", ECSCalculator);
-      customElements.define("calc-screen", CalcScreen);
-      customElements.define("number-btn", NumberBtn);
-      customElements.define("operator-btn", OperatorBtn);
-      customElements.define("equals-btn", EqualsBtn);
-      customElements.define("clear-btn", ClearBtn);
+      customElements.define('ecs-calculator', ECSCalculator);
+      customElements.define('calc-screen', CalcScreen);
+      customElements.define('number-btn', NumberBtn);
+      customElements.define('operator-btn', OperatorBtn);
+      customElements.define('equals-btn', EqualsBtn);
+      customElements.define('clear-btn', ClearBtn);
 
       /* Systems */
 
@@ -187,7 +187,7 @@
         calcComp.algo.push(calcComp.currentValue);
         calcComp.algo.push(operatorComp.innerText);
 
-        calcComp.currentValue = "";
+        calcComp.currentValue = '';
 
         entity.remove(OperatorBtn);
       }
@@ -201,7 +201,7 @@
 
         calcComp.algo.push(calcComp.currentValue);
 
-        const algoString = calcComp.algo.join(" ");
+        const algoString = calcComp.algo.join(' ');
 
         const total = +eval(algoString).toFixed(6);
         calcComp.currentTotal = total;
@@ -217,8 +217,8 @@
       function clearComputation({ entity, components }) {
         const calcComp = components.get(ECSCalculator);
 
-        calcComp.currentValue = "";
-        calcComp.currentTotal = "";
+        calcComp.currentValue = '';
+        calcComp.currentTotal = '';
         calcComp.algo = [];
 
         entity.remove(ClearBtn);

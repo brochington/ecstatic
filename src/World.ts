@@ -1,11 +1,12 @@
-import Entity, { EntityId } from "./Entity";
-import ComponentCollection from "./ComponentCollection";
-import { Tag } from "./Tag";
-import { SystemFunc } from "./Systems";
-import DevTools from "./DevTools";
+import Entity, { EntityId } from './Entity';
+import ComponentCollection from './ComponentCollection';
+import { Tag } from './Tag';
+import { SystemFunc } from './Systems';
+import DevTools from './DevTools';
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, no-unused-vars
 export type ClassConstructor<T> = { new (...args: any[]): T };
 
 export default class World<CT> {
@@ -13,13 +14,15 @@ export default class World<CT> {
 
   entities: Map<EntityId, Entity<CT>> = new Map();
 
-  entitiesByCTypes: Map<string[], Set<EntityId>> = new Map();
+  entitiesByCTypes: Map<string, Set<EntityId>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
   systems: Systems<CT>;
 
   dev: DevTools<CT>;
+
+  private componentToSystemQueries: Map<string, string[]> = new Map();
 
   constructor() {
     this.dev = new DevTools(this);
@@ -29,6 +32,7 @@ export default class World<CT> {
   /**
    * "finds" a single entity based on a predicate
    */
+  // eslint-disable-next-line no-unused-vars
   find = (predicate: (entity: Entity<CT>) => boolean): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (predicate(entity)) {
@@ -42,6 +46,7 @@ export default class World<CT> {
   /**
    * "finds" all entities based on a predicate, kinda like filter.
    */
+  // eslint-disable-next-line no-unused-vars
   findAll = (predicate: (entity: Entity<CT>) => boolean): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
@@ -57,7 +62,9 @@ export default class World<CT> {
   /**
    * "locates" a single entity based on its Components.
    */
-  locate = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT> | null => {
+  locate = (
+    cl: ClassConstructor<CT> | ClassConstructor<CT>[]
+  ): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (entity.components.has(cl)) {
         return entity;
@@ -70,7 +77,9 @@ export default class World<CT> {
   /**
    * Locates all entities that contain the components named
    */
-  locateAll = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT>[] => {
+  locateAll = (
+    cl: ClassConstructor<CT> | ClassConstructor<CT>[]
+  ): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
@@ -120,6 +129,7 @@ export default class World<CT> {
    */
   grabBy = <T extends CT>(
     cl: ClassConstructor<T>,
+    // eslint-disable-next-line no-unused-vars
     predicate: (comp: T) => boolean
   ): { entity: Entity<CT>; component: T } | null => {
     const entities = this.locateAll(cl);
@@ -151,7 +161,7 @@ export default class World<CT> {
   ): { entity: Entity<CT>; component: T }[] => {
     const entities = this.locateAll(cl);
 
-    return entities.map((entity) => {
+    return entities.map(entity => {
       return {
         entity,
         component: entity.components.get<T>(cl),
@@ -199,10 +209,12 @@ export default class World<CT> {
     if (tagEntityIds) {
       const entityId = tagEntityIds.values().next().value;
 
-      const entity = this.entities.get(entityId);
+      if (entityId) {
+        const entity = this.entities.get(entityId);
 
-      if (entity) {
-        return entity;
+        if (entity) {
+          return entity;
+        }
       }
     }
 
@@ -210,7 +222,7 @@ export default class World<CT> {
   };
 
   /**
-   * Gett all entities that have been tagged with the given tag.
+   * Get all entities that have been tagged with the given tag.
    * @param tag A string or number.
    */
   getAllTagged = (tag: Tag): Entity<CT>[] => {
@@ -248,7 +260,7 @@ export default class World<CT> {
     this.componentCollections.set(eid, cc);
 
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+      if (ctArr.split(',').every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
@@ -273,39 +285,47 @@ export default class World<CT> {
    * NOTE: This will change what systems will be called on the entity.
    */
   remove = (eid: EntityId, cType: ClassConstructor<CT>): this => {
-    const cc =
-      this.componentCollections.get(eid) || new ComponentCollection<CT>();
+    const cc = this.componentCollections.get(eid);
+    if (!cc) {
+      return this;
+    }
 
-    // need to get component instance...
+    const componentName = cType.name;
+    if (!cc.hasByName(componentName)) {
+      return this;
+    }
+
     const component = cc.get(cType);
 
+    // Handle TrackedComponent logic first
     // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
       const entity = this.entities.get(eid);
-
       if (!entity) {
-        throw new Error(`world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`);
+        throw new Error(
+          `world.remove: Unable to locate entity for TrackedComponent. eid: ${eid}, cType: ${cType.name}`
+        );
       }
-
       // @ts-ignore
       component[TrackedCompSymbolKeys.entityIDs].delete(eid);
-
       // @ts-ignore
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
-    // remove entity from current entitiesByCTypes
-    for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+    const affectedQueryKeys =
+      this.componentToSystemQueries.get(componentName) || [];
+
+    for (const queryKey of affectedQueryKeys) {
+      const entitySet = this.entitiesByCTypes.get(queryKey);
+      if (entitySet) {
         entitySet.delete(eid);
       }
     }
 
     cc.remove(cType);
 
-    // Move entityId to new CTypes if needed.
-    for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+    for (const [canonicalKey, entitySet] of this.entitiesByCTypes.entries()) {
+      if (canonicalKey.split(',').every(name => cc.hasByName(name))) {
         entitySet.add(eid);
       }
     }
@@ -321,12 +341,29 @@ export default class World<CT> {
   /**
    * Method for adding systems.
    */
-  addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
-    this.systems.add(cTypes, systemFunc, funcName);
+  addSystem(
+    cTypes: ClassConstructor<CT>[],
+    systemFunc: SystemFunc<CT>,
+    funcName?: string
+  ): this {
+    const cNames = cTypes.map(ct => ct.name).sort(); // Sort for consistency
+    const canonicalKey = cNames.join(','); // Create a stable string key
+
+    // Populate an inverted index for quick lookup of systems by component type.
+    for (const componentName of cNames) {
+      const existingQueries =
+        this.componentToSystemQueries.get(componentName) || [];
+      if (!existingQueries.includes(canonicalKey)) {
+        existingQueries.push(canonicalKey);
+      }
+      this.componentToSystemQueries.set(componentName, existingQueries);
+    }
+
+    // Pass the canonical key to the Systems manager
+    this.systems.add(cTypes, systemFunc, canonicalKey, funcName);
 
     return this;
   }
-
 
   /**
    * Setup an entity to exist in the given world. This is mostly an internal method, but exposed just in case.
@@ -378,7 +415,9 @@ export default class World<CT> {
     const entity = this.entities.get(entityId);
 
     if (!entity) {
-      throw new Error(`world.destroyEntity: No entity found. entity id: ${entityId}`);
+      throw new Error(
+        `world.destroyEntity: No entity found. entity id: ${entityId}`
+      );
     }
 
     this.entities.delete(entityId);

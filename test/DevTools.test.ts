@@ -1,7 +1,9 @@
-import { expect } from "chai";
-import DevTools from "../src/DevTools";
-import World from "../src/World";
-import DevEntity from "../src/DevEntity";
+import { expect } from 'chai';
+import { describe, it } from 'vitest';
+
+import DevTools from '../src/DevTools';
+import World from '../src/World';
+import DevEntity from '../src/DevEntity';
 
 class FirstComponent {
   id: string;
@@ -30,14 +32,14 @@ function thirdSystem() {
   /* */
 }
 
-describe("DevTools", () => {
-  it("exits", () => {
+describe('DevTools', () => {
+  it('exits', () => {
     const testWorld = new World<CompTypes>();
 
     expect(testWorld.dev).to.be.an.instanceof(DevTools);
   });
 
-  it("dev.systemComponents", () => {
+  it('dev.systemComponents', () => {
     const testWorld = new World<CompTypes>();
 
     testWorld
@@ -45,12 +47,12 @@ describe("DevTools", () => {
       .addSystem([SecondComponent], secondSystem)
       .addSystem([FirstComponent, SecondComponent], thirdSystem);
 
-    testWorld.createEntity().add(new FirstComponent("first-1"));
-    testWorld.createEntity().add(new SecondComponent("second-1"));
+    testWorld.createEntity().add(new FirstComponent('first-1'));
+    testWorld.createEntity().add(new SecondComponent('second-1'));
     testWorld
       .createEntity()
-      .add(new FirstComponent("first-2"))
-      .add(new SecondComponent("second-2"));
+      .add(new FirstComponent('first-2'))
+      .add(new SecondComponent('second-2'));
 
     const systemComps = testWorld.dev.systemComponents;
 
@@ -59,19 +61,19 @@ describe("DevTools", () => {
     const [sc1, sc2, sc3] = systemComps;
     expect(sc1).to.be.an.eql({
       system: firstSystem.name,
-      components: "FirstComponent",
+      components: 'FirstComponent',
     });
     expect(sc2).to.be.an.eql({
       system: secondSystem.name,
-      components: "SecondComponent",
+      components: 'SecondComponent',
     });
     expect(sc3).to.be.an.eql({
       system: thirdSystem.name,
-      components: "FirstComponent, SecondComponent",
+      components: 'FirstComponent, SecondComponent',
     });
   });
 
-  it("dev.entities", () => {
+  it('dev.entities', () => {
     const testWorld = new World<CompTypes>();
 
     testWorld
@@ -79,12 +81,12 @@ describe("DevTools", () => {
       .addSystem([SecondComponent], secondSystem)
       .addSystem([FirstComponent, SecondComponent], thirdSystem);
 
-    testWorld.createEntity().add(new FirstComponent("first-1"));
-    testWorld.createEntity().add(new SecondComponent("second-1"));
+    testWorld.createEntity().add(new FirstComponent('first-1'));
+    testWorld.createEntity().add(new SecondComponent('second-1'));
     testWorld
       .createEntity()
-      .add(new FirstComponent("first-2"))
-      .add(new SecondComponent("second-2"));
+      .add(new FirstComponent('first-2'))
+      .add(new SecondComponent('second-2'));
 
     const devEntities = testWorld.dev.entities;
 

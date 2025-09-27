@@ -1,6 +1,8 @@
-import { isComponentInstance } from "./guards";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { isComponentInstance } from './guards';
 
 type CompName = string;
+// eslint-disable-next-line no-unused-vars
 type ClassConstructor<T> = { new (...args: any[]): T };
 
 // CT is a Union, like `type = FirstComponent | SecondComponent`.
@@ -12,6 +14,7 @@ export default class ComponentCollection<CT> {
     this.components.set((<any>component).constructor.name, component);
   };
 
+  // eslint-disable-next-line no-unused-vars
   update = <T extends CT>(cl: ClassConstructor<T>, func: (c: T) => T): void => {
     const c = this.components.get(cl.name);
 
@@ -55,7 +58,7 @@ export default class ComponentCollection<CT> {
    */
   has = (cType: ClassConstructor<CT> | ClassConstructor<CT>[]): boolean => {
     return Array.isArray(cType)
-      ? cType.every((ct) => this.components.has(ct.name) === true)
+      ? cType.every(ct => this.components.has(ct.name) === true)
       : this.components.has(cType.name);
   };
 
@@ -67,7 +70,7 @@ export default class ComponentCollection<CT> {
    */
   hasByName = (cName: string | string[]): boolean => {
     return Array.isArray(cName)
-      ? cName.every((ct) => this.components.has(ct) === true)
+      ? cName.every(ct => this.components.has(ct) === true)
       : this.components.has(cName);
   };
 
@@ -83,6 +86,14 @@ export default class ComponentCollection<CT> {
    */
   get size(): number {
     return this.components.size;
+  }
+
+  /**
+   * Make ComponentCollection iterable by delegating to the internal Map's iterator.
+   * This allows for...of loops, spreading [...collection], and Array.from(collection).
+   */
+  [Symbol.iterator](): IterableIterator<CT> {
+    return this.components.values();
   }
 
   toDevComponents(): Record<string, CT> {

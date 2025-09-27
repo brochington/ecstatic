@@ -3,7 +3,7 @@
     "sourceMap": true,
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "downlevelIteration": true,
     "allowJs": true,
     "noEmit": true,
@@ -13,11 +13,6 @@
     "baseUrl": ".",
     "paths": {}
   },
-  "include": [
-    "src",
-    "ecstatic.d.ts"
-  ],
-  "exclude": [
-    "src/test"
-  ]
+  "include": ["src", "test", "benchmarks", "ecstatic.d.ts", "*.config.js"],
+  "exclude": ["dist", "docs", "node_modules"]
 }

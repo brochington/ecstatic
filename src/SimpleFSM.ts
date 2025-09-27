@@ -2,6 +2,7 @@ export type State = string | number | symbol;
 
 export type Transitions<S extends State, D = undefined> = Record<
   S,
+  // eslint-disable-next-line no-unused-vars
   (data: D, current: S) => S
 >;
 
