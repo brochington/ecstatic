@@ -6,9 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
-    globals: true, // Enable global test functions like describe, it, expect
-    environment: 'jsdom', // Use jsdom for DOM testing
-    setupFiles: [], // Can add setup files here if needed
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: [],
   },
   resolve: {
     alias: {
@@ -16,5 +16,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
-  // TypeScript support is built-in
 });

@@ -39,6 +39,7 @@ export interface SystemFuncArgs<CT> {
 /**
  * Function that is called when a system is run.
  */
+// eslint-disable-next-line no-unused-vars
 export type SystemFunc<CT> = (sytemFuncArgs: SystemFuncArgs<CT>) => void;
 
 export default class Systems<CT> {

@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { isComponentInstance } from './guards';
 
 type CompName = string;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-type ClassConstructor<T> = { new (...args: unknown[]): T };
+// eslint-disable-next-line no-unused-vars
+type ClassConstructor<T> = { new (...args: any[]): T };
 
 // CT is a Union, like `type = FirstComponent | SecondComponent`.
 export default class ComponentCollection<CT> {
@@ -10,11 +11,10 @@ export default class ComponentCollection<CT> {
 
   // instance of a component
   add = (component: CT): void => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
     this.components.set((<any>component).constructor.name, component);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   update = <T extends CT>(cl: ClassConstructor<T>, func: (c: T) => T): void => {
     const c = this.components.get(cl.name);
 

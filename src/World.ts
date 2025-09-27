@@ -6,6 +6,7 @@ import DevTools from './DevTools';
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, no-unused-vars
 export type ClassConstructor<T> = { new (...args: any[]): T };
 
 export default class World<CT> {
@@ -29,6 +30,7 @@ export default class World<CT> {
   /**
    * "finds" a single entity based on a predicate
    */
+  // eslint-disable-next-line no-unused-vars
   find = (predicate: (entity: Entity<CT>) => boolean): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (predicate(entity)) {
@@ -42,6 +44,7 @@ export default class World<CT> {
   /**
    * "finds" all entities based on a predicate, kinda like filter.
    */
+  // eslint-disable-next-line no-unused-vars
   findAll = (predicate: (entity: Entity<CT>) => boolean): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
@@ -124,6 +127,7 @@ export default class World<CT> {
    */
   grabBy = <T extends CT>(
     cl: ClassConstructor<T>,
+    // eslint-disable-next-line no-unused-vars
     predicate: (comp: T) => boolean
   ): { entity: Entity<CT>; component: T } | null => {
     const entities = this.locateAll(cl);

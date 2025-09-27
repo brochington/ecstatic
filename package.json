@@ -6,8 +6,8 @@
   "main": "dist/bundle.js",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && rspack --config rspack.config.js",
-    "dev": "npm run clean && rspack --config rspack.config.js --watch",
+    "build": "npm run clean && rspack --config rspack.config.mjs",
+    "dev": "npm run clean && rspack --config rspack.config.mjs --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit --project tsconfig.typecheck.json",

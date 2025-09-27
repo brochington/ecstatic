@@ -1,7 +1,7 @@
-const path = require('path');
-const { rspack } = require('@rspack/core');
+import path from 'path';
+import { rspack } from '@rspack/core';
 
-module.exports = {
+export default {
   entry: [path.join(process.cwd(), 'src/index.ts')],
   output: {
     filename: 'bundle.js',

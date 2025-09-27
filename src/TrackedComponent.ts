@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import World, { ClassConstructor } from './World';
 import Entity, { EntityId } from './Entity';
 
@@ -15,6 +16,7 @@ export const TrackedCompSymbolKeys = {
 
 //@ts-ignore
 type TrackedComponent<CT> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any[]): CT;
 
   //@ts-ignore
@@ -70,6 +72,7 @@ interface TrackedEventHandlers<CT> {
 // https://github.com/microsoft/TypeScript/pull/26797
 function createClassInstanceProxyHandlers<CT>(
   trackedEventHandlers: TrackedEventHandlers<CT>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxyHandler<any> {
   const updatedProps = new Set();
   return {
@@ -112,6 +115,7 @@ export function trackComponent<CT>(
   trackedEventHandlers: TrackedEventHandlers<CT>
 ): TrackedComponent<CT> {
   return new Proxy(CompClass, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     construct(Component: any, args: any) {
       const component = new Component(...args) as CT & TrackedComponent<CT>;
 
