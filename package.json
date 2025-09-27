@@ -7,7 +7,8 @@
     "clean": "rimraf dist",
     "build": "npm run clean && rspack --config rspack.config.js",
     "dev": "npm run clean && rspack --config rspack.config.js --watch",
-    "test": " echo 'no tests, will update to vitest soon'",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "docs": "typedoc --out docs src && touch ./docs/.nojekyll",
     "serve": "rspack serve"
   },
@@ -41,8 +42,14 @@
   "devDependencies": {
     "@rspack/cli": "^1.5.7",
     "@rspack/core": "^1.5.7",
+    "@types/node": "^24.5.2",
+    "@types/sinon": "^17.0.4",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^27.0.0",
     "prettier": "3.6.2",
     "serve": "14.2.5",
-    "typescript": "5.9.2"
+    "sinon": "^21.0.0",
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
   }
 }

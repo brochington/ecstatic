@@ -245,27 +245,29 @@ describe('Entity', () => {
       expect(onCompAddFake.callCount).to.equal(1);
     });
 
-    it('onTrackedComponentUpdate', (done) => {
+    it('onTrackedComponentUpdate', async () => {
       const world = new World<CompTypes>();
 
       const TrackedComp = trackComponent(FirstComponent, {});
 
-      class LCEntity extends Entity<CompTypes> {
-        onTrackedComponentUpdate({ world: _world, component }) {
-          expect(_world).to.be.instanceof(World);
-          expect(component).to.be.instanceof(FirstComponent);
-          expect(component).to.be.instanceof(TrackedComp);
-          done();
+      await new Promise<void>((resolve) => {
+        class LCEntity extends Entity<CompTypes> {
+          onTrackedComponentUpdate({ world: _world, component }) {
+            expect(_world).to.be.instanceof(World);
+            expect(component).to.be.instanceof(FirstComponent);
+            expect(component).to.be.instanceof(TrackedComp);
+            resolve();
+          }
         }
-      }
 
-      const lcEntity = new LCEntity(world);
+        const lcEntity = new LCEntity(world);
 
-      const comp = new TrackedComp('1'); // contsructor args is broken here...
+        const comp = new TrackedComp('1'); // contsructor args is broken here...
 
-      lcEntity.add(comp);
+        lcEntity.add(comp);
 
-      comp.id = '2';
+        comp.id = '2';
+      });
     })
 
     it('onComponentRemove', () => {

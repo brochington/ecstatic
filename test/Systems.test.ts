@@ -40,21 +40,23 @@ describe("System", () => {
     expect(world.systems.systemFuncBySystemName.get(firstSystem.name)).to.equal(firstSystem);
   });
 
-  it("Run System with Anonymous function", (done) => {
+  it("Run System with Anonymous function", async () => {
     const world = new World<CompTypes>();
 
-    world.addSystem([FirstComponent], (args) => {
-      const { components } = args;
+    await new Promise<void>((resolve) => {
+      world.addSystem([FirstComponent], (args) => {
+        const { components } = args;
 
-      const firstComp = components.get(FirstComponent);
+        const firstComp = components.get(FirstComponent);
 
-      expect(firstComp.id).to.equal("first");
-      done();
+        expect(firstComp.id).to.equal("first");
+        resolve();
+      });
+
+      world.createEntity().add(new FirstComponent("first"));
+
+      world.systems.run();
     });
-
-    world.createEntity().add(new FirstComponent("first"));
-
-    world.systems.run();
   });
 
   it("Correctly calls systems based on created entities", () => {
@@ -87,26 +89,28 @@ describe("System", () => {
     expect(fake4.callCount).to.equal(1); // entity 2
   });
 
-  it("Correct args passed to system function", (done) => {
+  it("Correct args passed to system function", async () => {
     const world = new World<CompTypes>();
 
-    world.addSystem(
-      [FirstComponent],
-      (args: SystemFuncArgs<CompTypes>) => {
-        expect(args.entity).to.be.instanceof(Entity);
-        expect(args.components).to.be.instanceof(ComponentCollection);
-        expect(args.components.size).to.equal(1);
-        expect(args.world).to.be.instanceof(World);
-        expect(args.index).to.equal(0);
-        expect(args.isFirst).to.equal(true);
-        expect(args.isLast).to.equal(true);
+    await new Promise<void>((resolve) => {
+      world.addSystem(
+        [FirstComponent],
+        (args: SystemFuncArgs<CompTypes>) => {
+          expect(args.entity).to.be.instanceof(Entity);
+          expect(args.components).to.be.instanceof(ComponentCollection);
+          expect(args.components.size).to.equal(1);
+          expect(args.world).to.be.instanceof(World);
+          expect(args.index).to.equal(0);
+          expect(args.isFirst).to.equal(true);
+          expect(args.isLast).to.equal(true);
 
-        done();
-      }
-    );
+          resolve();
+        }
+      );
 
-    world.createEntity().add(new FirstComponent("a"));
+      world.createEntity().add(new FirstComponent("a"));
 
-    world.systems.run();
+      world.systems.run();
+    });
   });
 });

@@ -30,7 +30,7 @@ describe("World", () => {
   });
 
   describe("instance methods", () => {
-    context("registerSystems", () => {
+    describe("registerSystems", () => {
       it("set correct content in the world instance.", () => {
         const testWorld = new World<CompTypes>();
         const cTypes = [FirstComponent];
@@ -45,7 +45,7 @@ describe("World", () => {
         expect(t[0][1]).to.be.instanceof(Set);
       });
     });
-    context("registerEntity", () => {
+    describe("registerEntity", () => {
       it("creates ComponentCollection at correct entityId location in entities map", () => {
         const testWorld = new World<CompTypes>();
 
@@ -65,7 +65,7 @@ describe("World", () => {
       });
     });
 
-    context("find", () => {
+    describe("find", () => {
       it("finds correct entity", () => {
         const world = new World<CompTypes>();
 
@@ -83,7 +83,7 @@ describe("World", () => {
       });
     });
 
-    context("findAll", () => {
+    describe("findAll", () => {
       it("finds all filtered entities", () => {
         const world = new World<CompTypes>();
 
@@ -196,7 +196,7 @@ describe("World", () => {
       expect(comp.id).to.equal('a');
     });
 
-    context('getComponent', () => {
+    describe('getComponent', () => {
       it('getComponent no default value', () => {
         const world = new World<CompTypes>();
   
@@ -219,7 +219,7 @@ describe("World", () => {
     })
 
 
-    context("set", () => {
+    describe("set", () => {
       it("sets component in the correct entityId, and updates entitiesByCType", () => {
         const testWorld = new World<CompTypes>();
 

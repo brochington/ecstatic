@@ -24,7 +24,7 @@ describe("Component Collection (internal)", () => {
 
     expect(cc).to.be.instanceof(ComponentCollection);
   });
-  context("Instance Methods", () => {
+  describe("Instance Methods", () => {
     describe('add', () => {
       it("Class Instance", () => {
         const cc = new ComponentCollection<CompTypes>();

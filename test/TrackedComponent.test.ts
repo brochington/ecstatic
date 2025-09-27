@@ -58,70 +58,72 @@ describe('TrackedComponent', () => {
       expect(onAddFake.callCount).to.equal(2);
     });
 
-    it('add onUpdate event handler to a component', (done) => {
+    it('add onUpdate event handler to a component', async () => {
       class Component1 {
         test = 1;
       }
 
       let entityID = null;
 
-      const TrackedComp1 = trackComponent(Component1, {
-        onUpdate: (args) => {
-          const { component, world, previousVal, property, entities } = args;
+      await new Promise<void>((resolve) => {
+        const TrackedComp1 = trackComponent(Component1, {
+          onUpdate: (args) => {
+            const { component, world, previousVal, property, entities } = args;
 
-          expect(component).to.be.an.instanceof(Component1);
-          expect(world).to.be.an.instanceof(World);
-          expect(previousVal).to.equal(1);
-          expect(component.test).to.equal(2);
-          expect(property).to.equal('test');
-          expect(entities.size).to.equal(1);
-          expect(entities.get(entityID)).to.be.an.instanceof(Entity);
+            expect(component).to.be.an.instanceof(Component1);
+            expect(world).to.be.an.instanceof(World);
+            expect(previousVal).to.equal(1);
+            expect(component.test).to.equal(2);
+            expect(property).to.equal('test');
+            expect(entities.size).to.equal(1);
+            expect(entities.get(entityID)).to.be.an.instanceof(Entity);
 
-          done();
-        },
+            resolve();
+          },
+        });
+
+        const world = new World<Component1>();
+        const comp = new TrackedComp1();
+        const entity = world.createEntity().add(comp);
+        entityID = entity.id;
+
+        comp.test = 2;
       });
-
-      const world = new World<Component1>();
-
-      const comp = new TrackedComp1();
-
-      const entity = world.createEntity().add(comp);
-      entityID = entity.id;
-
-      comp.test = 2;
     });
 
-    it('add onRemove event handler to component', (done) => {
+    it('add onRemove event handler to component', async () => {
       class Component1 {
         test = 1;
       }
 
       let entityID = null;
-      const TrackedComp1 = trackComponent(Component1, {
-        onRemove: (args) => {
-          const { component, world, entity, entities } = args;
-  
-          expect(component).to.be.an.instanceof(Component1);
-          expect(component.test).to.equal(1);
-          
-          expect(world).to.be.an.instanceof(World);
-          
-          expect(entity).to.be.instanceof(Entity);
-          expect(entityID).to.not.equal(null);
-          expect(entityID).to.equal(entity.id);
-          expect(entities.size).to.equal(0);
-  
-          done();
-        },
-      });
   
       const world = new World<Component1>();
-      
-      const entity = world.createEntity().add(new TrackedComp1());
-
+      const entity = world.createEntity();
       entityID = entity.id;
-  
-      entity.remove(TrackedComp1);
+
+      await new Promise<void>((resolve) => {
+        const TrackedComp1 = trackComponent(Component1, {
+          onRemove: (args) => {
+            const { component, world, entity, entities } = args;
+
+            expect(component).to.be.an.instanceof(Component1);
+            expect(component.test).to.equal(1);
+
+            expect(world).to.be.an.instanceof(World);
+
+            expect(entity).to.be.an.instanceof(Entity);
+            expect(entityID).to.not.equal(null);
+            expect(entityID).to.equal(entity.id);
+            expect(entities.size).to.equal(0);
+
+            resolve();
+          },
+        });
+
+        entity.add(new TrackedComp1());
+        entity.remove(TrackedComp1);
+      });
     });
   });
 });
