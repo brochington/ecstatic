@@ -28,11 +28,9 @@ world.addSystem([MyComponent], mySystem);
 world.systems.run(); // calls all systems.
 ```
 
-
 ### Added `trackComponent()` function which allows Components to be decorated with a few lifecycle methods (onAdd, onUpdate, onRemove)
 
 ```typescript
-
 import { trackComponent } from '@brochington/ecstatic';
 
 class MyComponent {
@@ -50,7 +48,7 @@ const TrackedMyComponent = trackComponent(MyComponent, {
 
   onRemove({ world, component, entity, entities }) {
     // Triggers when component is removed from an entity.
-  }
+  },
 });
 
 const trackedComp = new TrackedMyComponent();
@@ -68,7 +66,6 @@ entity.remove(MyComponent);
 // trackedComp.onRemove() is called.
 ```
 
-
 ### Lifecycle methods may now be added to an entity by extending the Entity class.
 
 ```typescript
@@ -84,34 +81,32 @@ class EntityWithLifecycle extends Entity<CompTypes> {
 const firstLCComp = new EntityWithLifecycle(world);
 ```
 
-
 ### deferred completion of entity creation and destruction until after the next pass of the systems.
 
-  - entities now have a state that can be check via `entity.state`.
-    - possible states:
-        - `creating`
-        - `created`
-        - `destroying`
-        - `destroyed`
-        - `error`
-    - `creating` and `destroying` are particularly useful in systems:
+- entities now have a state that can be check via `entity.state`.
+  - possible states:
+    - `creating`
+    - `created`
+    - `destroying`
+    - `destroyed`
+    - `error`
+  - `creating` and `destroying` are particularly useful in systems:
 
-    ```typescript
-    function mySystem({ entity }) {
-      if (entity.state === 'creating') {
-        // do initialization logic here.
-      }
-
-      if (entity.state === 'destroying') {
-        // do any cleanup that is needed. Remove event handlers, unmount elements, etc.
-      }
+  ```typescript
+  function mySystem({ entity }) {
+    if (entity.state === 'creating') {
+      // do initialization logic here.
     }
-    ```
 
-  - If needed, entities can be destroyed by calling `entity.destroyImmediately()`. `entity.state` will immediately be set to `destroyed`.
+    if (entity.state === 'destroying') {
+      // do any cleanup that is needed. Remove event handlers, unmount elements, etc.
+    }
+  }
+  ```
 
-  - this will be bypassed if no systems are added.
+- If needed, entities can be destroyed by calling `entity.destroyImmediately()`. `entity.state` will immediately be set to `destroyed`.
 
+- this will be bypassed if no systems are added.
 
 ### `createEntity(world)` is removed. Use `world.createEntity` or `new Entity(world)` to create an entity.
 
@@ -125,8 +120,7 @@ const entity = world.createEntity();
 const entity = new Entity(world);
 ```
 
-
-### Typescript: Component type unions that are passed into World are no longer  "typeof Component" unions, and just "Union".
+### Typescript: Component type unions that are passed into World are no longer "typeof Component" unions, and just "Union".
 
 ```typescript
 /* old busted */

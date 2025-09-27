@@ -13,15 +13,6 @@
     "baseUrl": ".",
     "paths": {}
   },
-  "include": [
-    "src",
-    "test",
-    "ecstatic.d.ts",
-    "*.config.js"
-  ],
-  "exclude": [
-    "dist",
-    "docs",
-    "node_modules"
-  ]
+  "include": ["src", "test", "ecstatic.d.ts", "*.config.js"],
+  "exclude": ["dist", "docs", "node_modules"]
 }

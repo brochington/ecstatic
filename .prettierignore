@@ -1,0 +1,17 @@
+# Build outputs
+dist/
+docs/
+
+# Dependencies
+node_modules/
+
+# Config files that should maintain their formatting
+*.config.js
+*.config.mjs
+
+# Generated files
+ecstatic.d.ts
+
+# Package files
+package-lock.json
+

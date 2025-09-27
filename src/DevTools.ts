@@ -6,7 +6,6 @@ interface DevSystemComps {
   components: string;
 }
 
-
 class DevTools<CT> {
   world: World<CT>;
 
@@ -24,8 +23,9 @@ class DevTools<CT> {
   get systemComponents(): DevSystemComps[] {
     const compsBySystems = [];
 
-    for (const [system, compNames] of this.world.systems.compNamesBySystemName) {
-      compsBySystems.push({ system, components: compNames.join(", ") });
+    for (const [system, compNames] of this.world.systems
+      .compNamesBySystemName) {
+      compsBySystems.push({ system, components: compNames.join(', ') });
     }
 
     return compsBySystems;
@@ -44,7 +44,7 @@ class DevTools<CT> {
    */
 
   get entities(): DevEntity<CT>[] {
-    return [...this.world.entities.values()].map((e) => e.toDevEntity());
+    return [...this.world.entities.values()].map(e => e.toDevEntity());
   }
 }
 

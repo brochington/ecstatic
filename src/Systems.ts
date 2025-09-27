@@ -1,6 +1,6 @@
-import Entity, { EntityId } from "./Entity";
-import World, { ClassConstructor } from "./World";
-import ComponentCollection from "./ComponentCollection";
+import Entity, { EntityId } from './Entity';
+import World, { ClassConstructor } from './World';
+import ComponentCollection from './ComponentCollection';
 
 /**
  * Arguments that are passed into a System function on each iteration.
@@ -59,10 +59,10 @@ export default class Systems<CT> {
     systemFunc: SystemFunc<CT>,
     funcName?: string
   ): this {
-    const cNames = cTypes.map((ct) => ct.name);
+    const cNames = cTypes.map(ct => ct.name);
 
     let name = systemFunc.name;
-    if (systemFunc.name === "") {
+    if (systemFunc.name === '') {
       // Super brute force, and might lead to errors in the future, but for now
       // using the stringified system function if the function doesn't already have a name.
       // This is useful for anonymous functions used as a system function.
@@ -83,16 +83,16 @@ export default class Systems<CT> {
 
   run(): void {
     const size = this.world.entitiesByCTypes.size;
-    
+
     const entitiesInCreatingState = [];
     const entitiesInDestroyingState = [];
 
     for (const entity of this.world.entities.values()) {
-      if (entity.state === "creating") {
+      if (entity.state === 'creating') {
         entitiesInCreatingState.push(entity);
       }
 
-      if (entity.state === "destroying") {
+      if (entity.state === 'destroying') {
         entitiesInDestroyingState.push(entity);
       }
     }
@@ -122,7 +122,6 @@ export default class Systems<CT> {
 
         index += 1;
       }
-
     }
 
     for (const entity of entitiesInCreatingState) {

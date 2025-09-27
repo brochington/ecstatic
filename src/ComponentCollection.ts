@@ -1,7 +1,8 @@
-import { isComponentInstance } from "./guards";
+import { isComponentInstance } from './guards';
 
 type CompName = string;
-type ClassConstructor<T> = { new (...args: any[]): T };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+type ClassConstructor<T> = { new (...args: unknown[]): T };
 
 // CT is a Union, like `type = FirstComponent | SecondComponent`.
 export default class ComponentCollection<CT> {
@@ -9,9 +10,11 @@ export default class ComponentCollection<CT> {
 
   // instance of a component
   add = (component: CT): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
     this.components.set((<any>component).constructor.name, component);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   update = <T extends CT>(cl: ClassConstructor<T>, func: (c: T) => T): void => {
     const c = this.components.get(cl.name);
 
@@ -55,7 +58,7 @@ export default class ComponentCollection<CT> {
    */
   has = (cType: ClassConstructor<CT> | ClassConstructor<CT>[]): boolean => {
     return Array.isArray(cType)
-      ? cType.every((ct) => this.components.has(ct.name) === true)
+      ? cType.every(ct => this.components.has(ct.name) === true)
       : this.components.has(cType.name);
   };
 
@@ -67,7 +70,7 @@ export default class ComponentCollection<CT> {
    */
   hasByName = (cName: string | string[]): boolean => {
     return Array.isArray(cName)
-      ? cName.every((ct) => this.components.has(ct) === true)
+      ? cName.every(ct => this.components.has(ct) === true)
       : this.components.has(cName);
   };
 

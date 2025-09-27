@@ -1,14 +1,14 @@
- 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
-import World from "../src/World";
-import Entity, { EntityCompEventArgs } from "../src/Entity";
+import World from '../src/World';
+import Entity, { EntityCompEventArgs } from '../src/Entity';
 import DevEntity from '../src/DevEntity';
 import { trackComponent } from '../src/TrackedComponent';
+import ComponentCollection from '../src/ComponentCollection';
 
 class FirstComponent {
   id: string;
@@ -20,9 +20,7 @@ class FirstComponent {
 
 class SecondComponent {}
 
-type CompTypes =
-  | FirstComponent
-  | SecondComponent
+type CompTypes = FirstComponent | SecondComponent;
 
 describe('Entity', () => {
   it('exists', () => {
@@ -47,7 +45,10 @@ describe('Entity', () => {
 
       testEntity.add(new FirstComponent(testCompId));
 
-      const cc = testWorld.componentCollections.get(testEntity.id);
+      const cc = testWorld.componentCollections.get(
+        testEntity.id
+      ) as ComponentCollection<CompTypes>;
+      expect(cc).to.be.instanceof(ComponentCollection);
       expect(cc.size).to.equal(1);
       expect(cc.has(FirstComponent)).to.equal(true);
     });
@@ -65,13 +66,15 @@ describe('Entity', () => {
       expect(testEntity.has(SecondComponent)).to.equal(true);
       expect(testWorld.entitiesByCTypes.size).to.equal(1);
 
-
       // Testing to make sure World.entitiesByCType is dealt with correctly.
       let entitySet1 = new Set();
 
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
         //@ts-ignore
-        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+        if (
+          ctArr.includes(FirstComponent.name) &&
+          ctArr.includes(SecondComponent.name)
+        ) {
           entitySet1 = entitySet;
         }
       }
@@ -88,7 +91,10 @@ describe('Entity', () => {
       let entitySet3 = new Set();
       for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
         // @ts-ignore
-        if (ctArr.includes(FirstComponent.name) && ctArr.includes(SecondComponent.name)) {
+        if (
+          ctArr.includes(FirstComponent.name) &&
+          ctArr.includes(SecondComponent.name)
+        ) {
           entitySet2 = entitySet;
           return;
         }
@@ -173,19 +179,22 @@ describe('Entity', () => {
 
       expect(testWorld.getTagged(testTag1)).to.equal(null);
       expect(testWorld.getAllTagged(testTag1).length).to.equal(0);
-    })
+    });
   });
 
   describe('dev', () => {
     it('toDevEntity', () => {
       const testWorld = new World<CompTypes>();
 
-      function firstSystem() { /* */ }
+      function firstSystem() {
+        /* */
+      }
       testWorld.addSystem([FirstComponent], firstSystem);
 
       const firstComp = new FirstComponent('id1');
       const testTag = 'testTag1';
-      const testEntity = testWorld.createEntity()
+      const testEntity = testWorld
+        .createEntity()
         .add(firstComp)
         .addTag(testTag);
 
@@ -215,13 +224,13 @@ describe('Entity', () => {
       const onCreateFake = sinon.fake();
 
       class FirstLCComp extends Entity<CompTypes> {
-        onCreate(world): void {
+        onCreate(world: World<CompTypes>): void {
           expect(world).to.be.instanceof(World);
           onCreateFake();
         }
       }
 
-      const firstLCComp = new FirstLCComp(world);
+      const _firstLCComp = new FirstLCComp(world); // eslint-disable-line
 
       expect(onCreateFake.callCount).to.equal(1);
     });
@@ -232,7 +241,10 @@ describe('Entity', () => {
       const onCompAddFake = sinon.fake();
 
       class LCEntity extends Entity<CompTypes> {
-        onComponentAdd({ world: _world, component }: EntityCompEventArgs<CompTypes>): void {
+        onComponentAdd({
+          world: _world,
+          component,
+        }: EntityCompEventArgs<CompTypes>): void {
           expect(_world).to.be.instanceof(World);
           expect(component).to.be.instanceof(FirstComponent);
           onCompAddFake();
@@ -251,9 +263,12 @@ describe('Entity', () => {
 
       const TrackedComp = trackComponent(FirstComponent, {});
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         class LCEntity extends Entity<CompTypes> {
-          onTrackedComponentUpdate({ world: _world, component }) {
+          onTrackedComponentUpdate({
+            world: _world,
+            component,
+          }: EntityCompEventArgs<CompTypes>): void {
             expect(_world).to.be.instanceof(World);
             expect(component).to.be.instanceof(FirstComponent);
             expect(component).to.be.instanceof(TrackedComp);
@@ -269,7 +284,7 @@ describe('Entity', () => {
 
         comp.id = '2';
       });
-    })
+    });
 
     it('onComponentRemove', () => {
       const world = new World<CompTypes>();
@@ -277,7 +292,10 @@ describe('Entity', () => {
       const onCompAddFake = sinon.fake();
 
       class LCEntity extends Entity<CompTypes> {
-        onComponentRemove({ world: _world, component }: EntityCompEventArgs<CompTypes>): void {
+        onComponentRemove({
+          world: _world,
+          component,
+        }: EntityCompEventArgs<CompTypes>): void {
           expect(_world).to.be.instanceof(World);
           expect(component).to.be.instanceof(FirstComponent);
           onCompAddFake();
@@ -299,7 +317,7 @@ describe('Entity', () => {
       const onDestoryFake = sinon.fake();
 
       class FirstLCComp extends Entity<CompTypes> {
-        onDestroy(world): void {
+        onDestroy(world: World<CompTypes>): void {
           expect(world).to.be.instanceof(World);
           onDestoryFake();
         }
@@ -327,13 +345,16 @@ describe('Entity', () => {
 
       const systemFake = sinon.fake();
 
-      world.addSystem([FirstComponent], (args) => {
-        const { entity: _entity } = args;
+      world.addSystem(
+        [FirstComponent],
+        args => {
+          const { entity: _entity } = args;
 
-        systemFake();
-        expect(_entity.state).to.equal('creating');
-      }, 'testSystem');
-
+          systemFake();
+          expect(_entity.state).to.equal('creating');
+        },
+        'testSystem'
+      );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
 
@@ -349,13 +370,13 @@ describe('Entity', () => {
   describe('Destruction', () => {
     it('Entity is destroyed immediately if no systems are added to the world.', () => {
       const world = new World<CompTypes>();
-  
+
       const entity = world.createEntity();
-  
+
       expect(entity.state).to.equal('created');
-  
+
       entity.destroy();
-  
+
       expect(entity.state).to.equal('destroyed');
     });
 
@@ -364,19 +385,23 @@ describe('Entity', () => {
 
       const systemFake = sinon.fake();
 
-      world.addSystem([FirstComponent], (args) => {
-        const { entity: _entity } = args;
+      world.addSystem(
+        [FirstComponent],
+        args => {
+          const { entity: _entity } = args;
 
-        systemFake();
+          systemFake();
 
-        expect(_entity.state).to.equal('destroying');
-      }, 'testSystem');
+          expect(_entity.state).to.equal('destroying');
+        },
+        'testSystem'
+      );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
 
-      entity.destroy()
+      entity.destroy();
 
-      expect(entity.state).to.equal('destroying')
+      expect(entity.state).to.equal('destroying');
 
       world.systems.run();
 
@@ -389,15 +414,19 @@ describe('Entity', () => {
 
       const systemFake = sinon.fake();
 
-      world.addSystem([FirstComponent], () => {
-        systemFake();
-      }, 'testSystem');
+      world.addSystem(
+        [FirstComponent],
+        () => {
+          systemFake();
+        },
+        'testSystem'
+      );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
 
-      entity.destroyImmediately()
+      entity.destroyImmediately();
 
-      expect(entity.state).to.equal('destroyed')
+      expect(entity.state).to.equal('destroyed');
 
       world.systems.run();
 

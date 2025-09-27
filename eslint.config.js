@@ -3,9 +3,12 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
 import nodePlugin from 'eslint-plugin-node';
+import prettierConfig from 'eslint-config-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 
 export default [
   js.configs.recommended,
+  prettierConfig,
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -25,6 +28,7 @@ export default [
       '@typescript-eslint': tseslint,
       import: importPlugin,
       node: nodePlugin,
+      prettier: prettierPlugin,
     },
     rules: {
       // TypeScript rules
@@ -56,6 +60,9 @@ export default [
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+
+      // Prettier integration
+      'prettier/prettier': 'error',
     },
   },
   {
@@ -64,6 +71,7 @@ export default [
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'prettier/prettier': 'off',
     },
   },
   {

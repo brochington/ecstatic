@@ -1,8 +1,8 @@
-import Entity, { EntityId } from "./Entity";
-import ComponentCollection from "./ComponentCollection";
-import { Tag } from "./Tag";
-import { SystemFunc } from "./Systems";
-import DevTools from "./DevTools";
+import Entity, { EntityId } from './Entity';
+import ComponentCollection from './ComponentCollection';
+import { Tag } from './Tag';
+import { SystemFunc } from './Systems';
+import DevTools from './DevTools';
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 
@@ -57,7 +57,9 @@ export default class World<CT> {
   /**
    * "locates" a single entity based on its Components.
    */
-  locate = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT> | null => {
+  locate = (
+    cl: ClassConstructor<CT> | ClassConstructor<CT>[]
+  ): Entity<CT> | null => {
     for (const entity of this.entities.values()) {
       if (entity.components.has(cl)) {
         return entity;
@@ -70,7 +72,9 @@ export default class World<CT> {
   /**
    * Locates all entities that contain the components named
    */
-  locateAll = (cl: ClassConstructor<CT> | ClassConstructor<CT>[]): Entity<CT>[] => {
+  locateAll = (
+    cl: ClassConstructor<CT> | ClassConstructor<CT>[]
+  ): Entity<CT>[] => {
     const results: Entity<CT>[] = [];
 
     for (const entity of this.entities.values()) {
@@ -151,7 +155,7 @@ export default class World<CT> {
   ): { entity: Entity<CT>; component: T }[] => {
     const entities = this.locateAll(cl);
 
-    return entities.map((entity) => {
+    return entities.map(entity => {
       return {
         entity,
         component: entity.components.get<T>(cl),
@@ -286,7 +290,9 @@ export default class World<CT> {
       const entity = this.entities.get(eid);
 
       if (!entity) {
-        throw new Error(`world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`);
+        throw new Error(
+          `world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`
+        );
       }
 
       // @ts-ignore
@@ -323,12 +329,15 @@ export default class World<CT> {
   /**
    * Method for adding systems.
    */
-  addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this {
+  addSystem(
+    cTypes: ClassConstructor<CT>[],
+    systemFunc: SystemFunc<CT>,
+    funcName?: string
+  ): this {
     this.systems.add(cTypes, systemFunc, funcName);
 
     return this;
   }
-
 
   /**
    * Setup an entity to exist in the given world. This is mostly an internal method, but exposed just in case.
@@ -380,7 +389,9 @@ export default class World<CT> {
     const entity = this.entities.get(entityId);
 
     if (!entity) {
-      throw new Error(`world.destroyEntity: No entity found. entity id: ${entityId}`);
+      throw new Error(
+        `world.destroyEntity: No entity found. entity id: ${entityId}`
+      );
     }
 
     this.entities.delete(entityId);

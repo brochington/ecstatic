@@ -1,7 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import aliases from './aliases.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +12,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      ...aliases,
       // Convert aliases to work with vitest
       '@': path.resolve(__dirname, 'src'),
     },

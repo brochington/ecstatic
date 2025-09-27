@@ -1,6 +1,6 @@
-import { expect } from "chai";
+import { expect } from 'chai';
 import sinon from 'sinon';
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
 
 import { trackComponent } from '../src/TrackedComponent';
 import World from '../src/World';
@@ -27,16 +27,18 @@ describe('TrackedComponent', () => {
       const onAddFake = sinon.fake();
 
       const TrackedComp1 = trackComponent(Component1, {
-        onAdd: (args) => {
+        onAdd: args => {
           const { component, world, entity, entities } = args;
 
           expect(component).to.be.an.instanceof(Component1);
           expect(world).to.be.an.instanceof(World);
           expect(entity).to.be.an.instanceof(Entity);
           expect(entities.size).to.equal(eidCount);
-          expect(entities.get(entityID as EntityId)).to.be.an.instanceof(Entity);
+          expect(entities.get(entityID as EntityId)).to.be.an.instanceof(
+            Entity
+          );
 
-          onAddFake()
+          onAddFake();
         },
       });
 
@@ -67,9 +69,9 @@ describe('TrackedComponent', () => {
 
       let entityID: EntityId | null = null;
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const TrackedComp1 = trackComponent(Component1, {
-          onUpdate: (args) => {
+          onUpdate: args => {
             const { component, world, previousVal, property, entities } = args;
 
             expect(component).to.be.an.instanceof(Component1);
@@ -78,7 +80,9 @@ describe('TrackedComponent', () => {
             expect(component.test).to.equal(2);
             expect(property).to.equal('test');
             expect(entities.size).to.equal(1);
-            expect(entities.get(entityID as EntityId)).to.be.an.instanceof(Entity);
+            expect(entities.get(entityID as EntityId)).to.be.an.instanceof(
+              Entity
+            );
 
             resolve();
           },
@@ -99,14 +103,14 @@ describe('TrackedComponent', () => {
       }
 
       let entityID = null;
-  
+
       const world = new World<Component1>();
       const entity = world.createEntity();
       entityID = entity.id;
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const TrackedComp1 = trackComponent(Component1, {
-          onRemove: (args) => {
+          onRemove: args => {
             const { component, world, entity, entities } = args;
 
             expect(component).to.be.an.instanceof(Component1);
@@ -129,4 +133,3 @@ describe('TrackedComponent', () => {
     });
   });
 });
-
