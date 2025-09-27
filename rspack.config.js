@@ -1,20 +1,7 @@
 const path = require('path');
-const webpack = require('webpack');
+const { rspack } = require('@rspack/core');
 const aliases = require('./aliases');
 
-const babelLoaderConfig = {
-  loader: 'babel-loader',
-  options: {
-    plugins: [
-      '@babel/plugin-syntax-dynamic-import',
-      '@babel/plugin-proposal-class-properties',
-      '@babel/plugin-proposal-object-rest-spread',
-    ],
-    presets: [
-      '@babel/typescript',
-    ],
-  },
-}
 
 module.exports = {
   entry: [
@@ -40,14 +27,19 @@ module.exports = {
     rules: [{
       test: /\.ts(x?)$/,
       include: path.join(process.cwd(), 'src'),
-      use: [babelLoaderConfig],
-    }, {
-      test: /\.m?js$/,
-      include: path.join(process.cwd(), 'src'),
-      use: [babelLoaderConfig],
+      use: [{
+        loader: 'builtin:swc-loader',
+        options: {
+          jsc: {
+            parser: {
+              syntax: 'typescript',
+            },
+          },
+        },
+      }],
     }],
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin(),
+    new rspack.HotModuleReplacementPlugin(),
   ],
 };
