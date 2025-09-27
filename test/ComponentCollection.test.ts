@@ -201,7 +201,9 @@ describe('Component Collection (internal)', () => {
       expect(ids).to.deep.equal(['first', 'second']);
 
       // Test filter
-      const firstComponents = Array.from(cc).filter(comp => comp instanceof FirstComponent);
+      const firstComponents = Array.from(cc).filter(
+        comp => comp instanceof FirstComponent
+      );
       expect(firstComponents).to.have.length(1);
       expect(firstComponents[0]).to.equal(firstComp);
     });
