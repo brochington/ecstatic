@@ -199,10 +199,12 @@ export default class World<CT> {
     if (tagEntityIds) {
       const entityId = tagEntityIds.values().next().value;
 
-      const entity = this.entities.get(entityId);
+      if (entityId) {
+        const entity = this.entities.get(entityId);
 
-      if (entity) {
-        return entity;
+        if (entity) {
+          return entity;
+        }
       }
     }
 

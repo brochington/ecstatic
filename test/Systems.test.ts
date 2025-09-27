@@ -1,5 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
+import { describe, it } from "vitest";
+
 import { SystemFuncArgs } from "../src/Systems";
 import Entity from "../src/Entity";
 import World from "../src/World";

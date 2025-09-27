@@ -1,4 +1,6 @@
 import { expect } from "chai";
+import { describe, it } from "vitest";
+
 import ComponentCollection from "../src/ComponentCollection";
 
 class FirstComponent {

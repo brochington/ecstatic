@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+ 
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { describe, it } from "vitest";
 import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 

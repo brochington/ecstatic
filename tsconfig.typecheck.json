@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src",
+    "ecstatic.d.ts",
+    "*.config.js"
+  ],
+  "exclude": [
+    "dist",
+    "docs",
+    "node_modules",
+    "test"
+  ]
+}

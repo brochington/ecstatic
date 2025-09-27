@@ -1,6 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+ 
 import { expect } from "chai";
 import noop from "lodash/noop";
+import { describe, it } from "vitest";
+
 import World from "../src/World";
 import Entity from "../src/Entity";
 import ComponentCollection from "../src/ComponentCollection";
@@ -53,7 +55,7 @@ describe("World", () => {
 
         entity.add(new FirstComponent("test-comp-1"));
 
-        const cc = testWorld.componentCollections.get(entity.id);
+        const cc = testWorld.componentCollections.get(entity.id) as ComponentCollection<CompTypes>;
 
         expect(cc.size).to.equal(1);
 
@@ -79,7 +81,7 @@ describe("World", () => {
         });
 
         expect(foundEntity).to.be.instanceof(Entity);
-        expect(foundEntity.id).to.equal(entity1.id);
+        expect(foundEntity?.id).to.equal(entity1.id);
       });
     });
 
@@ -205,7 +207,7 @@ describe("World", () => {
         const comp1 = world.getComponent(FirstComponent);
         const comp2 = world.getComponent(SecondComponent);
   
-        expect(comp1.id).to.equal('a');
+        expect(comp1?.id).to.equal('a');
         expect(comp2).to.equal(null);
       });
 
@@ -214,7 +216,7 @@ describe("World", () => {
   
         const comp1 = world.getComponent(FirstComponent, new FirstComponent('b'));
   
-        expect(comp1.id).to.equal('b');
+        expect(comp1?.id).to.equal('b');
       })
     })
 
@@ -229,7 +231,7 @@ describe("World", () => {
 
         testWorld.add(entity.id, component);
 
-        const cc = testWorld.componentCollections.get(entity.id);
+        const cc = testWorld.componentCollections.get(entity.id) as ComponentCollection<CompTypes>;
 
         expect(cc).to.be.instanceof(ComponentCollection);
         expect(cc.has(FirstComponent)).to.equal(true);

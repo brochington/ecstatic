@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
+
 import World, { ClassConstructor } from "./World";
 import ComponentCollection from "./ComponentCollection";
 import { Tag } from "./Tag";
 import DevEntity from "./DevEntity";
-
 import SimpleFSM from "./SimpleFSM";
 
 export type EntityId = string;

@@ -1,7 +1,8 @@
+import { EntityState } from "ecstatic";
+
 import World from "./World";
 import Entity from "./Entity";
 import { Tag } from "./Tag";
-import { EntityState } from "ecstatic";
 
 interface DevEntityTableRow {
   id: string;

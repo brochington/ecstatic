@@ -15,9 +15,13 @@
   },
   "include": [
     "src",
-    "ecstatic.d.ts"
+    "test",
+    "ecstatic.d.ts",
+    "*.config.js"
   ],
   "exclude": [
-    "src/test"
+    "dist",
+    "docs",
+    "node_modules"
   ]
 }

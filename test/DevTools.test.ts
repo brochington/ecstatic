@@ -1,4 +1,6 @@
 import { expect } from "chai";
+import { describe, it } from "vitest";
+
 import DevTools from "../src/DevTools";
 import World from "../src/World";
 import DevEntity from "../src/DevEntity";

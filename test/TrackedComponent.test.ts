@@ -1,8 +1,10 @@
 import { expect } from "chai";
 import sinon from 'sinon';
+import { describe, it } from "vitest";
+
 import { trackComponent } from '../src/TrackedComponent';
 import World from '../src/World';
-import Entity from '../src/Entity';
+import Entity, { EntityId } from '../src/Entity';
 
 describe('TrackedComponent', () => {
   it('returns a wrapped component class constructor', () => {
@@ -19,7 +21,7 @@ describe('TrackedComponent', () => {
     it('add onAdd event handler to a component', () => {
       class Component1 {}
 
-      let entityID = null;
+      let entityID: EntityId | null = null;
       let eidCount = 0;
 
       const onAddFake = sinon.fake();
@@ -32,7 +34,7 @@ describe('TrackedComponent', () => {
           expect(world).to.be.an.instanceof(World);
           expect(entity).to.be.an.instanceof(Entity);
           expect(entities.size).to.equal(eidCount);
-          expect(entities.get(entityID)).to.be.an.instanceof(Entity);
+          expect(entities.get(entityID as EntityId)).to.be.an.instanceof(Entity);
 
           onAddFake()
         },
@@ -63,7 +65,7 @@ describe('TrackedComponent', () => {
         test = 1;
       }
 
-      let entityID = null;
+      let entityID: EntityId | null = null;
 
       await new Promise<void>((resolve) => {
         const TrackedComp1 = trackComponent(Component1, {
@@ -76,7 +78,7 @@ describe('TrackedComponent', () => {
             expect(component.test).to.equal(2);
             expect(property).to.equal('test');
             expect(entities.size).to.equal(1);
-            expect(entities.get(entityID)).to.be.an.instanceof(Entity);
+            expect(entities.get(entityID as EntityId)).to.be.an.instanceof(Entity);
 
             resolve();
           },
