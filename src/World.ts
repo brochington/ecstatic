@@ -14,13 +14,15 @@ export default class World<CT> {
 
   entities: Map<EntityId, Entity<CT>> = new Map();
 
-  entitiesByCTypes: Map<string[], Set<EntityId>> = new Map();
+  entitiesByCTypes: Map<string, Set<EntityId>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
   systems: Systems<CT>;
 
   dev: DevTools<CT>;
+
+  private componentToSystemQueries: Map<string, string[]> = new Map();
 
   constructor() {
     this.dev = new DevTools(this);
@@ -258,7 +260,7 @@ export default class World<CT> {
     this.componentCollections.set(eid, cc);
 
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+      if (ctArr.split(',').every(cc.hasByName)) {
         entitySet.add(eid);
       }
     }
@@ -283,45 +285,61 @@ export default class World<CT> {
    * NOTE: This will change what systems will be called on the entity.
    */
   remove = (eid: EntityId, cType: ClassConstructor<CT>): this => {
-    const cc =
-      this.componentCollections.get(eid) || new ComponentCollection<CT>();
+    const cc = this.componentCollections.get(eid);
+    if (!cc) {
+      return this;
+    }
 
-    // need to get component instance...
+    const componentName = cType.name;
+    if (!cc.hasByName(componentName)) {
+      return this;
+    }
+
     const component = cc.get(cType);
 
+    // Handle TrackedComponent logic first
     // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
       const entity = this.entities.get(eid);
-
       if (!entity) {
         throw new Error(
-          `world.remove: Unable to locate entity. eid: ${eid}, cType: ${cType.name}`
+          `world.remove: Unable to locate entity for TrackedComponent. eid: ${eid}, cType: ${cType.name}`
         );
       }
-
       // @ts-ignore
       component[TrackedCompSymbolKeys.entityIDs].delete(eid);
-
       // @ts-ignore
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
-    // remove entity from current entitiesByCTypes
-    for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+    // --- START OPTIMIZED REMOVAL ---
+
+    // 1. Find all system queries that depended on the component being removed.
+    const affectedQueryKeys =
+      this.componentToSystemQueries.get(componentName) || [];
+
+    // 2. Remove the entity from each of those systems' entity sets.
+    for (const queryKey of affectedQueryKeys) {
+      const entitySet = this.entitiesByCTypes.get(queryKey);
+      if (entitySet) {
         entitySet.delete(eid);
       }
     }
 
+    // --- END OPTIMIZED REMOVAL ---
+
+    // 3. Physically remove the component from the entity's collection.
     cc.remove(cType);
 
-    // Move entityId to new CTypes if needed.
-    for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if ((ctArr as string[]).every(cc.hasByName)) {
+    // 4. Re-evaluate which systems the entity now belongs to.
+    //    This adds the entity back to any sets that still match.
+    for (const [canonicalKey, entitySet] of this.entitiesByCTypes.entries()) {
+      if (canonicalKey.split(',').every(name => cc.hasByName(name))) {
         entitySet.add(eid);
       }
     }
 
+    // 5. Trigger the entity's onComponentRemove lifecycle hook.
     const entity = this.entities.get(eid);
     if (entity) {
       entity.onComponentRemove({ world: this, component });
@@ -338,7 +356,23 @@ export default class World<CT> {
     systemFunc: SystemFunc<CT>,
     funcName?: string
   ): this {
-    this.systems.add(cTypes, systemFunc, funcName);
+    // --- START NEW LOGIC ---
+    const cNames = cTypes.map(ct => ct.name).sort(); // Sort for consistency
+    const canonicalKey = cNames.join(','); // Create a stable string key
+
+    // Populate the inverted index
+    for (const componentName of cNames) {
+      const existingQueries =
+        this.componentToSystemQueries.get(componentName) || [];
+      if (!existingQueries.includes(canonicalKey)) {
+        existingQueries.push(canonicalKey);
+      }
+      this.componentToSystemQueries.set(componentName, existingQueries);
+    }
+
+    // Pass the canonical key to the Systems manager
+    this.systems.add(cTypes, systemFunc, canonicalKey, funcName);
+    // --- END NEW LOGIC ---
 
     return this;
   }

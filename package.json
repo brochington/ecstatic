@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "type": "module",
   "description": "a damn fine ECS library",
   "main": "dist/bundle.js",
@@ -10,6 +10,10 @@
     "dev": "npm run clean && rspack --config rspack.config.mjs --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "bench": "vitest bench",
+    "bench:ui": "vitest bench --ui",
+    "bench:json": "vitest bench --outputJson benchmark-results.json",
+    "bench:compare": "vitest bench --compare benchmark-results.json",
     "type-check": "tsc --noEmit --project tsconfig.typecheck.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -10,6 +10,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: [],
   },
+  bench: {
+    reporters: ['verbose'],
+  },
   resolve: {
     alias: {
       // Convert aliases to work with vitest

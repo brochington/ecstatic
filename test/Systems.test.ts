@@ -36,9 +36,12 @@ describe('System', () => {
 
     world.addSystem([FirstComponent], firstSystem);
 
-    expect(world.systems.systemFuncBySystemName.get(firstSystem.name)).to.equal(
-      firstSystem
-    );
+    expect(
+      world.systems.systemFuncBySystemName.get(firstSystem.name)
+    ).to.deep.equal({
+      func: firstSystem,
+      key: 'FirstComponent',
+    });
   });
 
   it('Run System with Anonymous function', async () => {
