@@ -69,6 +69,7 @@
     "prettier": "3.6.2",
     "serve": "14.2.5",
     "sinon": "^21.0.0",
+    "sinon-chai": "^4.0.1",
     "typescript": "5.9.2",
     "vitest": "^3.2.4"
   }

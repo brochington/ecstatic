@@ -42,41 +42,52 @@ export interface SystemFuncArgs<CT> {
 // eslint-disable-next-line no-unused-vars
 export type SystemFunc<CT> = (sytemFuncArgs: SystemFuncArgs<CT>) => void;
 
+const DEFAULT_PHASE = '__DEFAULT__';
+
 export default class Systems<CT> {
   world: World<CT>;
-
-  systemFuncBySystemName: Map<string, { func: SystemFunc<CT>; key: string }>;
-
   compNamesBySystemName: Map<string, string[]>;
+
+  private phases: Map<
+    string,
+    { func: SystemFunc<CT>; name: string; key: string }[]
+  > = new Map();
+  private phaseOrder: string[] = [
+    'Input',
+    'Logic',
+    'Events',
+    'Render',
+    'Cleanup',
+  ];
 
   constructor(world: World<CT>) {
     this.world = world;
-    this.systemFuncBySystemName = new Map();
     this.compNamesBySystemName = new Map();
+    this.phases.set(DEFAULT_PHASE, []); // Initialize default phase for systems without a phase
+  }
+
+  setPhaseOrder(order: string[]): void {
+    this.phaseOrder = order;
   }
 
   add(
     cTypes: ClassConstructor<CT>[],
     systemFunc: SystemFunc<CT>,
-    canonicalKey: string, // Accept the pre-computed key
-    funcName?: string
+    canonicalKey: string,
+    options: { phase?: string; name?: string } = {}
   ): this {
     const cNames = cTypes.map(ct => ct.name);
+    const { phase = DEFAULT_PHASE, name: optionName } = options;
 
-    let name = funcName || systemFunc.name;
-    if (name === '' || !name) {
-      // Use a more robust way to get a unique name if needed,
-      // for now we'll use the canonical key if no name is available.
-      name = canonicalKey;
+    const name = optionName || systemFunc.name || canonicalKey;
+
+    if (!this.phases.has(phase)) {
+      this.phases.set(phase, []);
     }
 
-    this.systemFuncBySystemName.set(name, {
-      func: systemFunc,
-      key: canonicalKey,
-    });
+    this.phases.get(phase)?.push({ func: systemFunc, name, key: canonicalKey });
     this.compNamesBySystemName.set(name, cNames);
 
-    // Use the canonicalKey passed from the World
     if (!this.world.entitiesByCTypes.has(canonicalKey)) {
       this.world.entitiesByCTypes.set(canonicalKey, new Set<EntityId>());
     }
@@ -85,6 +96,19 @@ export default class Systems<CT> {
   }
 
   run(): void {
+    // Validation check: Ensure there's no ambiguity between phased and non-phased systems.
+    const defaultPhaseSystems = this.phases.get(DEFAULT_PHASE) || [];
+    const hasDefaultPhaseSystems = defaultPhaseSystems.length > 0;
+    const hasNamedPhaseSystems = Array.from(this.phases.keys()).some(
+      key => key !== DEFAULT_PHASE && (this.phases.get(key)?.length ?? 0) > 0
+    );
+
+    if (hasDefaultPhaseSystems && hasNamedPhaseSystems) {
+      throw new Error(
+        'Ambiguous system execution order: Some systems are registered with a phase, while others are not. Please assign a phase to all systems if you intend to use execution phases.'
+      );
+    }
+
     const entitiesToCreate: Entity<CT>[] = [];
     const entitiesToDestroy: Entity<CT>[] = [];
 
@@ -96,42 +120,56 @@ export default class Systems<CT> {
       }
     }
 
-    for (const {
-      func,
-      key: canonicalKey,
-    } of this.systemFuncBySystemName.values()) {
-      const entityIdSet =
-        this.world.entitiesByCTypes.get(canonicalKey) || new Set();
-      const size = entityIdSet.size;
+    const runOrder = hasNamedPhaseSystems ? this.phaseOrder : [DEFAULT_PHASE];
 
-      if (size === 0) {
-        continue;
+    // Add any custom phases defined by the user that are not in the default order to the end.
+    for (const phaseName of this.phases.keys()) {
+      if (phaseName !== DEFAULT_PHASE && !runOrder.includes(phaseName)) {
+        runOrder.push(phaseName);
+      }
+    }
+
+    for (const phase of runOrder) {
+      const systemsInPhase = this.phases.get(phase) || [];
+
+      for (const { func, key: canonicalKey } of systemsInPhase) {
+        const entityIdSet =
+          this.world.entitiesByCTypes.get(canonicalKey) || new Set();
+        const size = entityIdSet.size;
+
+        if (size === 0) {
+          continue;
+        }
+
+        let index = 0;
+        for (const eid of entityIdSet) {
+          const entity = this.world.entities.get(eid);
+
+          // Do not run systems on entities that have been destroyed.
+          if (!entity || entity.state === 'destroyed') continue;
+
+          const components =
+            this.world.componentCollections.get(eid) ||
+            new ComponentCollection<CT>();
+
+          const args: SystemFuncArgs<CT> = {
+            entity,
+            components,
+            world: this.world,
+            index,
+            size,
+            isFirst: index === 0,
+            isLast: index + 1 === size,
+          };
+
+          func(args);
+
+          index++;
+        }
       }
 
-      let index = 0;
-      for (const eid of entityIdSet) {
-        const entity = this.world.entities.get(eid);
-
-        if (!entity) continue;
-
-        const components =
-          this.world.componentCollections.get(eid) ||
-          new ComponentCollection<CT>();
-
-        const args: SystemFuncArgs<CT> = {
-          entity,
-          components,
-          world: this.world,
-          index,
-          size,
-          isFirst: index === 0,
-          isLast: index + 1 === size,
-        };
-
-        func(args);
-
-        index++;
-      }
+      // After systems, process events for the current phase.
+      this.world.events.processQueueForPhase(phase);
     }
 
     for (const entity of entitiesToCreate) {
@@ -142,13 +180,4 @@ export default class Systems<CT> {
       entity.destroyImmediately();
     }
   }
-
-  /*
-    TODO: Nice to have options here:
-      - systems.activeSystems = new Set(); // if not in set, system doesn't run.
-      - systems.deactivateSystem('systemName') // remove system from activeSystems
-      - systems.activateSystem('systemName) // adds system back to activeSystems
-      - systems.pause() // pauses running of systems. basically return immediately on run().
-      - systems.resume() // resume running of systems.
-  */
 }

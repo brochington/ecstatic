@@ -20,6 +20,12 @@ export interface EntityCompEventArgs<CT> {
   component: CT;
 }
 
+export interface ComponentLifecycleEventArgs<CT> {
+  world: World<CT>;
+  entity: Entity<CT>;
+  component: CT;
+}
+
 export default class Entity<CT> {
   private _id: string;
   private _world: World<CT>;

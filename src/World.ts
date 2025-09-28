@@ -5,9 +5,19 @@ import { SystemFunc } from './Systems';
 import DevTools from './DevTools';
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
+import { EventListenerFunc, EventManager } from './EventManager';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-unused-vars
 export type ClassConstructor<T> = { new (...args: any[]): T };
+
+/**
+ * Defines the structure for a prefab, used for creating entities from a template.
+ */
+export interface PrefabDefinition<CT> {
+  tags?: Tag[];
+
+  components: CT[];
+}
 
 export default class World<CT> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
@@ -22,11 +32,133 @@ export default class World<CT> {
 
   dev: DevTools<CT>;
 
+  events: EventManager<CT>;
+
   private componentToSystemQueries: Map<string, string[]> = new Map();
+  private resources: Map<ClassConstructor<unknown>, unknown> = new Map();
+  private prefabs: Map<string, PrefabDefinition<CT>> = new Map();
 
   constructor() {
     this.dev = new DevTools(this);
     this.systems = new Systems(this);
+    this.events = new EventManager(this);
+  }
+
+  /**
+   * Registers a system-like listener for a specific event type.
+   * @param EventType The class of the event to listen for.
+   * @param listenerFunc The function to execute when the event is emitted.
+   * @param options An object to specify options, like the execution phase.
+   */
+  addSystemListener<E>(
+    EventType: ClassConstructor<E>,
+    listenerFunc: EventListenerFunc<E, CT>,
+    options: { phase?: string } = {}
+  ): this {
+    const { phase = 'Events' } = options; // Default to 'Events' phase
+    this.events.addListener(EventType, listenerFunc, phase);
+    return this;
+  }
+
+  /**
+   * Stores a singleton resource in the world. Resources are global, unique data structures.
+   * @param resource The instance of the resource to store.
+   */
+  setResource<T>(resource: T): this {
+    // @ts-ignore
+    this.resources.set(resource.constructor as ClassConstructor<T>, resource);
+    return this;
+  }
+
+  /**
+   * Retrieves a singleton resource from the world.
+   * @param ResourceType The class of the resource to retrieve.
+   * @returns The resource instance, or undefined if not found.
+   */
+  getResource<T>(ResourceType: ClassConstructor<T>): T | undefined {
+    return this.resources.get(ResourceType) as T;
+  }
+
+  /**
+   * Checks if a resource exists in the world.
+   * @param ResourceType The class of the resource to check.
+   */
+  hasResource<T>(ResourceType: ClassConstructor<T>): boolean {
+    return this.resources.has(ResourceType);
+  }
+
+  /**
+   * Removes a resource from the world.
+   * @param ResourceType The class of the resource to remove.
+   */
+  removeResource<T>(ResourceType: ClassConstructor<T>): boolean {
+    return this.resources.delete(ResourceType);
+  }
+
+  /**
+   * Registers a prefab definition with the world, allowing for reusable entity templates.
+   * @param name A unique name for the prefab.
+   * @param definition The prefab definition, including components and optional tags.
+   */
+  registerPrefab(name: string, definition: PrefabDefinition<CT>): this {
+    this.prefabs.set(name, definition);
+    return this;
+  }
+
+  /**
+   * Creates a new entity from a registered prefab.
+   * @param name The name of the prefab to use.
+   * @param overrides An object to override properties of the prefab's components for this specific instance.
+   * @returns The newly created entity.
+   */
+  createEntityFromPrefab(
+    name: string,
+    overrides: { [componentName: string]: Partial<CT> } = {}
+  ): Entity<CT> {
+    const prefab = this.prefabs.get(name);
+    if (!prefab) {
+      throw new Error(`Prefab with name "${name}" not found.`);
+    }
+
+    const entity = this.createEntity();
+
+    // Add tags if they exist
+    if (prefab.tags) {
+      for (const tag of prefab.tags) {
+        entity.addTag(tag);
+      }
+    }
+
+    // Add and override components
+    for (const prefabComponent of prefab.components) {
+      // Deep clone the component to prevent shared state between entities
+      const componentInstance = JSON.parse(JSON.stringify(prefabComponent));
+      // Restore the constructor to maintain proper typing
+      Object.setPrototypeOf(
+        componentInstance,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prefabComponent as any).constructor.prototype
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const componentName = (prefabComponent as any).constructor.name;
+
+      if (overrides[componentName]) {
+        Object.assign(componentInstance, overrides[componentName]);
+      }
+
+      entity.add(componentInstance);
+    }
+
+    return entity;
+  }
+
+  /**
+   * Sets the execution order for system phases.
+   * @param order An array of phase names in the desired order of execution.
+   */
+  setPhaseOrder(order: string[]): this {
+    this.systems.setPhaseOrder(order);
+    return this;
   }
 
   /**
@@ -260,7 +392,7 @@ export default class World<CT> {
     this.componentCollections.set(eid, cc);
 
     for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if (ctArr.split(',').every(cc.hasByName)) {
+      if (ctArr.split(',').every(name => cc.hasByName(name))) {
         entitySet.add(eid);
       }
     }
@@ -273,6 +405,12 @@ export default class World<CT> {
       component[TrackedCompSymbolKeys.entityIDs].add(eid);
       // @ts-ignore
       component[TrackedCompSymbolKeys.onAdd](this, entity);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (component as any).onAdd === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (component as any).onAdd({ world: this, entity, component });
     }
 
     entity.onComponentAdd({ world: this, component });
@@ -296,16 +434,21 @@ export default class World<CT> {
     }
 
     const component = cc.get(cType);
+    const entity = this.entities.get(eid);
+    if (!entity) {
+      // This should ideally not happen if a component collection exists.
+      return this;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (component as any).onRemove === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (component as any).onRemove({ world: this, entity, component });
+    }
 
     // Handle TrackedComponent logic first
     // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
-      const entity = this.entities.get(eid);
-      if (!entity) {
-        throw new Error(
-          `world.remove: Unable to locate entity for TrackedComponent. eid: ${eid}, cType: ${cType.name}`
-        );
-      }
       // @ts-ignore
       component[TrackedCompSymbolKeys.entityIDs].delete(eid);
       // @ts-ignore
@@ -330,21 +473,18 @@ export default class World<CT> {
       }
     }
 
-    const entity = this.entities.get(eid);
-    if (entity) {
-      entity.onComponentRemove({ world: this, component });
-    }
+    entity.onComponentRemove({ world: this, component });
 
     return this;
   };
 
   /**
-   * Method for adding systems.
+   * Add a system to the world.
    */
   addSystem(
     cTypes: ClassConstructor<CT>[],
     systemFunc: SystemFunc<CT>,
-    funcName?: string
+    options: { phase?: string; name?: string } = {}
   ): this {
     const cNames = cTypes.map(ct => ct.name).sort(); // Sort for consistency
     const canonicalKey = cNames.join(','); // Create a stable string key
@@ -360,7 +500,7 @@ export default class World<CT> {
     }
 
     // Pass the canonical key to the Systems manager
-    this.systems.add(cTypes, systemFunc, canonicalKey, funcName);
+    this.systems.add(cTypes, systemFunc, canonicalKey, options);
 
     return this;
   }
@@ -407,10 +547,9 @@ export default class World<CT> {
   }
 
   /**
-   * Destroys an entity.
-   * Same as entity.destroy().
+   * Destroys an entity
    */
-  destroyEntity(entityId: EntityId): World<CT> {
+  destroyEntity(entityId: EntityId): this {
     this.componentCollections.delete(entityId);
     const entity = this.entities.get(entityId);
 

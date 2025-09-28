@@ -5,7 +5,10 @@ import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
 import World from '../src/World';
-import Entity, { EntityCompEventArgs } from '../src/Entity';
+import Entity, {
+  EntityCompEventArgs,
+  ComponentLifecycleEventArgs,
+} from '../src/Entity';
 import DevEntity from '../src/DevEntity';
 import { trackComponent } from '../src/TrackedComponent';
 import ComponentCollection from '../src/ComponentCollection';
@@ -331,6 +334,160 @@ describe('Entity', () => {
     });
   });
 
+  describe('Component Lifecycle Hooks', () => {
+    class LifecycleComponent {
+      id: string;
+      onAddCalled: boolean = false;
+      onRemoveCalled: boolean = false;
+      onAddArgs: any = null;
+      onRemoveArgs: any = null;
+
+      constructor(id: string) {
+        this.id = id;
+      }
+
+      onAdd(args: ComponentLifecycleEventArgs<LifecycleComponent>) {
+        this.onAddCalled = true;
+        this.onAddArgs = args;
+      }
+
+      onRemove(args: ComponentLifecycleEventArgs<LifecycleComponent>) {
+        this.onRemoveCalled = true;
+        this.onRemoveArgs = args;
+      }
+    }
+
+    class NoHooksComponent {
+      value: number;
+
+      constructor(value: number) {
+        this.value = value;
+      }
+    }
+
+    it('component onAdd hook is called when component is added to entity', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new LifecycleComponent('test-comp');
+
+      expect(component.onAddCalled).to.equal(false);
+
+      entity.add(component);
+
+      expect(component.onAddCalled).to.equal(true);
+      expect(component.onAddArgs.world).to.equal(world);
+      expect(component.onAddArgs.entity).to.equal(entity);
+      expect(component.onAddArgs.component).to.equal(component);
+    });
+
+    it('component onRemove hook is called when component is removed from entity', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new LifecycleComponent('test-comp');
+
+      entity.add(component);
+      expect(component.onRemoveCalled).to.equal(false);
+
+      entity.remove(LifecycleComponent);
+
+      expect(component.onRemoveCalled).to.equal(true);
+      expect(component.onRemoveArgs.world).to.equal(world);
+      expect(component.onRemoveArgs.entity).to.equal(entity);
+      expect(component.onRemoveArgs.component).to.equal(component);
+    });
+
+    it('components without lifecycle hooks work normally', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new NoHooksComponent(42);
+
+      expect(() => entity.add(component)).to.not.throw();
+      expect(entity.has(NoHooksComponent)).to.equal(true);
+      expect(entity.get(NoHooksComponent).value).to.equal(42);
+
+      expect(() => entity.remove(NoHooksComponent)).to.not.throw();
+      expect(entity.has(NoHooksComponent)).to.equal(false);
+    });
+
+    it('lifecycle hooks are called with correct arguments', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new LifecycleComponent('test-args');
+
+      entity.add(component);
+
+      // Check onAdd arguments
+      expect(component.onAddArgs).to.have.property('world');
+      expect(component.onAddArgs).to.have.property('entity');
+      expect(component.onAddArgs).to.have.property('component');
+      expect(component.onAddArgs.world).to.be.instanceof(World);
+      expect(component.onAddArgs.entity).to.be.instanceof(Entity);
+      expect(component.onAddArgs.component).to.be.instanceof(
+        LifecycleComponent
+      );
+
+      entity.remove(LifecycleComponent);
+
+      // Check onRemove arguments
+      expect(component.onRemoveArgs).to.have.property('world');
+      expect(component.onRemoveArgs).to.have.property('entity');
+      expect(component.onRemoveArgs).to.have.property('component');
+      expect(component.onRemoveArgs.world).to.be.instanceof(World);
+      expect(component.onRemoveArgs.entity).to.be.instanceof(Entity);
+      expect(component.onRemoveArgs.component).to.be.instanceof(
+        LifecycleComponent
+      );
+    });
+
+    it('lifecycle hooks are called when using world.add directly', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new LifecycleComponent('direct-add');
+
+      expect(component.onAddCalled).to.equal(false);
+
+      world.add(entity.id, component);
+
+      expect(component.onAddCalled).to.equal(true);
+      expect(component.onAddArgs.world).to.equal(world);
+      expect(component.onAddArgs.entity).to.equal(entity);
+    });
+
+    it('lifecycle hooks are called when using world.remove directly', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const component = new LifecycleComponent('direct-remove');
+
+      world.add(entity.id, component);
+      expect(component.onRemoveCalled).to.equal(false);
+
+      world.remove(entity.id, LifecycleComponent);
+
+      expect(component.onRemoveCalled).to.equal(true);
+      expect(component.onRemoveArgs.world).to.equal(world);
+      expect(component.onRemoveArgs.entity).to.equal(entity);
+    });
+
+    it('multiple components with lifecycle hooks work independently', () => {
+      const world = new World<CompTypes>();
+      const entity = world.createEntity();
+      const comp1 = new LifecycleComponent('comp1');
+      const comp2 = new LifecycleComponent('comp2');
+
+      entity.add(comp1);
+      entity.add(comp2);
+
+      expect(comp1.onAddCalled).to.equal(true);
+      expect(comp2.onAddCalled).to.equal(true);
+      expect(comp1.onAddArgs.entity).to.equal(entity);
+      expect(comp2.onAddArgs.entity).to.equal(entity);
+
+      entity.remove(LifecycleComponent); // This removes the first instance
+
+      expect(comp1.onRemoveCalled || comp2.onRemoveCalled).to.equal(true);
+    });
+  });
+
   describe('Creation', () => {
     it('Setting of created state on entity is immediate if no systems added to world', () => {
       const world = new World<CompTypes>();
@@ -353,7 +510,7 @@ describe('Entity', () => {
           systemFake();
           expect(_entity.state).to.equal('creating');
         },
-        'testSystem'
+        { name: 'testSystem' }
       );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
@@ -394,7 +551,7 @@ describe('Entity', () => {
 
           expect(_entity.state).to.equal('destroying');
         },
-        'testSystem'
+        { name: 'testSystem' }
       );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
@@ -419,7 +576,7 @@ describe('Entity', () => {
         () => {
           systemFake();
         },
-        'testSystem'
+        { name: 'testSystem' }
       );
 
       const entity = world.createEntity().add(new FirstComponent('testEntity'));
