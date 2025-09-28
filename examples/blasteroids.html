@@ -1,503 +1,535 @@
-  <!doctype html>
+<!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ecstatic Demo: Blasteroids</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #111;
-      color: #eee;
-      text-align: center;
-    }
-
-    canvas {
-      background: #000;
-      border: 2px solid #555;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
-  </style>
-</head>
-
-<body>
-  <h1>Ecstatic Demo: Blasteroids</h1>
-  <p>Controls: [Arrow Keys] to move, [Space] to shoot</p>
-  <canvas id="ecs-canvas"></canvas>
-  <div>
-    <button id="serialize-game-state">serialize game state</button>
-  </div>
-
-  <script type="importmap">
-    {
-      "imports": {
-        "ecstatic": "../dist/ecstatic.esm.js"
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecstatic Demo: Blasteroids</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #111;
+        color: #eee;
+        text-align: center;
       }
-    }
-  </script>
-  <script type="module">
-    /* -------------------------------------------------------------------------- */
-    /*                               HELPER FUNCTIONS                             */
-    /* -------------------------------------------------------------------------- */
 
-    function getRandomNumber(min, max) {
-      return Math.random() * (max - min) + min;
-    }
-    /* -------------------------------------------------------------------------- */
-    /*                                    WORLD                                   */
-    /* -------------------------------------------------------------------------- */
-
-    import * as ecstatic from 'ecstatic';
-    const { World } = ecstatic;
-    const world = new World();
-    const CANVAS_WIDTH = 800;
-    const CANVAS_HEIGHT = 600;
-    const MIN_ASTEROID_RADIUS = 10;
-
-    /* -------------------------------------------------------------------------- */
-    /*                                 COMPONENTS                                 */
-    /* -------------------------------------------------------------------------- */
-
-    // --- Resources (Singleton Components) ---
-    class CanvasContext {
-      constructor() {
-        this.canvas = document.getElementById('ecs-canvas');
-        this.context = this.canvas.getContext('2d');
-        this.width = CANVAS_WIDTH;
-        this.height = CANVAS_HEIGHT;
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
+      canvas {
+        background: #000;
+        border: 2px solid #555;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
       }
-    }
+    </style>
+  </head>
 
-    class InputState {
-      left = false;
-      right = false;
-      up = false;
-      space = false;
-      spaceReleased = true;
-    }
+  <body>
+    <h1>Ecstatic Demo: Blasteroids</h1>
+    <p>Controls: [Arrow Keys] to move, [Space] to shoot</p>
+    <canvas id="ecs-canvas"></canvas>
+    <div>
+      <button id="serialize-game-state">serialize game state</button>
+    </div>
 
-    class GameState {
-      score = 0;
-      isGameOver = false;
-    }
-
-    // --- Entity Components ---
-    class Transform {
-      constructor(x, y, rotation = 0) {
-        this.x = x;
-        this.y = y;
-        this.rotation = rotation;
-        this.dx = 0;
-        this.dy = 0;
-      }
-    }
-
-    class Collider {
-      constructor(radius) {
-        this.radius = radius;
-      }
-    }
-
-    class Polygon {
-      constructor(points, color = 'white') {
-        this.points = points;
-        this.color = color;
-      }
-    }
-
-    class Health {
-      constructor(value) {
-        this.value = value;
-      }
-    }
-
-    class Expires {
-      constructor(lifeInFrames) {
-        this.life = lifeInFrames;
-      }
-    }
-
-    class CollisionEvent {
-      constructor(entityA, entityB) {
-        this.entityA = entityA;
-        this.entityB = entityB;
-      }
-    }
-
-    /* -------------------------------------------------------------------------- */
-    /*                                   SYSTEMS                                  */
-    /* -------------------------------------------------------------------------- */
-
-    function playerInputSystem({ world }) {
-      const input = world.getResource(InputState);
-      const player = world.getTagged('player');
-      if (!player || !input) return;
-
-      const transform = player.get(Transform);
-      const ROTATION_SPEED = 0.05;
-      const THRUST_AMOUNT = 0.1;
-      const MAX_SPEED = 5;
-
-      if (input.left) transform.rotation -= ROTATION_SPEED;
-      if (input.right) transform.rotation += ROTATION_SPEED;
-      if (input.up) {
-        transform.dx += Math.cos(transform.rotation) * THRUST_AMOUNT;
-        transform.dy += Math.sin(transform.rotation) * THRUST_AMOUNT;
-
-        const speed = Math.sqrt(transform.dx ** 2 + transform.dy ** 2);
-        if (speed > MAX_SPEED) {
-          transform.dx = (transform.dx / speed) * MAX_SPEED;
-          transform.dy = (transform.dy / speed) * MAX_SPEED;
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "../dist/ecstatic.esm.js"
         }
       }
-      if (input.space && input.spaceReleased) {
-        world.createEntityFromPrefab('bullet', {
-          Transform: {
-            x: transform.x + Math.cos(transform.rotation) * 15,
-            y: transform.y + Math.sin(transform.rotation) * 15,
-            dx: Math.cos(transform.rotation) * 7 + transform.dx,
-            dy: Math.sin(transform.rotation) * 7 + transform.dy
+    </script>
+    <script type="module">
+      /* -------------------------------------------------------------------------- */
+      /*                               HELPER FUNCTIONS                             */
+      /* -------------------------------------------------------------------------- */
+
+      function getRandomNumber(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+      /* -------------------------------------------------------------------------- */
+      /*                                    WORLD                                   */
+      /* -------------------------------------------------------------------------- */
+
+      import * as ecstatic from 'ecstatic';
+      const { World } = ecstatic;
+      const world = new World();
+      const CANVAS_WIDTH = 800;
+      const CANVAS_HEIGHT = 600;
+      const MIN_ASTEROID_RADIUS = 10;
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 COMPONENTS                                 */
+      /* -------------------------------------------------------------------------- */
+
+      // --- Resources (Singleton Components) ---
+      class CanvasContext {
+        constructor() {
+          this.canvas = document.getElementById('ecs-canvas');
+          this.context = this.canvas.getContext('2d');
+          this.width = CANVAS_WIDTH;
+          this.height = CANVAS_HEIGHT;
+          this.canvas.width = this.width;
+          this.canvas.height = this.height;
+        }
+      }
+
+      class InputState {
+        left = false;
+        right = false;
+        up = false;
+        space = false;
+        spaceReleased = true;
+      }
+
+      class GameState {
+        score = 0;
+        isGameOver = false;
+      }
+
+      // --- Entity Components ---
+      class Transform {
+        constructor(x, y, rotation = 0) {
+          this.x = x;
+          this.y = y;
+          this.rotation = rotation;
+          this.dx = 0;
+          this.dy = 0;
+        }
+      }
+
+      class Collider {
+        constructor(radius) {
+          this.radius = radius;
+        }
+      }
+
+      class Polygon {
+        constructor(points, color = 'white') {
+          this.points = points;
+          this.color = color;
+        }
+      }
+
+      class Health {
+        constructor(value) {
+          this.value = value;
+        }
+      }
+
+      class Expires {
+        constructor(lifeInFrames) {
+          this.life = lifeInFrames;
+        }
+      }
+
+      class CollisionEvent {
+        constructor(entityA, entityB) {
+          this.entityA = entityA;
+          this.entityB = entityB;
+        }
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                   SYSTEMS                                  */
+      /* -------------------------------------------------------------------------- */
+
+      function playerInputSystem({ world }) {
+        const input = world.getResource(InputState);
+        const player = world.getTagged('player');
+        if (!player || !input) return;
+
+        const transform = player.get(Transform);
+        const ROTATION_SPEED = 0.05;
+        const THRUST_AMOUNT = 0.1;
+        const MAX_SPEED = 5;
+
+        if (input.left) transform.rotation -= ROTATION_SPEED;
+        if (input.right) transform.rotation += ROTATION_SPEED;
+        if (input.up) {
+          transform.dx += Math.cos(transform.rotation) * THRUST_AMOUNT;
+          transform.dy += Math.sin(transform.rotation) * THRUST_AMOUNT;
+
+          const speed = Math.sqrt(transform.dx ** 2 + transform.dy ** 2);
+          if (speed > MAX_SPEED) {
+            transform.dx = (transform.dx / speed) * MAX_SPEED;
+            transform.dy = (transform.dy / speed) * MAX_SPEED;
           }
-        });
-        input.spaceReleased = false;
-      }
-    }
-
-    function movementSystem({ components, world }) {
-      const canvas = world.getResource(CanvasContext);
-      if (!canvas) return;
-      const transform = components.get(Transform);
-
-      transform.x += transform.dx;
-      transform.y += transform.dy;
-
-      if (transform.x > canvas.width) transform.x = 0;
-      if (transform.x < 0) transform.x = canvas.width;
-      if (transform.y > canvas.height) transform.y = 0;
-      if (transform.y < 0) transform.y = canvas.height;
-    }
-
-    function bulletLifecycleSystem({ entity, components }) {
-      const expires = components.get(Expires);
-      expires.life -= 1;
-      if (expires.life <= 0) {
-        entity.destroy();
-      }
-    }
-
-    function collisionDetectionSystem({ entity: entityA, world }) {
-      const allColliders = world.locateAll([Collider, Transform]);
-      const currentIndex = allColliders.findIndex(e => e.id === entityA.id);
-
-      for (let i = currentIndex + 1; i < allColliders.length; i++) {
-        const entityB = allColliders[i];
-        if ((entityA.hasTag('player') && entityB.hasTag('bullet')) || (entityA.hasTag('bullet') && entityB.hasTag('player'))) continue;
-
-        const posA = entityA.get(Transform);
-        const colA = entityA.get(Collider);
-        const posB = entityB.get(Transform);
-        const colB = entityB.get(Collider);
-        const dx = posB.x - posA.x;
-        const dy = posB.y - posA.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < colA.radius + colB.radius) {
-          world.events.emit(new CollisionEvent(entityA, entityB));
+        }
+        if (input.space && input.spaceReleased) {
+          world.createEntityFromPrefab('bullet', {
+            Transform: {
+              x: transform.x + Math.cos(transform.rotation) * 15,
+              y: transform.y + Math.sin(transform.rotation) * 15,
+              dx: Math.cos(transform.rotation) * 7 + transform.dx,
+              dy: Math.sin(transform.rotation) * 7 + transform.dy,
+            },
+          });
+          input.spaceReleased = false;
         }
       }
-    }
 
-    function collisionResolutionSystem({ event, world }) {
-      const { entityA, entityB } = event;
-      const gameState = world.getResource(GameState);
-      if (!gameState || entityA.state === 'destroying' || entityB.state === 'destroying') return;
-
-      const isEntityAAsteroid = entityA.hasTag('asteroid');
-      const isEntityBAsteroid = entityB.hasTag('asteroid');
-
-      if ((entityA.hasTag('bullet') && isEntityBAsteroid)) {
-        entityB.get(Health).value -= 1;
-        gameState.score += 10;
-        entityA.destroy();
-      } else if (isEntityAAsteroid && entityB.hasTag('bullet')) {
-        entityA.get(Health).value -= 1;
-        gameState.score += 10;
-        entityB.destroy();
-      }
-
-      if ((entityA.hasTag('player') && isEntityBAsteroid) || (isEntityAAsteroid && entityB.hasTag('player'))) {
-        gameState.isGameOver = true;
-      }
-    }
-
-    function destructionSystem({ entity, world, components }) {
-      const health = components.get(Health);
-      if (health.value <= 0) {
+      function movementSystem({ components, world }) {
+        const canvas = world.getResource(CanvasContext);
+        if (!canvas) return;
         const transform = components.get(Transform);
-        const collider = components.get(Collider);
-        const gameState = world.getResource(GameState);
-        if (!gameState) return;
 
-        const newRadius = collider.radius / 2;
-        if (newRadius >= MIN_ASTEROID_RADIUS) {
-          gameState.score += 50;
-          spawnAsteroid(world, { x: transform.x, y: transform.y, radius: newRadius });
-          spawnAsteroid(world, { x: transform.x, y: transform.y, radius: newRadius });
-        } else {
-          gameState.score += 100;
-        }
-        entity.destroy();
-      }
-    }
+        transform.x += transform.dx;
+        transform.y += transform.dy;
 
-    function clearCanvasSystem({ world }) {
-      const canvas = world.getResource(CanvasContext);
-      if (canvas) {
-        canvas.context.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-
-    function renderEntitiesSystem({ components, world }) {
-      if (world.getResource(GameState).isGameOver) return;
-      const canvas = world.getResource(CanvasContext);
-
-      if (!canvas) return;
-      const ctx = canvas.context;
-      const transform = components.get(Transform);
-      const polygon = components.get(Polygon);
-
-      ctx.save();
-      ctx.translate(transform.x, transform.y);
-      ctx.rotate(transform.rotation);
-      ctx.strokeStyle = polygon.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(polygon.points[0], polygon.points[1]);
-      for (let i = 2; i < polygon.points.length; i += 2) {
-        ctx.lineTo(polygon.points[i], polygon.points[i + 1]);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function renderUiSystem({ world }) {
-      const canvas = world.getResource(CanvasContext);
-      const gameState = world.getResource(GameState);
-      if (!canvas || !gameState) return;
-      const ctx = canvas.context;
-
-      ctx.fillStyle = 'white';
-      ctx.font = '24px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(`Score: ${gameState.score}`, 20, 30);
-
-      if (gameState.isGameOver) {
-        ctx.textAlign = 'center';
-        ctx.font = '48px sans-serif';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px sans-serif';
-        ctx.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 40);
-      }
-    }
-
-    // --- System Registration with Phases ---
-    world.setPhaseOrder(['Input', 'Logic', 'Render', 'Cleanup']);
-
-    world.addSystem([GameState], playerInputSystem, { phase: 'Input' });
-
-    world.addSystem([Transform], movementSystem, { phase: 'Logic' });
-    world.addSystem([Expires], bulletLifecycleSystem, { phase: 'Logic' });
-    world.addSystem([Collider, Transform], collisionDetectionSystem, { phase: 'Logic' });
-    world.addSystem([Health, Transform, Collider], destructionSystem, { phase: 'Logic' });
-    world.addSystemListener(CollisionEvent, collisionResolutionSystem, { phase: 'Logic' });
-
-    // FIX: Registering render systems with empty component arrays so they run once per frame.
-    world.addSystem([GameState], clearCanvasSystem, { phase: 'Render' });
-    world.addSystem([Transform, Polygon], renderEntitiesSystem, { phase: 'Render' });
-    world.addSystem([GameState], renderUiSystem, { phase: 'Render' });
-
-
-    /* -------------------------------------------------------------------------- */
-    /*                              ENTITY PREFABS                                */
-    /* -------------------------------------------------------------------------- */
-
-    world.registerPrefab('player', {
-      tags: ['player'],
-      components: [
-        new Transform(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, -Math.PI / 2),
-        new Polygon([-15, 10, 15, 0, -15, -10], 'cyan'),
-        new Collider(15),
-        new Health(1)
-      ]
-    });
-
-    world.registerPrefab('asteroid', {
-      tags: ['asteroid'],
-      components: [
-        new Transform(0, 0),
-        new Polygon([], 'white'),
-        new Collider(40),
-        new Health(1)
-      ]
-    });
-
-    world.registerPrefab('bullet', {
-      tags: ['bullet'],
-      components: [
-        new Transform(0, 0),
-        new Polygon([-2, -2, 2, -2, 2, 2, -2, 2], 'yellow'),
-        new Collider(2),
-        new Expires(90)
-      ]
-    });
-
-    function spawnAsteroid(world, overrides) {
-      const radius = overrides.radius || 40;
-      const health = Math.max(1, Math.floor(radius / 15));
-      const vel = getRandomNumber(0.5, 2);
-      const angle = getRandomNumber(0, Math.PI * 2);
-      const dx = Math.cos(angle) * vel;
-      const dy = Math.sin(angle) * vel;
-
-      const points = [];
-      const sides = 10;
-      for (let j = 0; j < sides; j++) {
-        const angle = (j / sides) * Math.PI * 2;
-        const dist = getRandomNumber(radius * 0.8, radius * 1.2);
-        points.push(Math.cos(angle) * dist, Math.sin(angle) * dist);
+        if (transform.x > canvas.width) transform.x = 0;
+        if (transform.x < 0) transform.x = canvas.width;
+        if (transform.y > canvas.height) transform.y = 0;
+        if (transform.y < 0) transform.y = canvas.height;
       }
 
-      world.createEntityFromPrefab('asteroid', {
-        Transform: { x: overrides.x, y: overrides.y, dx, dy },
-        Collider: { radius },
-        Health: { value: health },
-        Polygon: { points }
-      });
-    }
-
-    /* -------------------------------------------------------------------------- */
-    /*                               INITIALIZE GAME                              */
-    /* -------------------------------------------------------------------------- */
-
-    function initializeGame() {
-      world.setResource(new CanvasContext());
-      world.setResource(new InputState());
-      const gameState = new GameState();
-      world.setResource(gameState);
-      world.createEntity().add(gameState).addTag('gameState');
-
-      world.createEntityFromPrefab('player');
-      for (let i = 0; i < 5; i++) {
-        spawnAsteroid(world, {
-          x: getRandomNumber(0, CANVAS_WIDTH),
-          y: getRandomNumber(0, CANVAS_HEIGHT)
-        });
-      }
-    }
-
-    function resetGame() {
-      const gameState = world.getResource(GameState);
-      if (!gameState) return;
-
-      for (const entity of [...world.entities.values()]) {
-        if (!entity.hasTag('player') && !entity.hasTag('gameState')) {
+      function bulletLifecycleSystem({ entity, components }) {
+        const expires = components.get(Expires);
+        expires.life -= 1;
+        if (expires.life <= 0) {
           entity.destroy();
         }
       }
 
-      const player = world.getTagged('player');
-      if (player) {
-        const transform = player.get(Transform);
-        transform.x = CANVAS_WIDTH / 2;
-        transform.y = CANVAS_HEIGHT / 2;
-        transform.dx = 0;
-        transform.dy = 0;
-        transform.rotation = -Math.PI / 2;
-      } else {
-        world.createEntityFromPrefab('player');
+      function collisionDetectionSystem({ entity: entityA, world }) {
+        const allColliders = world.locateAll([Collider, Transform]);
+        const currentIndex = allColliders.findIndex(e => e.id === entityA.id);
+
+        for (let i = currentIndex + 1; i < allColliders.length; i++) {
+          const entityB = allColliders[i];
+          if (
+            (entityA.hasTag('player') && entityB.hasTag('bullet')) ||
+            (entityA.hasTag('bullet') && entityB.hasTag('player'))
+          )
+            continue;
+
+          const posA = entityA.get(Transform);
+          const colA = entityA.get(Collider);
+          const posB = entityB.get(Transform);
+          const colB = entityB.get(Collider);
+          const dx = posB.x - posA.x;
+          const dy = posB.y - posA.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < colA.radius + colB.radius) {
+            world.events.emit(new CollisionEvent(entityA, entityB));
+          }
+        }
       }
 
-      for (let i = 0; i < 5; i++) {
-        spawnAsteroid(world, {
-          x: getRandomNumber(0, CANVAS_WIDTH),
-          y: getRandomNumber(0, CANVAS_HEIGHT)
+      function collisionResolutionSystem({ event, world }) {
+        const { entityA, entityB } = event;
+        const gameState = world.getResource(GameState);
+        if (
+          !gameState ||
+          entityA.state === 'destroying' ||
+          entityB.state === 'destroying'
+        )
+          return;
+
+        const isEntityAAsteroid = entityA.hasTag('asteroid');
+        const isEntityBAsteroid = entityB.hasTag('asteroid');
+
+        if (entityA.hasTag('bullet') && isEntityBAsteroid) {
+          entityB.get(Health).value -= 1;
+          gameState.score += 10;
+          entityA.destroy();
+        } else if (isEntityAAsteroid && entityB.hasTag('bullet')) {
+          entityA.get(Health).value -= 1;
+          gameState.score += 10;
+          entityB.destroy();
+        }
+
+        if (
+          (entityA.hasTag('player') && isEntityBAsteroid) ||
+          (isEntityAAsteroid && entityB.hasTag('player'))
+        ) {
+          gameState.isGameOver = true;
+        }
+      }
+
+      function destructionSystem({ entity, world, components }) {
+        const health = components.get(Health);
+        if (health.value <= 0) {
+          const transform = components.get(Transform);
+          const collider = components.get(Collider);
+          const gameState = world.getResource(GameState);
+          if (!gameState) return;
+
+          const newRadius = collider.radius / 2;
+          if (newRadius >= MIN_ASTEROID_RADIUS) {
+            gameState.score += 50;
+            spawnAsteroid(world, {
+              x: transform.x,
+              y: transform.y,
+              radius: newRadius,
+            });
+            spawnAsteroid(world, {
+              x: transform.x,
+              y: transform.y,
+              radius: newRadius,
+            });
+          } else {
+            gameState.score += 100;
+          }
+          entity.destroy();
+        }
+      }
+
+      function clearCanvasSystem({ world }) {
+        const canvas = world.getResource(CanvasContext);
+        if (canvas) {
+          canvas.context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      function renderEntitiesSystem({ components, world }) {
+        if (world.getResource(GameState).isGameOver) return;
+        const canvas = world.getResource(CanvasContext);
+
+        if (!canvas) return;
+        const ctx = canvas.context;
+        const transform = components.get(Transform);
+        const polygon = components.get(Polygon);
+
+        ctx.save();
+        ctx.translate(transform.x, transform.y);
+        ctx.rotate(transform.rotation);
+        ctx.strokeStyle = polygon.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(polygon.points[0], polygon.points[1]);
+        for (let i = 2; i < polygon.points.length; i += 2) {
+          ctx.lineTo(polygon.points[i], polygon.points[i + 1]);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function renderUiSystem({ world }) {
+        const canvas = world.getResource(CanvasContext);
+        const gameState = world.getResource(GameState);
+        if (!canvas || !gameState) return;
+        const ctx = canvas.context;
+
+        ctx.fillStyle = 'white';
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Score: ${gameState.score}`, 20, 30);
+
+        if (gameState.isGameOver) {
+          ctx.textAlign = 'center';
+          ctx.font = '48px sans-serif';
+          ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+          ctx.font = '24px sans-serif';
+          ctx.fillText(
+            'Click to Restart',
+            canvas.width / 2,
+            canvas.height / 2 + 40
+          );
+        }
+      }
+
+      // --- System Registration with Phases ---
+      world.setPhaseOrder(['Input', 'Logic', 'Render', 'Cleanup']);
+
+      world.addSystem([GameState], playerInputSystem, { phase: 'Input' });
+
+      world.addSystem([Transform], movementSystem, { phase: 'Logic' });
+      world.addSystem([Expires], bulletLifecycleSystem, { phase: 'Logic' });
+      world.addSystem([Collider, Transform], collisionDetectionSystem, {
+        phase: 'Logic',
+      });
+      world.addSystem([Health, Transform, Collider], destructionSystem, {
+        phase: 'Logic',
+      });
+      world.addSystemListener(CollisionEvent, collisionResolutionSystem, {
+        phase: 'Logic',
+      });
+
+      // FIX: Registering render systems with empty component arrays so they run once per frame.
+      world.addSystem([GameState], clearCanvasSystem, { phase: 'Render' });
+      world.addSystem([Transform, Polygon], renderEntitiesSystem, {
+        phase: 'Render',
+      });
+      world.addSystem([GameState], renderUiSystem, { phase: 'Render' });
+
+      /* -------------------------------------------------------------------------- */
+      /*                              ENTITY PREFABS                                */
+      /* -------------------------------------------------------------------------- */
+
+      world.registerPrefab('player', {
+        tags: ['player'],
+        components: [
+          new Transform(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, -Math.PI / 2),
+          new Polygon([-15, 10, 15, 0, -15, -10], 'cyan'),
+          new Collider(15),
+          new Health(1),
+        ],
+      });
+
+      world.registerPrefab('asteroid', {
+        tags: ['asteroid'],
+        components: [
+          new Transform(0, 0),
+          new Polygon([], 'white'),
+          new Collider(40),
+          new Health(1),
+        ],
+      });
+
+      world.registerPrefab('bullet', {
+        tags: ['bullet'],
+        components: [
+          new Transform(0, 0),
+          new Polygon([-2, -2, 2, -2, 2, 2, -2, 2], 'yellow'),
+          new Collider(2),
+          new Expires(90),
+        ],
+      });
+
+      function spawnAsteroid(world, overrides) {
+        const radius = overrides.radius || 40;
+        const health = Math.max(1, Math.floor(radius / 15));
+        const vel = getRandomNumber(0.5, 2);
+        const angle = getRandomNumber(0, Math.PI * 2);
+        const dx = Math.cos(angle) * vel;
+        const dy = Math.sin(angle) * vel;
+
+        const points = [];
+        const sides = 10;
+        for (let j = 0; j < sides; j++) {
+          const angle = (j / sides) * Math.PI * 2;
+          const dist = getRandomNumber(radius * 0.8, radius * 1.2);
+          points.push(Math.cos(angle) * dist, Math.sin(angle) * dist);
+        }
+
+        world.createEntityFromPrefab('asteroid', {
+          Transform: { x: overrides.x, y: overrides.y, dx, dy },
+          Collider: { radius },
+          Health: { value: health },
+          Polygon: { points },
         });
       }
 
-      gameState.score = 0;
-      gameState.isGameOver = false;
+      /* -------------------------------------------------------------------------- */
+      /*                               INITIALIZE GAME                              */
+      /* -------------------------------------------------------------------------- */
 
+      function initializeGame() {
+        world.setResource(new CanvasContext());
+        world.setResource(new InputState());
+        const gameState = new GameState();
+        world.setResource(gameState);
+        world.createEntity().add(gameState).addTag('gameState');
+
+        world.createEntityFromPrefab('player');
+        for (let i = 0; i < 5; i++) {
+          spawnAsteroid(world, {
+            x: getRandomNumber(0, CANVAS_WIDTH),
+            y: getRandomNumber(0, CANVAS_HEIGHT),
+          });
+        }
+      }
+
+      function resetGame() {
+        const gameState = world.getResource(GameState);
+        if (!gameState) return;
+
+        for (const entity of [...world.entities.values()]) {
+          if (!entity.hasTag('player') && !entity.hasTag('gameState')) {
+            entity.destroy();
+          }
+        }
+
+        const player = world.getTagged('player');
+        if (player) {
+          const transform = player.get(Transform);
+          transform.x = CANVAS_WIDTH / 2;
+          transform.y = CANVAS_HEIGHT / 2;
+          transform.dx = 0;
+          transform.dy = 0;
+          transform.rotation = -Math.PI / 2;
+        } else {
+          world.createEntityFromPrefab('player');
+        }
+
+        for (let i = 0; i < 5; i++) {
+          spawnAsteroid(world, {
+            x: getRandomNumber(0, CANVAS_WIDTH),
+            y: getRandomNumber(0, CANVAS_HEIGHT),
+          });
+        }
+
+        gameState.score = 0;
+        gameState.isGameOver = false;
+
+        gameLoop();
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                             USER INTERACTION                               */
+      /* -------------------------------------------------------------------------- */
+
+      // FIX: Get the InputState resource inside the event listener to avoid stale references.
+      window.addEventListener('keydown', e => {
+        const input = world.getResource(InputState);
+        const gameState = world.getResource(GameState);
+        if (!input) return;
+        if (e.key === 'ArrowLeft') input.left = true;
+        if (e.key === 'ArrowRight') input.right = true;
+        if (e.key === 'ArrowUp') input.up = true;
+        if (e.key === ' ') input.space = true;
+
+        // Allow restarting the game with the space bar when the game is over.
+        if (e.key === ' ' && gameState && gameState.isGameOver) {
+          resetGame();
+        }
+      });
+      window.addEventListener('keyup', e => {
+        const input = world.getResource(InputState);
+        if (!input) return;
+        if (e.key === 'ArrowLeft') input.left = false;
+        if (e.key === 'ArrowRight') input.right = false;
+        if (e.key === 'ArrowUp') input.up = false;
+        if (e.key === ' ') {
+          input.space = false;
+          input.spaceReleased = true;
+        }
+      });
+
+      document
+        .getElementById('serialize-game-state')
+        .addEventListener('click', () => {
+          const serializedWorld = world.toJSON();
+          console.log(serializedWorld);
+        });
+
+      const onResetGame = () => {
+        const gameState = world.getResource(GameState);
+        if (gameState && gameState.isGameOver) {
+          resetGame();
+        }
+      };
+
+      document
+        .getElementById('ecs-canvas')
+        .addEventListener('click', onResetGame);
+
+      /* -------------------------------------------------------------------------- */
+      /*                                  GAME LOOP                                 */
+      /* -------------------------------------------------------------------------- */
+
+      let animationFrameId;
+
+      function gameLoop() {
+        const gameState = world.getResource(GameState);
+        world.systems.run();
+        if (gameState && !gameState.isGameOver) {
+          animationFrameId = requestAnimationFrame(gameLoop);
+        }
+      }
+
+      initializeGame();
       gameLoop();
-    }
-
-    /* -------------------------------------------------------------------------- */
-    /*                             USER INTERACTION                               */
-    /* -------------------------------------------------------------------------- */
-
-    // FIX: Get the InputState resource inside the event listener to avoid stale references.
-    window.addEventListener('keydown', e => {
-      const input = world.getResource(InputState);
-      const gameState = world.getResource(GameState);
-      if (!input) return;
-      if (e.key === 'ArrowLeft') input.left = true;
-      if (e.key === 'ArrowRight') input.right = true;
-      if (e.key === 'ArrowUp') input.up = true;
-      if (e.key === ' ') input.space = true;
-
-      // Allow restarting the game with the space bar when the game is over.
-      if (e.key === ' ' && gameState && gameState.isGameOver) {
-        resetGame();
-      }
-    });
-    window.addEventListener('keyup', e => {
-      const input = world.getResource(InputState);
-      if (!input) return;
-      if (e.key === 'ArrowLeft') input.left = false;
-      if (e.key === 'ArrowRight') input.right = false;
-      if (e.key === 'ArrowUp') input.up = false;
-      if (e.key === ' ') {
-        input.space = false;
-        input.spaceReleased = true;
-      }
-    });
-
-    document.getElementById('serialize-game-state').addEventListener('click', () => {
-      const serializedWorld = world.toJSON();
-      console.log(serializedWorld);
-    });
-
-
-    const onResetGame = () => {
-      const gameState = world.getResource(GameState);
-      if (gameState && gameState.isGameOver) {
-        resetGame();
-      }
-    };
-
-    document.getElementById('ecs-canvas').addEventListener('click', onResetGame);
-
-    /* -------------------------------------------------------------------------- */
-    /*                                  GAME LOOP                                 */
-    /* -------------------------------------------------------------------------- */
-
-    let animationFrameId;
-
-    function gameLoop() {
-      const gameState = world.getResource(GameState);
-      world.systems.run();
-      if (gameState && !gameState.isGameOver) {
-        animationFrameId = requestAnimationFrame(gameLoop);
-      }
-    }
-
-    initializeGame();
-    gameLoop();
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>
