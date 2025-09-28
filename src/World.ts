@@ -1,3 +1,5 @@
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+
 import Entity, { EntityId } from './Entity';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
@@ -7,8 +9,35 @@ import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 import { EventListenerFunc, EventManager } from './EventManager';
 
+/**
+ * A type representing a class constructor that may have a static `fromJSON` method.
+ */
+export type SerializableClassConstructor<T> = ClassConstructor<T> & {
+  // eslint-disable-next-line no-unused-vars
+  fromJSON?: (data: unknown) => T;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-unused-vars
 export type ClassConstructor<T> = { new (...args: any[]): T };
+
+/**
+ * Interface for components that may have lifecycle methods and custom serialization.
+ */
+export interface ComponentLifecycle<CT> {
+  // eslint-disable-next-line no-unused-vars
+  onAdd?: (args: {
+    world: World<CT>;
+    entity: Entity<CT>;
+    component: CT;
+  }) => void;
+  // eslint-disable-next-line no-unused-vars
+  onRemove?: (args: {
+    world: World<CT>;
+    entity: Entity<CT>;
+    component: CT;
+  }) => void;
+  toJSON?: () => unknown;
+}
 
 /**
  * Defines the structure for a prefab, used for creating entities from a template.
@@ -17,6 +46,27 @@ export interface PrefabDefinition<CT> {
   tags?: Tag[];
 
   components: CT[];
+}
+
+/**
+ * A mapping of string names to their corresponding class constructors.
+ * This is required for deserialization to map plain objects back to class instances.
+ */
+export interface TypeMapping {
+  components: Record<string, SerializableClassConstructor<unknown>>;
+  resources: Record<string, SerializableClassConstructor<unknown>>;
+}
+
+/**
+ * The structure of the serialized world state.
+ */
+interface SerializedWorld {
+  resources: { name: string; data: unknown }[];
+  entities: {
+    id: EntityId;
+    tags: Tag[];
+    components: { name: string; data: unknown }[];
+  }[];
 }
 
 export default class World<CT> {
@@ -134,13 +184,14 @@ export default class World<CT> {
       // Deep clone the component to prevent shared state between entities
       const componentInstance = JSON.parse(JSON.stringify(prefabComponent));
       // Restore the constructor to maintain proper typing
+      const componentWithConstructor = prefabComponent as CT & {
+        constructor: { prototype: unknown; name: string };
+      };
       Object.setPrototypeOf(
         componentInstance,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (prefabComponent as any).constructor.prototype
+        componentWithConstructor.constructor.prototype as object
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const componentName = (prefabComponent as any).constructor.name;
+      const componentName = componentWithConstructor.constructor.name;
 
       if (overrides[componentName]) {
         Object.assign(componentInstance, overrides[componentName]);
@@ -407,10 +458,9 @@ export default class World<CT> {
       component[TrackedCompSymbolKeys.onAdd](this, entity);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (component as any).onAdd === 'function') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (component as any).onAdd({ world: this, entity, component });
+    const componentWithLifecycle = component as CT & ComponentLifecycle<CT>;
+    if (componentWithLifecycle.onAdd) {
+      componentWithLifecycle.onAdd({ world: this, entity, component });
     }
 
     entity.onComponentAdd({ world: this, component });
@@ -440,10 +490,9 @@ export default class World<CT> {
       return this;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (component as any).onRemove === 'function') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (component as any).onRemove({ world: this, entity, component });
+    const componentWithLifecycle = component as CT & ComponentLifecycle<CT>;
+    if (componentWithLifecycle.onRemove) {
+      componentWithLifecycle.onRemove({ world: this, entity, component });
     }
 
     // Handle TrackedComponent logic first
@@ -584,4 +633,111 @@ export default class World<CT> {
   /*
   TODO: world.destroy() and world.destroyImmediately() methods.
   */
+
+  /**
+   * Serializes the entire state of the world into a JSON-compatible object.
+   * It will use a component/resource's `.toJSON()` method if it exists,
+   * otherwise it falls back to `class-transformer`'s `instanceToPlain`.
+   * @returns A plain object representing the world state.
+   */
+  toJSON(): SerializedWorld {
+    const serialized: SerializedWorld = {
+      resources: [],
+      entities: [],
+    };
+
+    // Serialize Resources
+    for (const [constructor, instance] of this.resources.entries()) {
+      const serializableInstance = instance as unknown & {
+        toJSON?: () => unknown;
+      };
+      const data = serializableInstance.toJSON
+        ? serializableInstance.toJSON()
+        : instanceToPlain(instance);
+      serialized.resources.push({ name: constructor.name, data });
+    }
+
+    // Serialize Entities and their Components
+    for (const entity of this.entities.values()) {
+      const serializedComponents: { name: string; data: unknown }[] = [];
+      const components = this.componentCollections.get(entity.id);
+
+      if (components) {
+        for (const component of components) {
+          const componentWithToJSON = component as CT & ComponentLifecycle<CT>;
+          const data = componentWithToJSON.toJSON
+            ? componentWithToJSON.toJSON()
+            : instanceToPlain(component);
+          serializedComponents.push({
+            name: (component as { constructor: { name: string } }).constructor
+              .name,
+            data,
+          });
+        }
+      }
+
+      serialized.entities.push({
+        id: entity.id,
+        tags: Array.from(entity.tags),
+        components: serializedComponents,
+      });
+    }
+
+    return serialized;
+  }
+
+  /**
+   * Creates a new World instance by hydrating it from a serialized state.
+   * @param serializedWorld The plain object representing the world state, typically from `world.toJSON()`.
+   * @param typeMapping A mapping of string names to the actual class constructors for components and resources.
+   * @returns A new, fully hydrated World instance.
+   */
+  static fromJSON<CT>(
+    serializedWorld: SerializedWorld,
+    typeMapping: TypeMapping
+  ): World<CT> {
+    const world = new World<CT>();
+
+    // Hydrate Resources
+    for (const res of serializedWorld.resources) {
+      const ResourceClass = typeMapping.resources[res.name];
+      if (!ResourceClass) {
+        throw new Error(
+          `Cannot hydrate resource: Class constructor for "${res.name}" not found in typeMapping.resources.`
+        );
+      }
+      const instance = ResourceClass.fromJSON
+        ? ResourceClass.fromJSON(res.data)
+        : plainToInstance(ResourceClass, res.data as object);
+      world.setResource(instance);
+    }
+
+    // Hydrate Entities and Components
+    for (const ent of serializedWorld.entities) {
+      const entity = world.createEntity();
+      // NOTE: We are not preserving entity IDs here to avoid potential collisions
+      // if merging worlds, but this could be changed if stable IDs are required.
+
+      // Add tags
+      for (const tag of ent.tags) {
+        entity.addTag(tag);
+      }
+
+      // Add components
+      for (const comp of ent.components) {
+        const ComponentClass = typeMapping.components[comp.name];
+        if (!ComponentClass) {
+          throw new Error(
+            `Cannot hydrate component: Class constructor for "${comp.name}" not found in typeMapping.components.`
+          );
+        }
+        const instance = ComponentClass.fromJSON
+          ? ComponentClass.fromJSON(comp.data)
+          : plainToInstance(ComponentClass, comp.data as object);
+        entity.add(instance as CT);
+      }
+    }
+
+    return world;
+  }
 }

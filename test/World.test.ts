@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import noop from 'lodash/noop';
 import { describe, it } from 'vitest';
 
-import World from '../src/World';
+import World, { TypeMapping } from '../src/World';
 import Entity from '../src/Entity';
 import ComponentCollection from '../src/ComponentCollection';
 
@@ -669,6 +669,418 @@ describe('World', () => {
         expect(entity.hasTag('marker')).to.equal(true);
         expect(entity.hasTag('flag')).to.equal(true);
         expect(entity.tags.size).to.equal(2);
+      });
+    });
+
+    describe('Serialization (toJSON/fromJSON)', () => {
+      // Test components and resources with various data types
+      class SimpleComponent {
+        value: string;
+        count: number;
+        constructor(value: string = 'default', count: number = 0) {
+          this.value = value;
+          this.count = count;
+        }
+      }
+
+      class ComplexComponent {
+        id: string;
+        position: { x: number; y: number };
+        metadata: Map<string, any>;
+        constructor(id: string, x: number = 0, y: number = 0) {
+          this.id = id;
+          this.position = { x, y };
+          this.metadata = new Map<string, any>([
+            ['created', Date.now()],
+            ['version', '1.0'],
+          ]);
+        }
+      }
+
+      class CustomSerializationComponent {
+        secret: string;
+        public: string;
+        constructor(secret: string, pub: string) {
+          this.secret = secret;
+          this.public = pub;
+        }
+
+        toJSON() {
+          return {
+            public: this.public,
+            // Intentionally exclude secret from serialization
+            checksum: this.secret.length,
+          };
+        }
+
+        static fromJSON(data: any): CustomSerializationComponent {
+          return new CustomSerializationComponent(
+            'restored-' + data.public,
+            data.public
+          );
+        }
+      }
+
+      class GameConfig {
+        maxPlayers: number;
+        difficulty: string;
+        enabled: boolean;
+        constructor(
+          maxPlayers: number = 4,
+          difficulty: string = 'normal',
+          enabled: boolean = true
+        ) {
+          this.maxPlayers = maxPlayers;
+          this.difficulty = difficulty;
+          this.enabled = enabled;
+        }
+      }
+
+      class AudioManager {
+        volume: number;
+        muted: boolean;
+        constructor(volume: number = 100, muted: boolean = false) {
+          this.volume = volume;
+          this.muted = muted;
+        }
+
+        toJSON() {
+          return {
+            volume: this.volume,
+            muted: this.muted,
+            status: this.muted ? 'muted' : 'playing',
+          };
+        }
+
+        static fromJSON(data: any): AudioManager {
+          const manager = new AudioManager(data.volume, data.muted);
+          // Custom restoration logic could go here
+          return manager;
+        }
+      }
+
+      type SerializationCompTypes =
+        | SimpleComponent
+        | ComplexComponent
+        | CustomSerializationComponent;
+
+      const typeMapping: TypeMapping = {
+        components: {
+          SimpleComponent,
+          ComplexComponent,
+          CustomSerializationComponent,
+        },
+        resources: {
+          GameConfig,
+          AudioManager,
+        },
+      };
+
+      it('toJSON serializes empty world correctly', () => {
+        const world = new World<SerializationCompTypes>();
+        const serialized = world.toJSON();
+
+        expect(serialized).to.have.property('resources');
+        expect(serialized).to.have.property('entities');
+        expect(serialized.resources).to.be.an('array').with.lengthOf(0);
+        expect(serialized.entities).to.be.an('array').with.lengthOf(0);
+      });
+
+      it('toJSON serializes entities with components and tags', () => {
+        const world = new World<SerializationCompTypes>();
+
+        const entity1 = world
+          .createEntity()
+          .add(new SimpleComponent('test', 42))
+          .addTag('player')
+          .addTag('active');
+
+        const entity2 = world
+          .createEntity()
+          .add(new ComplexComponent('complex1', 10, 20))
+          .addTag('enemy');
+
+        const serialized = world.toJSON();
+
+        expect(serialized.entities).to.have.lengthOf(2);
+
+        // Check entity1
+        const serializedEntity1 = serialized.entities.find(
+          e => e.id === entity1.id
+        );
+        expect(serializedEntity1).to.exist;
+        expect(serializedEntity1?.tags).to.deep.equal(['player', 'active']);
+        expect(serializedEntity1?.components).to.have.lengthOf(1);
+        expect(serializedEntity1?.components[0].name).to.equal(
+          'SimpleComponent'
+        );
+        expect(serializedEntity1?.components[0].data).to.deep.equal({
+          value: 'test',
+          count: 42,
+        });
+
+        // Check entity2
+        const serializedEntity2 = serialized.entities.find(
+          e => e.id === entity2.id
+        );
+        expect(serializedEntity2).to.exist;
+        expect(serializedEntity2?.tags).to.deep.equal(['enemy']);
+        expect(serializedEntity2?.components).to.have.lengthOf(1);
+        expect(serializedEntity2?.components[0].name).to.equal(
+          'ComplexComponent'
+        );
+        expect(
+          (serializedEntity2?.components[0].data as any).position
+        ).to.deep.equal({
+          x: 10,
+          y: 20,
+        });
+      });
+
+      it('toJSON serializes resources', () => {
+        const world = new World<SerializationCompTypes>();
+        const config = new GameConfig(8, 'hard', false);
+        const audio = new AudioManager(75, true);
+
+        world.setResource(config);
+        world.setResource(audio);
+
+        const serialized = world.toJSON();
+
+        expect(serialized.resources).to.have.lengthOf(2);
+
+        const serializedConfig = serialized.resources.find(
+          r => r.name === 'GameConfig'
+        );
+        expect(serializedConfig).to.exist;
+        expect(serializedConfig?.data).to.deep.equal({
+          maxPlayers: 8,
+          difficulty: 'hard',
+          enabled: false,
+        });
+
+        const serializedAudio = serialized.resources.find(
+          r => r.name === 'AudioManager'
+        );
+        expect(serializedAudio).to.exist;
+        expect(serializedAudio?.data).to.deep.equal({
+          volume: 75,
+          muted: true,
+          status: 'muted', // From custom toJSON
+        });
+      });
+
+      it('toJSON uses custom toJSON methods when available', () => {
+        const world = new World<SerializationCompTypes>();
+        const customComp = new CustomSerializationComponent(
+          'secret123',
+          'public456'
+        );
+
+        world.createEntity().add(customComp);
+
+        const serialized = world.toJSON();
+
+        expect(serialized.entities[0].components[0].data).to.deep.equal({
+          public: 'public456',
+          checksum: 9, // secret123.length
+          // Note: secret field is not included due to custom toJSON
+        });
+      });
+
+      it('fromJSON creates world from serialized data', () => {
+        const originalWorld = new World<SerializationCompTypes>();
+
+        // Create some test data
+        originalWorld
+          .createEntity()
+          .add(new SimpleComponent('original', 100))
+          .addTag('test')
+          .addTag('sample');
+
+        originalWorld.setResource(new GameConfig(6, 'easy', true));
+
+        const serialized = originalWorld.toJSON();
+
+        // Deserialize into new world
+        const restoredWorld = World.fromJSON(serialized, typeMapping);
+
+        expect(restoredWorld).to.be.instanceof(World);
+        expect(restoredWorld.entities.size).to.equal(1);
+
+        // Check entity restoration
+        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
+        expect(restoredEntity.hasTag('test')).to.equal(true);
+        expect(restoredEntity.hasTag('sample')).to.equal(true);
+        expect(restoredEntity.has(SimpleComponent)).to.equal(true);
+
+        const restoredComponent = restoredEntity.get(SimpleComponent);
+        expect(restoredComponent.value).to.equal('original');
+        expect(restoredComponent.count).to.equal(100);
+
+        // Check resource restoration
+        const restoredConfig = restoredWorld.getResource(GameConfig);
+        expect(restoredConfig).to.exist;
+        expect(restoredConfig?.maxPlayers).to.equal(6);
+        expect(restoredConfig?.difficulty).to.equal('easy');
+        expect(restoredConfig?.enabled).to.equal(true);
+      });
+
+      it('fromJSON uses custom fromJSON methods when available', () => {
+        const originalWorld = new World<SerializationCompTypes>();
+        const customComp = new CustomSerializationComponent(
+          'original-secret',
+          'original-public'
+        );
+        originalWorld.createEntity().add(customComp);
+
+        const serialized = originalWorld.toJSON();
+        const restoredWorld = World.fromJSON(serialized, typeMapping);
+
+        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
+        const restoredComponent = restoredEntity.get(
+          CustomSerializationComponent
+        );
+
+        // Check that custom fromJSON was used
+        expect(restoredComponent.public).to.equal('original-public');
+        expect(restoredComponent.secret).to.equal('restored-original-public');
+      });
+
+      it('fromJSON throws error for missing component type mapping', () => {
+        const serialized = {
+          resources: [],
+          entities: [
+            {
+              id: 1,
+              tags: [],
+              components: [
+                {
+                  name: 'UnknownComponent',
+                  data: { value: 'test' },
+                },
+              ],
+            },
+          ],
+        };
+
+        const incompleteTypeMapping: TypeMapping = {
+          components: {}, // Missing UnknownComponent
+          resources: {},
+        };
+
+        expect(() => {
+          World.fromJSON(serialized as any, incompleteTypeMapping);
+        }).to.throw(
+          'Cannot hydrate component: Class constructor for "UnknownComponent" not found in typeMapping.components.'
+        );
+      });
+
+      it('fromJSON throws error for missing resource type mapping', () => {
+        const serialized = {
+          resources: [
+            {
+              name: 'UnknownResource',
+              data: { setting: 'value' },
+            },
+          ],
+          entities: [],
+        };
+
+        const incompleteTypeMapping: TypeMapping = {
+          components: {},
+          resources: {}, // Missing UnknownResource
+        };
+
+        expect(() => {
+          World.fromJSON(serialized as any, incompleteTypeMapping);
+        }).to.throw(
+          'Cannot hydrate resource: Class constructor for "UnknownResource" not found in typeMapping.resources.'
+        );
+      });
+
+      it('round-trip serialization preserves complex data structures', () => {
+        const originalWorld = new World<SerializationCompTypes>();
+
+        // Create complex entity
+        originalWorld
+          .createEntity()
+          .add(new ComplexComponent('test-complex', 42, 84))
+          .addTag('complex')
+          .addTag('test-entity');
+
+        // Add resources
+        originalWorld.setResource(new AudioManager(50, false));
+        originalWorld.setResource(new GameConfig(12, 'expert', true));
+
+        // Serialize and deserialize
+        const serialized = originalWorld.toJSON();
+        const restoredWorld = World.fromJSON(serialized, typeMapping);
+
+        // Verify everything is preserved
+        expect(restoredWorld.entities.size).to.equal(1);
+        expect(restoredWorld.hasResource(AudioManager)).to.equal(true);
+        expect(restoredWorld.hasResource(GameConfig)).to.equal(true);
+
+        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
+        expect(restoredEntity.hasTag('complex')).to.equal(true);
+        expect(restoredEntity.hasTag('test-entity')).to.equal(true);
+
+        const restoredComplex = restoredEntity.get(ComplexComponent);
+        expect(restoredComplex.id).to.equal('test-complex');
+        expect(restoredComplex.position.x).to.equal(42);
+        expect(restoredComplex.position.y).to.equal(84);
+
+        const restoredAudio = restoredWorld.getResource(AudioManager);
+        expect(restoredAudio?.volume).to.equal(50);
+        expect(restoredAudio?.muted).to.equal(false);
+
+        const restoredConfig = restoredWorld.getResource(GameConfig);
+        expect(restoredConfig?.maxPlayers).to.equal(12);
+        expect(restoredConfig?.difficulty).to.equal('expert');
+        expect(restoredConfig?.enabled).to.equal(true);
+      });
+
+      it('fromJSON handles empty serialized data', () => {
+        const serialized = {
+          resources: [],
+          entities: [],
+        };
+
+        const restoredWorld = World.fromJSON(serialized, typeMapping);
+
+        expect(restoredWorld).to.be.instanceof(World);
+        expect(restoredWorld.entities.size).to.equal(0);
+      });
+
+      it('fromJSON creates new entities with new IDs (IDs are not preserved)', () => {
+        const serialized = {
+          resources: [],
+          entities: [
+            {
+              id: 'original-id-999',
+              tags: ['custom-id'],
+              components: [
+                {
+                  name: 'SimpleComponent',
+                  data: { value: 'test', count: 123 },
+                },
+              ],
+            },
+          ],
+        };
+
+        const restoredWorld = World.fromJSON(serialized, typeMapping);
+
+        expect(restoredWorld.entities.size).to.equal(1);
+        const entity = Array.from(restoredWorld.entities.values())[0];
+        expect(entity.id).to.not.equal('original-id-999'); // ID should NOT be preserved (new UUID generated)
+        expect(typeof entity.id).to.equal('string'); // Should be a valid UUID string
+        expect(entity.hasTag('custom-id')).to.equal(true);
+
+        const component = entity.get(SimpleComponent);
+        expect(component.value).to.equal('test');
+        expect(component.count).to.equal(123);
       });
     });
   });

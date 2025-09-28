@@ -106,6 +106,9 @@ export default class Entity<CT> {
    * Add a component to an Entity, doh.
    */
   add<T extends CT>(component: T): this {
+    if (!component) {
+      throw new Error(`Entity.add: Component is null or undefined`);
+    }
     this._world.add(this._id, component);
 
     return this;
