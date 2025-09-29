@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as ecstatic from 'ecstatic';
 import { getRandomNumber } from '../utils/utils.js';
+import { MobileControls } from '../mobile-controls.js';
 import {
   ThreeScene,
   Controls,
@@ -72,6 +73,7 @@ import {
   uiRenderSystem,
   damageIndicatorSystem,
   crosshairSystem,
+  cameraControlSystem,
   rendererSystem,
   cleanupSystem,
   groundCollisionSystem,
@@ -207,6 +209,9 @@ function registerSystems(world) {
   world.addSystem([GameState], crosshairSystem, {
     phase: 'Render',
   });
+  world.addSystem([GameState], cameraControlSystem, {
+    phase: 'Render',
+  });
   // world.addSystem([GameState], splatterFadeSystem, {
   //   phase: 'Render'
   // });
@@ -232,6 +237,7 @@ function initializeGame(world) {
   world.setResource(new InputState());
   world.setResource(new GameConfig());
   world.setResource(new WeaponSystem());
+  world.setResource(new MobileControls());
   world.createEntity().add(new GameState());
 
   createSkybox(threeScene.scene);
@@ -484,6 +490,8 @@ function initializeGame(world) {
 
 function setupInput(world) {
   const gameOverScreen = document.getElementById('game-over-screen');
+  const mobileControls = world.getResource(MobileControls);
+  const isMobile = mobileControls && mobileControls.isMobile;
 
   // Remove existing event listeners to prevent duplicates after reset
   document.removeEventListener('keydown', handleKeyDown);
@@ -556,12 +564,22 @@ function setupInput(world) {
     e.preventDefault();
   }
 
-  // Add event listeners
-  document.addEventListener('keydown', handleKeyDown);
-  document.addEventListener('keyup', handleKeyUp);
-  document.addEventListener('mousedown', handleMouseDown);
-  document.addEventListener('mouseup', handleMouseUp);
-  document.addEventListener('wheel', handleWheel, { passive: false });
+  // Add event listeners - only desktop controls on non-mobile devices
+  if (!isMobile) {
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('wheel', handleWheel, { passive: false });
+  } else {
+    // Setup mobile weapon switching callback
+    mobileControls.onWeaponSwitch = (weaponIndex) => {
+      const weaponSystem = world.getResource(WeaponSystem);
+      if (weaponSystem) {
+        weaponSystem.switchWeapon(weaponIndex);
+      }
+    };
+  }
 
   window.addEventListener('resize', () => {
     const threeScene = world.getResource(ThreeScene);

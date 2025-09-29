@@ -76,6 +76,7 @@ export function playerMovementSystem({ world }) {
   const input = world.getResource(InputState);
   const playerEntity = world.getTagged(Player);
   const controls = world.getResource(Controls);
+  const mobileControls = world.getResource('MobileControls');
   if (!input || !playerEntity || !controls) return;
 
   const velocity = playerEntity.get(Velocity);
@@ -89,21 +90,37 @@ export function playerMovementSystem({ world }) {
   const direction = new THREE.Vector3();
   const camera = controls.pointerLock.getObject();
 
-  if (input.forward) {
-    camera.getWorldDirection(direction);
-    velocity.add(direction.multiplyScalar(speed));
-  }
-  if (input.backward) {
-    camera.getWorldDirection(direction);
-    velocity.sub(direction.multiplyScalar(speed));
-  }
-  if (input.right) {
-    direction.setFromMatrixColumn(camera.matrix, 0);
-    velocity.add(direction.multiplyScalar(speed));
-  }
-  if (input.left) {
-    direction.setFromMatrixColumn(camera.matrix, 0);
-    velocity.sub(direction.multiplyScalar(speed));
+  // Handle desktop controls
+  if (!mobileControls || !mobileControls.isMobile) {
+    if (input.forward) {
+      camera.getWorldDirection(direction);
+      velocity.add(direction.multiplyScalar(speed));
+    }
+    if (input.backward) {
+      camera.getWorldDirection(direction);
+      velocity.sub(direction.multiplyScalar(speed));
+    }
+    if (input.right) {
+      direction.setFromMatrixColumn(camera.matrix, 0);
+      velocity.add(direction.multiplyScalar(speed));
+    }
+    if (input.left) {
+      direction.setFromMatrixColumn(camera.matrix, 0);
+      velocity.sub(direction.multiplyScalar(speed));
+    }
+  } else {
+    // Handle mobile virtual joystick
+    const movementVector = mobileControls.getMovementVector();
+
+    if (movementVector.x !== 0 || movementVector.y !== 0) {
+      // Forward/backward movement
+      camera.getWorldDirection(direction);
+      velocity.add(direction.multiplyScalar(speed * -movementVector.y));
+
+      // Left/right movement
+      direction.setFromMatrixColumn(camera.matrix, 0);
+      velocity.add(direction.multiplyScalar(speed * movementVector.x));
+    }
   }
 
   const maxSpeed = 0.2;
@@ -148,6 +165,7 @@ export function playerShootingSystem({ world }) {
   const player = world.getTagged(Player);
   const controls = world.getResource(Controls);
   const weaponSystem = world.getResource(WeaponSystem);
+  const mobileControls = world.getResource('MobileControls');
 
   if (!input || !player || !controls || !weaponSystem) return;
 
@@ -164,12 +182,28 @@ export function playerShootingSystem({ world }) {
 
   // Check if we should fire based on weapon type and input
   let shouldFire = false;
-  if (weapon.type === 'machinegun' || weapon.type === 'flamethrower') {
-    // Machine gun and flamethrower auto-fire while button is held down
-    shouldFire = input.shoot && weaponSystem.canFire();
+
+  // Handle mobile shooting
+  if (mobileControls && mobileControls.isMobile) {
+    if (weapon.type === 'machinegun' || weapon.type === 'flamethrower') {
+      // Machine gun and flamethrower auto-fire while button is held down
+      shouldFire = mobileControls.isShooting() && weaponSystem.canFire();
+    } else {
+      // Other weapons fire when mobile shoot button is pressed
+      shouldFire = mobileControls.isShooting() && !input.shoot && weaponSystem.canFire();
+      if (mobileControls.isShooting()) {
+        input.shootReleased = true; // Simulate button release for single-shot weapons
+      }
+    }
   } else {
-    // Other weapons fire on button release (single shot)
-    shouldFire = input.shootReleased && weaponSystem.canFire();
+    // Desktop shooting logic
+    if (weapon.type === 'machinegun' || weapon.type === 'flamethrower') {
+      // Machine gun and flamethrower auto-fire while button is held down
+      shouldFire = input.shoot && weaponSystem.canFire();
+    } else {
+      // Other weapons fire on button release (single shot)
+      shouldFire = input.shootReleased && weaponSystem.canFire();
+    }
   }
 
   if (shouldFire && weaponSystem.fire()) {
@@ -1248,6 +1282,8 @@ export function uiRenderSystem({ world }) {
   // Update weapon UI
   if (weaponSystem) {
     const currentWeapon = weaponSystem.getCurrentWeapon();
+    const currentWeaponIndex = weaponSystem.currentWeaponIndex;
+
     document.getElementById('current-weapon').innerText = currentWeapon.name;
     document.getElementById('current-ammo').innerText =
       currentWeapon.ammo === Infinity ? '∞' : currentWeapon.ammo;
@@ -1267,8 +1303,17 @@ export function uiRenderSystem({ world }) {
       case 'rocket launcher':
         weaponIcon.innerText = '🚀';
         break;
+      case 'flamethrower':
+        weaponIcon.innerText = '🔥';
+        break;
       default:
         weaponIcon.innerText = '🔫';
+    }
+
+    // Update mobile weapon buttons
+    const mobileControls = world.getResource('MobileControls');
+    if (mobileControls && mobileControls.isMobile) {
+      mobileControls.updateWeaponButtons(currentWeaponIndex);
     }
   }
 
@@ -1503,6 +1548,32 @@ export function damageIndicatorSystem({ world }) {
 
     indicatorsContainer.appendChild(indicatorElement);
   });
+}
+
+export function cameraControlSystem({ world }) {
+  const controls = world.getResource(Controls);
+  const mobileControls = world.getResource('MobileControls');
+  const player = world.getTagged(Player);
+
+  if (!controls || !player) return;
+
+  const camera = controls.pointerLock.getObject();
+  const threeObject = player.get(ThreeObject);
+
+  // Handle mobile camera controls
+  if (mobileControls && mobileControls.isMobile) {
+    const cameraRotation = mobileControls.getCameraRotation();
+
+    // Apply rotation from touch input
+    if (cameraRotation.x !== 0 || cameraRotation.y !== 0) {
+      // Rotate player container horizontally (left/right)
+      threeObject.mesh.rotation.y -= cameraRotation.x * 0.01;
+
+      // Rotate camera vertically (up/down)
+      const cameraVerticalRotation = camera.rotation.x - cameraRotation.y * 0.01;
+      camera.rotation.x = THREE.MathUtils.clamp(cameraVerticalRotation, -Math.PI/2, Math.PI/2);
+    }
+  }
 }
 
 export function rendererSystem({ world }) {
