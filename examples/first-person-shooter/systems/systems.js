@@ -13,6 +13,8 @@ import {
   Velocity,
   Collider,
   Health,
+  Armor,
+  ArmorRegeneration,
   Expires,
   EnemyAI,
   ScoutAI,
@@ -23,12 +25,14 @@ import {
   WeaponPickup,
   WeaponPickupArrow,
   HitFlash,
+  DamageIndicator,
   Player,
   Enemy,
   Scout,
   Tank,
   Sniper,
   Obstacle,
+  ArmorPickup,
 } from '../components/components.js';
 import {
   CollisionEvent,
@@ -36,6 +40,7 @@ import {
   PlayerDeathEvent,
   PlayerHealedEvent,
   PlayerWeaponPickupEvent,
+  PlayerArmorPickupEvent,
 } from '../events/events.js';
 import {
   createBullet,
@@ -46,6 +51,7 @@ import {
   createMuzzleFlash,
   createExplosion,
   createRocketExplosion,
+  createFlameThrowerBlast,
   spawnEnemy,
   spawnScout,
   spawnTank,
@@ -53,6 +59,7 @@ import {
   spawnHealthPack,
   dropHealthPack,
   spawnWeaponPickup,
+  spawnArmorPickup,
 } from '../entities/entities.js';
 import { sceneSize } from '../game/game.js';
 
@@ -137,15 +144,7 @@ export function playerShootingSystem({ world }) {
   const controls = world.getResource(Controls);
   const weaponSystem = world.getResource(WeaponSystem);
 
-  if (
-    !input ||
-    !player ||
-    !controls ||
-    !weaponSystem ||
-    !input.shoot ||
-    !input.shootReleased
-  )
-    return;
+  if (!input || !player || !controls || !weaponSystem) return;
 
   const camera = controls.pointerLock.getObject();
   const direction = new THREE.Vector3();
@@ -156,9 +155,19 @@ export function playerShootingSystem({ world }) {
     .getWorldPosition(startPosition)
     .add(direction.clone().multiplyScalar(1.5));
 
-  if (weaponSystem.fire()) {
-    const weapon = weaponSystem.getCurrentWeapon();
+  const weapon = weaponSystem.getCurrentWeapon();
 
+  // Check if we should fire based on weapon type and input
+  let shouldFire = false;
+  if (weapon.type === 'machinegun' || weapon.type === 'flamethrower') {
+    // Machine gun and flamethrower auto-fire while button is held down
+    shouldFire = input.shoot && weaponSystem.canFire();
+  } else {
+    // Other weapons fire on button release (single shot)
+    shouldFire = input.shootReleased && weaponSystem.canFire();
+  }
+
+  if (shouldFire && weaponSystem.fire()) {
     switch (weapon.type) {
       case 'pistol':
         createBullet(world, startPosition, direction, Player, weapon.damage);
@@ -178,12 +187,18 @@ export function playerShootingSystem({ world }) {
       case 'rocket':
         createRocket(world, startPosition, direction, Player, weapon.damage);
         break;
+      case 'flamethrower':
+        createFlameThrowerBlast(world, startPosition, direction, Player, weapon.damage);
+        break;
     }
 
     createMuzzleFlash(world, startPosition, direction, weapon.type);
   }
 
-  input.shootReleased = false;
+  // Reset shootReleased after firing
+  if (input.shootReleased) {
+    input.shootReleased = false;
+  }
 }
 
 export function enemyAISystem({ world, components }) {
@@ -534,6 +549,24 @@ export function weaponPickupAnimationSystem({ components }) {
   threeObject.mesh.rotation.x = Math.sin(weaponPickup.bobTimer * 0.5) * 0.1;
 }
 
+export function armorPickupAnimationSystem({ components }) {
+  const armorPickup = components.get(ArmorPickup);
+
+  // Skip animation for picked up armor pickups
+  if (armorPickup.pickedUp) return;
+
+  const threeObject = components.get(ThreeObject);
+
+  armorPickup.bobTimer += 0.05;
+  armorPickup.bobOffset = Math.sin(armorPickup.bobTimer) * 0.15;
+  threeObject.mesh.position.y = 1 + armorPickup.bobOffset;
+
+  // Rotate armor to make it more visible with shield-like motion
+  threeObject.mesh.rotation.y += 0.02;
+  threeObject.mesh.rotation.x = Math.sin(armorPickup.bobTimer * 0.3) * 0.2;
+  threeObject.mesh.rotation.z = Math.cos(armorPickup.bobTimer * 0.4) * 0.1;
+}
+
 export function weaponPickupArrowAnimationSystem({ components }) {
   const arrow = components.get(WeaponPickupArrow);
   const threeObject = components.get(ThreeObject);
@@ -811,6 +844,12 @@ export function collisionSystem({ world }) {
         const enemyCollider = enemy.get(Collider);
         if (bulletCollider.box.intersectsBox(enemyCollider.box)) {
           world.events.emit(new CollisionEvent(bullet, enemy));
+
+          // Handle splash damage for shotgun pellets
+          if (bullet.hasTag && bullet.hasTag('shotgunPellet')) {
+            const bulletPos = bullet.get(ThreeObject).mesh.position;
+            applySplashDamage(world, bulletPos, projectile.damage, projectile.firedBy, 3);
+          }
           break;
         }
       }
@@ -850,6 +889,20 @@ export function collisionSystem({ world }) {
         world.events.emit(new PlayerWeaponPickupEvent(pickup));
       }
     }
+
+    // Handle armor pickup collision with player
+    const armorPickups = world.locateAll([ArmorPickup]);
+    for (const pickup of armorPickups) {
+      const pickupCollider = pickup.get(Collider);
+      const armorPickup = pickup.get(ArmorPickup);
+      if (
+        playerCollider.box.intersectsBox(pickupCollider.box) &&
+        !armorPickup.pickedUp
+      ) {
+        armorPickup.pickedUp = true;
+        world.events.emit(new PlayerArmorPickupEvent(pickup));
+      }
+    }
   }
 }
 
@@ -869,6 +922,7 @@ export function deathSystem({ world, entity, components }) {
       const gameStateEntity = world.locate(GameState);
       if (gameStateEntity) {
         const gameState = gameStateEntity.get(GameState);
+        gameState.kills += 1; // Increment kill count
         if (entity.hasTag(Scout)) {
           gameState.score += 150; // Scouts give more points
         } else if (entity.hasTag(Tank)) {
@@ -882,16 +936,29 @@ export function deathSystem({ world, entity, components }) {
       const position = entity.get(ThreeObject).mesh.position;
       createExplosion(world, position, 0xff4444);
 
-      // Chance to drop health pack when enemy dies
-      let dropChance = 0.2; // 20% base chance
+      // Chance to drop items when enemy dies
+      let healthDropChance = 0.15; // 15% base chance for health
+      let weaponDropChance = 0.25; // 25% base chance for weapons
+
       if (entity.hasTag(Tank)) {
-        dropChance = 0.4; // 40% chance for tanks (tougher enemies)
+        healthDropChance = 0.3; // 30% chance for tanks
+        weaponDropChance = 0.4; // 40% chance for tanks
       } else if (entity.hasTag(Sniper)) {
-        dropChance = 0.3; // 30% chance for snipers
+        healthDropChance = 0.2; // 20% chance for snipers
+        weaponDropChance = 0.35; // 35% chance for snipers
+      } else if (entity.hasTag(Scout)) {
+        healthDropChance = 0.1; // 10% chance for scouts
+        weaponDropChance = 0.2; // 20% chance for scouts
       }
 
-      if (Math.random() < dropChance) {
+      // Drop health pack
+      if (Math.random() < healthDropChance) {
         dropHealthPack(world, position);
+      }
+
+      // Drop weapon pickup
+      if (Math.random() < weaponDropChance) {
+        spawnWeaponPickup(world, null, position);
       }
     }
     entity.destroy();
@@ -906,7 +973,25 @@ export function damageSystem({ event: collision, world }) {
   if (target.has(Health)) {
     const targetHealth = target.get(Health);
     const projectile = bullet.get(Projectile);
-    const damage = projectile.damage;
+    let damage = projectile.damage;
+
+    // Apply damage to armor first if player has armor
+    if (target.hasTag(Player) && target.has(Armor)) {
+      const armor = target.get(Armor);
+      if (armor.value > 0) {
+        const armorDamage = Math.min(damage, armor.value);
+        armor.value -= armorDamage;
+        damage -= armorDamage;
+      }
+
+      // Reset armor regeneration timer when player takes damage
+      if (target.has(ArmorRegeneration)) {
+        const regen = target.get(ArmorRegeneration);
+        regen.damageTimer = 0;
+        regen.isRegenerating = false;
+      }
+    }
+
     targetHealth.value -= damage;
 
     // Add hit flash effect for enemies
@@ -925,6 +1010,15 @@ export function damageSystem({ event: collision, world }) {
 
     if (target.hasTag(Player)) {
       world.events.emit(new PlayerDamagedEvent());
+
+      // Create damage indicator
+      if (damage > 0) {
+        // Calculate direction from player to bullet
+        const playerPos = target.get(ThreeObject).mesh.position;
+        const bulletPos = bullet.get(ThreeObject).mesh.position;
+        const direction = Math.atan2(bulletPos.x - playerPos.x, bulletPos.z - playerPos.z);
+        world.createEntity().add(new DamageIndicator(direction, damage));
+      }
     }
   }
 
@@ -988,13 +1082,35 @@ export function uiRenderSystem({ world }) {
   const player = world.getTagged(Player);
   const weaponSystem = world.getResource(WeaponSystem);
 
+  // Update basic stats
   document.getElementById('score').innerText = gameState.score;
+  document.getElementById('kills').innerText = gameState.kills;
+
+  // Update health bar
   if (player && player.has(Health)) {
-    document.getElementById('health').innerText = Math.floor(
-      player.get(Health).value
-    );
-  } else {
-    document.getElementById('health').innerText = 0;
+    const health = player.get(Health);
+    const healthPercent = (health.value / health.maxValue) * 100;
+    document.getElementById('health-bar').style.width = `${healthPercent}%`;
+
+    // Low health warning effect
+    const screenBlood = document.getElementById('screen-blood');
+    if (healthPercent < 25) {
+      screenBlood.classList.add('low-health-flash');
+      screenBlood.style.opacity = '0.3';
+    } else if (healthPercent < 50) {
+      screenBlood.classList.remove('low-health-flash');
+      screenBlood.style.opacity = '0.1';
+    } else {
+      screenBlood.classList.remove('low-health-flash');
+      screenBlood.style.opacity = '0';
+    }
+  }
+
+  // Update armor bar
+  if (player && player.has(Armor)) {
+    const armor = player.get(Armor);
+    const armorPercent = (armor.value / armor.maxValue) * 100;
+    document.getElementById('armor-bar').style.width = `${armorPercent}%`;
   }
 
   // Update weapon UI
@@ -1003,13 +1119,212 @@ export function uiRenderSystem({ world }) {
     document.getElementById('current-weapon').innerText = currentWeapon.name;
     document.getElementById('current-ammo').innerText =
       currentWeapon.ammo === Infinity ? '∞' : currentWeapon.ammo;
+
+    // Update weapon icon
+    const weaponIcon = document.getElementById('weapon-icon');
+    switch (currentWeapon.name.toLowerCase()) {
+      case 'pistol':
+        weaponIcon.innerText = '🔫';
+        break;
+      case 'shotgun':
+        weaponIcon.innerText = '💥';
+        break;
+      case 'machine gun':
+        weaponIcon.innerText = '🔥';
+        break;
+      case 'rocket launcher':
+        weaponIcon.innerText = '🚀';
+        break;
+      default:
+        weaponIcon.innerText = '🔫';
+    }
   }
+
+  // Update minimap
+  updateMinimap(world);
+}
+
+function updateMinimap(world) {
+  const player = world.getTagged(Player);
+  const threeScene = world.getResource('ThreeScene');
+
+  if (!player || !threeScene) return;
+
+  const minimap = document.getElementById('minimap');
+  if (!minimap) return;
+
+  // Clear existing dots
+  const existingDots = minimap.querySelectorAll('.minimap-enemy, .minimap-item, .minimap-armor');
+  existingDots.forEach(dot => dot.remove());
+
+  const sceneSize = 100; // From game.js
+  const mapSize = 150; // Minimap size in pixels
+
+  // Update player position on minimap
+  if (player.has(ThreeObject)) {
+    const playerDot = minimap.querySelector('.minimap-player');
+
+    if (playerDot) {
+      // Get the camera's world position since it's attached to the player container
+      const camera = threeScene.camera;
+      const playerPos = new THREE.Vector3();
+      camera.getWorldPosition(playerPos);
+
+      const playerX = ((playerPos.x + sceneSize/2) / sceneSize) * mapSize;
+      const playerZ = ((playerPos.z + sceneSize/2) / sceneSize) * mapSize;
+
+      // Ensure coordinates are within bounds
+      const clampedX = Math.max(0, Math.min(mapSize, playerX));
+      const clampedZ = Math.max(0, Math.min(mapSize, playerZ));
+
+      playerDot.style.left = `${clampedX}px`;
+      playerDot.style.top = `${clampedZ}px`;
+    }
+  }
+
+  // Add enemy positions - collect all enemy types
+  const enemyTags = [Enemy, Scout, Tank, Sniper];
+  const enemies = [];
+  for (const tag of enemyTags) {
+    enemies.push(...world.getTaggedAll(tag));
+  }
+
+  enemies.forEach(enemy => {
+    if (enemy.has(ThreeObject)) {
+      const enemyMesh = enemy.get(ThreeObject).mesh;
+      const dot = document.createElement('div');
+      dot.className = 'minimap-enemy';
+
+      // Get world position of the enemy mesh
+      const enemyPos = new THREE.Vector3();
+      enemyMesh.getWorldPosition(enemyPos);
+
+      // Convert world coordinates to minimap coordinates
+      // World goes from -50 to +50, map from 0 to 150
+      const x = ((enemyPos.x + sceneSize/2) / sceneSize) * mapSize;
+      const z = ((enemyPos.z + sceneSize/2) / sceneSize) * mapSize;
+
+      // Ensure coordinates are within bounds
+      const clampedX = Math.max(0, Math.min(mapSize, x));
+      const clampedZ = Math.max(0, Math.min(mapSize, z));
+
+      dot.style.left = `${clampedX}px`;
+      dot.style.top = `${clampedZ}px`;
+      minimap.appendChild(dot);
+    }
+  });
+
+  // Add pickup positions
+  const pickups = world.entities.values();
+  for (const entity of pickups) {
+    if ((entity.has(WeaponPickup) || entity.has(ArmorPickup)) && entity.has(ThreeObject)) {
+      const pickupMesh = entity.get(ThreeObject).mesh;
+      const dot = document.createElement('div');
+      dot.className = entity.has(ArmorPickup) ? 'minimap-armor' : 'minimap-item';
+
+      // Get world position of the pickup mesh
+      const pickupPos = new THREE.Vector3();
+      pickupMesh.getWorldPosition(pickupPos);
+
+      const x = ((pickupPos.x + sceneSize/2) / sceneSize) * mapSize;
+      const z = ((pickupPos.z + sceneSize/2) / sceneSize) * mapSize;
+
+      // Ensure coordinates are within bounds
+      const clampedX = Math.max(0, Math.min(mapSize, x));
+      const clampedZ = Math.max(0, Math.min(mapSize, z));
+
+      dot.style.left = `${clampedX}px`;
+      dot.style.top = `${clampedZ}px`;
+      minimap.appendChild(dot);
+    }
+  }
+}
+
+export function damageIndicatorSystem({ world }) {
+  const indicatorsContainer = document.getElementById('damage-indicators');
+  if (!indicatorsContainer) return;
+
+  // Clear existing indicators
+  indicatorsContainer.innerHTML = '';
+
+  // Process all damage indicators
+  const indicators = world.locateAll([DamageIndicator]);
+  indicators.forEach(entity => {
+    const indicator = entity.get(DamageIndicator);
+    indicator.timer++;
+
+    if (indicator.timer >= indicator.duration) {
+      entity.destroy();
+      return;
+    }
+
+    // Calculate opacity based on timer
+    const progress = indicator.timer / indicator.duration;
+    const opacity = 1 - progress;
+
+    // Calculate position on screen edge
+    const angle = indicator.direction;
+    const x = Math.cos(angle) * indicator.distance;
+    const y = Math.sin(angle) * indicator.distance;
+
+    // Create indicator element
+    const indicatorElement = document.createElement('div');
+    indicatorElement.className = 'damage-indicator';
+    indicatorElement.style.left = `calc(50% + ${x}px)`;
+    indicatorElement.style.top = `calc(50% + ${y}px)`;
+    indicatorElement.style.opacity = opacity;
+    indicatorElement.textContent = Math.floor(indicator.damage);
+
+    indicatorsContainer.appendChild(indicatorElement);
+  });
 }
 
 export function rendererSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
+}
+
+export function applySplashDamage(world, position, damage, firedBy, radius) {
+  const regularEnemies = world.locateAll([EnemyAI, Collider]);
+  const scouts = world.locateAll([ScoutAI, Collider]);
+  const tanks = world.locateAll([TankAI, Collider]);
+  const snipers = world.locateAll([SniperAI, Collider]);
+  const enemies = [...regularEnemies, ...scouts, ...tanks, ...snipers];
+  const player = world.getTagged(Player);
+
+  // Damage enemies in splash radius (unless fired by enemy)
+  if (firedBy !== Enemy && firedBy !== Scout && firedBy !== Tank && firedBy !== Sniper) {
+    for (const enemy of enemies) {
+      if (enemy.state !== 'created') continue;
+      const enemyPos = enemy.get(ThreeObject).mesh.position;
+      const distance = position.distanceTo(enemyPos);
+
+      if (distance <= radius) {
+        // Damage decreases with distance from center
+        const splashDamage = Math.max(1, damage * (1 - distance / radius));
+        if (enemy.has(Health)) {
+          const health = enemy.get(Health);
+          health.value -= splashDamage;
+        }
+      }
+    }
+  }
+
+  // Damage player if in splash radius (for enemy-fired weapons or neutral explosions)
+  if (player && player.state === 'created' && firedBy !== Player) {
+    const playerPos = player.get(ThreeObject).mesh.position;
+    const distance = position.distanceTo(playerPos);
+
+    if (distance <= radius) {
+      const splashDamage = Math.max(1, damage * (1 - distance / radius));
+      if (player.has(Health)) {
+        const health = player.get(Health);
+        health.value -= splashDamage;
+        world.events.emit(new PlayerDamagedEvent());
+      }
+    }
+  }
 }
 
 export function cleanupSystem({ world }) {
@@ -1094,6 +1409,28 @@ export function weaponPickupSpawnerSystem({ world, components }) {
   }
 }
 
+export function armorPickupSpawnerSystem({ world, components }) {
+  const gameState = components.get(GameState);
+  const gameConfig = world.getResource(GameConfig);
+  const currentPickups = world.locateAll([ArmorPickup]).length;
+
+  // Allow up to 1 armor pickup on the field at once
+  if (currentPickups < 1) {
+    // Use a separate timer for armor pickups (spawn less frequently than weapon pickups)
+    if (!gameState.armorPickupSpawnTimer) {
+      gameState.armorPickupSpawnTimer =
+        gameConfig.armorPickupSpawnRate || 1200; // Default to 1200 if not set
+    }
+
+    gameState.armorPickupSpawnTimer--;
+    if (gameState.armorPickupSpawnTimer <= 0) {
+      spawnArmorPickup(world);
+      gameState.armorPickupSpawnTimer =
+        gameConfig.armorPickupSpawnRate || 1200;
+    }
+  }
+}
+
 export function groundCollisionSystem({ components }) {
   const threeObject = components.get(ThreeObject);
   const velocity = components.get(Velocity);
@@ -1157,5 +1494,40 @@ export function hitFlashSystem({ entity, components }) {
     material.emissive.setHex(hitFlash.originalEmissive);
     material.emissiveIntensity = hitFlash.originalEmissiveIntensity;
     entity.remove(HitFlash);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           ARMOR REGENERATION SYSTEM                        */
+/* -------------------------------------------------------------------------- */
+
+export function armorRegenerationSystem({ world }) {
+  const players = world.locateAll([Armor, ArmorRegeneration]);
+
+  for (const player of players) {
+    const armor = player.get(Armor);
+    const regen = player.get(ArmorRegeneration);
+
+    // If armor is already full, don't need to regenerate
+    if (armor.value >= armor.maxValue) {
+      regen.isRegenerating = false;
+      regen.damageTimer = 0; // Reset timer when full
+      continue;
+    }
+
+    // Increment damage timer
+    regen.damageTimer++;
+
+    // Check if enough time has passed since last damage
+    if (regen.damageTimer >= regen.regenerationDelay) {
+      // Start regenerating
+      regen.isRegenerating = true;
+
+      // Regenerate armor at the specified rate (converted from per-second to per-frame)
+      const regenAmount = regen.regenerationRate / 60; // Assuming 60fps
+      armor.value = Math.min(armor.maxValue, armor.value + regenAmount);
+    } else {
+      regen.isRegenerating = false;
+    }
   }
 }

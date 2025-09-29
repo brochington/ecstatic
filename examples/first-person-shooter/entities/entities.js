@@ -1,5 +1,6 @@
 import { getRandomNumber } from '../utils/utils.js';
 import * as THREE from 'three';
+import { applySplashDamage } from '../systems/systems.js';
 import { ThreeScene } from '../resources/resources.js';
 import {
   ThreeObject,
@@ -23,6 +24,7 @@ import {
   Obstacle,
   Particle,
   WeaponPickupArrow,
+  ArmorPickup,
 } from '../components/components.js';
 import { sceneSize } from '../game/game.js';
 
@@ -142,6 +144,59 @@ export function createShotgunBlast(
       .add(collider)
       .add(new Expires(120))
       .add(new Projectile(firedByTag, damage))
+      .addTag(Bullet)
+      .addTag('shotgunPellet');
+  }
+}
+
+export function createFlameThrowerBlast(
+  world,
+  position,
+  direction,
+  firedByTag,
+  damage = 3
+) {
+  const threeScene = world.getResource(ThreeScene);
+  if (!threeScene) return;
+
+  // Create flame particles that persist and deal damage over time
+  for (let i = 0; i < 5; i++) {
+    const flameDirection = direction.clone();
+    // Add some spread to the flames
+    flameDirection.x += getRandomNumber(-0.1, 0.1);
+    flameDirection.y += getRandomNumber(-0.1, 0.1);
+    flameDirection.z += getRandomNumber(-0.1, 0.1);
+    flameDirection.normalize();
+
+    const geo = new THREE.SphereGeometry(0.15, 6, 6);
+    const mat = new THREE.MeshPhongMaterial({
+      color: 0xff4400, // Orange-red flame color
+      emissive: 0x662200,
+      emissiveIntensity: 1.2,
+      transparent: true,
+      opacity: 0.9,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
+
+    // Add a small light to each flame particle
+    const flameLight = new THREE.PointLight(0xff4400, 0.5, 2);
+    mesh.add(flameLight);
+
+    const velocity = flameDirection.clone().multiplyScalar(0.5); // Slower than bullets
+    const collider = new Collider(new THREE.Box3().setFromObject(mesh));
+
+    threeScene.scene.add(mesh);
+
+    world
+      .createEntity()
+      .add(new ThreeObject(mesh))
+      .add(new Velocity(velocity.x, velocity.y, velocity.z))
+      .add(collider)
+      .add(new Expires(30)) // Flames last longer
+      .add(new Projectile(firedByTag, damage))
+      .addTag('flame')
       .addTag(Bullet);
   }
 }
@@ -291,6 +346,11 @@ export function createMuzzleFlash(
       flashColor = 0xff4444; // Red
       particleCount = 8;
       flashSize = 0.1;
+      break;
+    case 'flamethrower':
+      flashColor = 0xff6600; // Orange
+      particleCount = 6;
+      flashSize = 0.08;
       break;
     default:
       flashColor = 0xffff00;
@@ -692,13 +752,13 @@ export function dropHealthPack(world, position) {
     .add(new HealthPack());
 }
 
-export function spawnWeaponPickup(world, weaponType = null) {
+export function spawnWeaponPickup(world, weaponType = null, position = null) {
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
 
   // If no weapon type specified, randomly choose one (excluding pistol since player starts with it)
   if (!weaponType) {
-    const weaponTypes = ['shotgun', 'machinegun', 'rocket'];
+    const weaponTypes = ['shotgun', 'machinegun', 'rocket', 'flamethrower'];
     weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
   }
 
@@ -729,6 +789,14 @@ export function spawnWeaponPickup(world, weaponType = null) {
         emissiveIntensity: 0.4,
       });
       break;
+    case 'flamethrower':
+      geometry = new THREE.CylinderGeometry(0.2, 0.3, 0.8, 8);
+      material = new THREE.MeshPhongMaterial({
+        color: 0x333333, // Dark metal
+        emissive: 0x441100,
+        emissiveIntensity: 0.3,
+      });
+      break;
     default:
       return; // Invalid weapon type
   }
@@ -740,11 +808,17 @@ export function spawnWeaponPickup(world, weaponType = null) {
   const weaponLight = new THREE.PointLight(0x00ff88, 0.3, 3);
   weaponMesh.add(weaponLight);
 
-  const weaponPosition = new THREE.Vector3(
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
-    1,
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
-  );
+  let weaponPosition;
+  if (position) {
+    weaponPosition = position.clone();
+    weaponPosition.y = 1; // Ensure it's on the ground
+  } else {
+    weaponPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      1,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+  }
 
   weaponMesh.position.copy(weaponPosition);
   threeScene.scene.add(weaponMesh);
@@ -783,6 +857,72 @@ export function spawnWeaponPickup(world, weaponType = null) {
     .createEntity()
     .add(new ThreeObject(arrowMesh))
     .add(new WeaponPickupArrow(weaponEntity)); // Link to weapon entity
+}
+
+export function spawnArmorPickup(world, armorAmount = 50) {
+  const threeScene = world.getResource(ThreeScene);
+  if (!threeScene) return;
+
+  // Create a shield-like armor pickup
+  const armorGeometry = new THREE.OctahedronGeometry(0.5, 0);
+  const armorMaterial = new THREE.MeshPhongMaterial({
+    color: 0x4444ff, // Blue shield color
+    emissive: 0x111122,
+    emissiveIntensity: 0.3,
+    transparent: true,
+    opacity: 0.8,
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+
+  const armorMesh = new THREE.Mesh(armorGeometry, armorMaterial);
+
+  // Add a subtle blue pulsing light
+  const armorLight = new THREE.PointLight(0x4444ff, 0.4, 4);
+  armorMesh.add(armorLight);
+
+  const armorPosition = new THREE.Vector3(
+    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+    1,
+    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+  );
+
+  armorMesh.position.copy(armorPosition);
+  threeScene.scene.add(armorMesh);
+
+  // Create floating arrow indicator above the armor
+  const arrowGeometry = new THREE.ConeGeometry(0.1, 0.5, 6);
+  const arrowMaterial = new THREE.MeshPhongMaterial({
+    color: 0x4444ff, // Blue for armor
+    emissive: 0x111122,
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0.9,
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+
+  // Position arrow above armor
+  arrowMesh.position.copy(armorPosition).add(new THREE.Vector3(0, 2.5, 0));
+  arrowMesh.rotation.x = -Math.PI / 2; // Point downward
+
+  // Add bright light to arrow
+  const arrowLight = new THREE.PointLight(0x4444ff, 1.0, 8);
+  arrowMesh.add(arrowLight);
+
+  threeScene.scene.add(arrowMesh);
+
+  // Create armor pickup entity
+  const armorEntity = world
+    .createEntity()
+    .add(new ThreeObject(armorMesh))
+    .add(new Collider(new THREE.Box3().setFromObject(armorMesh)))
+    .add(new ArmorPickup(armorAmount));
+
+  // Create arrow indicator entity
+  world
+    .createEntity()
+    .add(new ThreeObject(arrowMesh))
+    .add(new WeaponPickupArrow(armorEntity)); // Link to armor entity
 }
 
 export function createSkybox(scene) {
@@ -1071,45 +1211,7 @@ export function createRocketExplosion(world, position) {
       .addTag(Particle);
   }
 
-  // Check for enemies in explosion radius
+  // Apply splash damage in explosion radius
   const explosionRadius = 4;
-  const enemies = world.locateAll([
-    EnemyAI,
-    ScoutAI,
-    TankAI,
-    SniperAI,
-    ThreeObject,
-  ]);
-
-  for (const enemy of enemies) {
-    if (enemy.state === 'created') {
-      const enemyPos = enemy.get(ThreeObject).mesh.position;
-      const distance = position.distanceTo(enemyPos);
-
-      if (distance <= explosionRadius) {
-        // Damage decreases with distance
-        const damage = Math.max(10, 40 * (1 - distance / explosionRadius));
-        if (enemy.has(Health)) {
-          const health = enemy.get(Health);
-          health.value -= damage;
-        }
-      }
-    }
-  }
-
-  // Check for player in explosion radius
-  const player = world.getTagged(Player);
-  if (player && player.state === 'created') {
-    const playerPos = player.get(ThreeObject).mesh.position;
-    const distance = position.distanceTo(playerPos);
-
-    if (distance <= explosionRadius) {
-      const damage = Math.max(5, 30 * (1 - distance / explosionRadius));
-      if (player.has(Health)) {
-        const health = player.get(Health);
-        health.value -= damage;
-        world.events.emit(new PlayerDamagedEvent());
-      }
-    }
-  }
+  applySplashDamage(world, position, 40, null, explosionRadius); // null firedBy means it damages everyone
 }

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 
 export class GameState {
   score = 0;
+  kills = 0;
   isGameOver = false;
   enemySpawnTimer = 0;
   healthPackSpawnTimer = 300;
@@ -29,6 +30,22 @@ export class Health {
   constructor(value, maxValue) {
     this.value = value;
     this.maxValue = maxValue;
+  }
+}
+
+export class Armor {
+  constructor(value, maxValue) {
+    this.value = value;
+    this.maxValue = maxValue;
+  }
+}
+
+export class ArmorRegeneration {
+  constructor(regenerationRate = 5, regenerationDelay = 120) {
+    this.regenerationRate = regenerationRate; // Armor points per second (assuming 60fps)
+    this.regenerationDelay = regenerationDelay; // Frames to wait before starting regeneration (2 seconds at 60fps)
+    this.damageTimer = 0; // Frames since last damage was taken
+    this.isRegenerating = false;
   }
 }
 
@@ -111,6 +128,15 @@ export class WeaponPickup {
   }
 }
 
+export class ArmorPickup {
+  constructor(armorAmount) {
+    this.armorAmount = armorAmount;
+    this.bobTimer = 0;
+    this.bobOffset = 0;
+    this.pickedUp = false;
+  }
+}
+
 export class WeaponPickupArrow {
   constructor(weaponEntity) {
     this.weaponEntity = weaponEntity;
@@ -126,6 +152,16 @@ export class HitFlash {
     this.originalColor = null;
     this.originalEmissive = null;
     this.originalEmissiveIntensity = null;
+  }
+}
+
+export class DamageIndicator {
+  constructor(direction, damage) {
+    this.direction = direction; // Angle in radians from player forward direction
+    this.damage = damage;
+    this.timer = 0;
+    this.duration = 60; // 1 second at 60fps
+    this.distance = 100; // Distance from center of screen
   }
 }
 

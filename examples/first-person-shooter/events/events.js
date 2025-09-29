@@ -23,4 +23,10 @@ export class PlayerWeaponPickupEvent {
   }
 }
 
+export class PlayerArmorPickupEvent {
+  constructor(pickupEntity) {
+    this.pickupEntity = pickupEntity;
+  }
+}
+
 export class PlayerDeathEvent {}

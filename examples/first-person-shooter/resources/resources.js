@@ -90,6 +90,7 @@ export class WeaponSystem {
       new Weapon('shotgun', 'Shotgun', 8, 45, 30), // 8 damage per pellet
       new Weapon('machinegun', 'Machine Gun', 6, 8, 100), // Rapid fire
       new Weapon('rocket', 'Rocket Launcher', 50, 120, 5), // High damage, area effect
+      new Weapon('flamethrower', 'Flamethrower', 3, 2, 200), // Rapid fire, damage over time
     ];
     this.currentWeaponIndex = 0;
     this.switchCooldown = 30;

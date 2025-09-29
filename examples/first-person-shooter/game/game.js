@@ -15,6 +15,8 @@ import {
   Particle,
   Collider,
   Health,
+  Armor,
+  ArmorRegeneration,
   Player,
   Obstacle,
   HealthPack,
@@ -23,12 +25,14 @@ import {
   TankAI,
   SniperAI,
   WeaponPickup,
+  ArmorPickup,
   WeaponPickupArrow,
   HitFlash,
 } from '../components/components.js';
 import {
   PlayerHealedEvent,
   PlayerWeaponPickupEvent,
+  PlayerArmorPickupEvent,
   CollisionEvent,
   PlayerDeathEvent,
 } from '../events/events.js';
@@ -39,6 +43,7 @@ import {
   enemySpawnerSystem,
   healthPackSpawnerSystem,
   weaponPickupSpawnerSystem,
+  armorPickupSpawnerSystem,
   lifecycleSystem,
   updateCollidersSystem,
   updatePlayerColliderSystem,
@@ -48,6 +53,7 @@ import {
   particleMovementSystem,
   healthPackAnimationSystem,
   weaponPickupAnimationSystem,
+  armorPickupAnimationSystem,
   weaponPickupArrowAnimationSystem,
   hitFlashSystem,
   enemyAISystem,
@@ -57,8 +63,10 @@ import {
   rocketExplosionSystem,
   deathSystem,
   damageSystem,
+  armorRegenerationSystem,
   gameOverSystem,
   uiRenderSystem,
+  damageIndicatorSystem,
   crosshairSystem,
   rendererSystem,
   cleanupSystem,
@@ -100,6 +108,9 @@ function registerSystems(world) {
   world.addSystem([GameState], weaponPickupSpawnerSystem, {
     phase: 'Logic',
   });
+  world.addSystem([GameState], armorPickupSpawnerSystem, {
+    phase: 'Logic',
+  });
   world.addSystem([lifecycleSystem], lifecycleSystem, {
     phase: 'Logic',
   });
@@ -107,6 +118,9 @@ function registerSystems(world) {
     phase: 'Logic',
   });
   world.addSystem([GameState], updatePlayerColliderSystem, {
+    phase: 'Logic',
+  });
+  world.addSystem([Armor, ArmorRegeneration], armorRegenerationSystem, {
     phase: 'Logic',
   });
   world.addSystem([GameState], entityObstacleCollisionSystem, {
@@ -128,6 +142,9 @@ function registerSystems(world) {
     phase: 'Logic',
   });
   world.addSystem([WeaponPickup, ThreeObject], weaponPickupAnimationSystem, {
+    phase: 'Logic',
+  });
+  world.addSystem([ArmorPickup, ThreeObject], armorPickupAnimationSystem, {
     phase: 'Logic',
   });
   world.addSystem(
@@ -167,6 +184,9 @@ function registerSystems(world) {
   });
 
   world.addSystem([GameState], uiRenderSystem, {
+    phase: 'Render',
+  });
+  world.addSystem([GameState], damageIndicatorSystem, {
     phase: 'Render',
   });
   world.addSystem([GameState], crosshairSystem, {
@@ -308,6 +328,8 @@ function initializeGame(world) {
     .add(new ThreeObject(playerContainer))
     .add(new Velocity())
     .add(new Health(100, 100))
+    .add(new Armor(100, 100)) // Start with full armor
+    .add(new ArmorRegeneration(5, 120)) // Regenerate 5 armor per second after 2 seconds delay
     .add(playerCollider)
     .addTag(Player);
 }
@@ -395,7 +417,7 @@ function setupInput(world) {
   document.addEventListener('keyup', handleKeyUp);
   document.addEventListener('mousedown', handleMouseDown);
   document.addEventListener('mouseup', handleMouseUp);
-  document.addEventListener('wheel', handleWheel);
+  document.addEventListener('wheel', handleWheel, { passive: false });
 
   window.addEventListener('resize', () => {
     const threeScene = world.getResource(ThreeScene);
@@ -431,7 +453,12 @@ function resetGame(world) {
   world.removeResource(WeaponSystem);
 
   document.getElementById('game-over-screen').style.display = 'none';
-  document.getElementById('health').textContent = '100';
+  document.getElementById('health-bar').style.width = '100%';
+  document.getElementById('armor-bar').style.width = '0%';
+  document.getElementById('current-weapon').innerText = 'Pistol';
+  document.getElementById('current-ammo').innerText = '∞';
+  document.getElementById('weapon-icon').innerText = '🔫';
+  document.getElementById('kills').textContent = '0';
   document.getElementById('score').textContent = '0';
 
   initializeGame(world);
@@ -503,6 +530,33 @@ function setupEventListeners(world) {
         );
         if (weaponIndex !== -1) {
           weaponSystem.switchWeapon(weaponIndex);
+        }
+
+        // Destroy the pickup
+        pickup.destroy();
+      }
+    },
+    {
+      phase: 'Events',
+    }
+  );
+
+  world.addSystemListener(
+    PlayerArmorPickupEvent,
+    ({ event }) => {
+      const player = world.getTagged(Player);
+      if (!player) return;
+
+      const pickup = event.pickupEntity;
+
+      // Check if the pickup entity still exists and has the ArmorPickup component
+      if (pickup && pickup.has(ArmorPickup)) {
+        const armorPickup = pickup.get(ArmorPickup);
+
+        // Add armor to player (up to max armor)
+        if (player.has(Armor)) {
+          const armor = player.get(Armor);
+          armor.value = Math.min(armor.maxValue, armor.value + armorPickup.armorAmount);
         }
 
         // Destroy the pickup
