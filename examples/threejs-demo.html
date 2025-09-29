@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecstatic Demo: 3D Cube Collector</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        background: #111;
+        color: #eee;
+        text-align: center;
+        overflow: hidden;
+        /* Prevent scrollbars */
+      }
+
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #info {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display: block;
+        color: white;
+        text-shadow: 0 0 5px black;
+      }
+
+      #score {
+        position: absolute;
+        top: 40px;
+        left: 20px;
+        font-size: 2em;
+        z-index: 100;
+        color: #00ff00;
+        text-shadow: 0 0 5px black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="info">
+      <h1>Ecstatic Demo: 3D Cube Collector</h1>
+      <p>
+        Controls: [Arrow Keys] to move, [W/S] to Zoom, [A/D] to Rotate Camera
+      </p>
+    </div>
+    <div id="score">Score: 0</div>
+    <canvas id="ecs-canvas"></canvas>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.1/dist/ecstatic.esm.js",
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as ecstatic from 'ecstatic';
+      import * as THREE from 'three';
+
+      /* -------------------------------------------------------------------------- */
+      /*                               HELPER FUNCTIONS                             */
+      /* -------------------------------------------------------------------------- */
+      function getRandomNumber(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const { World } = ecstatic;
+      const world = new World();
+      const sceneSize = 50;
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 RESOURCES                                  */
+      /* -------------------------------------------------------------------------- */
+
+      class ThreeScene {
+        constructor() {
+          this.scene = new THREE.Scene();
+          this.camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+          );
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('ecs-canvas'),
+            antialias: true,
+          });
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+          this.scene.add(ambientLight);
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+          directionalLight.position.set(5, 10, 7.5);
+          this.scene.add(directionalLight);
+        }
+      }
+
+      class InputState {
+        up = false;
+        down = false;
+        left = false;
+        right = false;
+        w = false; // For zoom in
+        s = false; // For zoom out
+        a = false; // For rotate left
+        d = false; // For rotate right
+      }
+
+      class GameState {
+        score = 0;
+      }
+
+      class CameraState {
+        distance = 15;
+        angle = 0;
+        minDistance = 5;
+        maxDistance = 30;
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 COMPONENTS                                 */
+      /* -------------------------------------------------------------------------- */
+
+      class ThreeObject {
+        constructor(mesh) {
+          this.mesh = mesh;
+        }
+      }
+
+      class Velocity {
+        constructor(x = 0, y = 0, z = 0) {
+          this.x = x;
+          this.y = y;
+          this.z = z;
+        }
+      }
+
+      class Rotation {
+        constructor(x = 0, y = 0, z = 0) {
+          this.x = x;
+          this.y = y;
+          this.z = z;
+        }
+      }
+
+      const Player = 'player';
+      const Collectible = 'collectible';
+
+      class CollectEvent {
+        constructor(collectibleEntity) {
+          this.collectibleEntity = collectibleEntity;
+        }
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                   SYSTEMS                                  */
+      /* -------------------------------------------------------------------------- */
+
+      function playerInputSystem({ world }) {
+        const input = world.getResource(InputState);
+        const playerEntity = world.getTagged(Player);
+        if (!input || !playerEntity) return;
+
+        const velocity = playerEntity.get(Velocity);
+        const PLAYER_SPEED = 0.2;
+
+        velocity.x = 0;
+        velocity.z = 0;
+
+        if (input.up) velocity.z = -PLAYER_SPEED;
+        if (input.down) velocity.z = PLAYER_SPEED;
+        if (input.left) velocity.x = -PLAYER_SPEED;
+        if (input.right) velocity.x = PLAYER_SPEED;
+      }
+
+      function movementSystem({ components }) {
+        const velocity = components.get(Velocity);
+        const threeObject = components.get(ThreeObject);
+
+        threeObject.mesh.position.x += velocity.x;
+        threeObject.mesh.position.z += velocity.z;
+
+        velocity.x *= 0.9;
+        velocity.z *= 0.9;
+      }
+
+      function rotationSystem({ components }) {
+        const rotation = components.get(Rotation);
+        const threeObject = components.get(ThreeObject);
+
+        threeObject.mesh.rotation.x += rotation.x;
+        threeObject.mesh.rotation.y += rotation.y;
+      }
+
+      function collisionSystem({ world }) {
+        const playerEntity = world.getTagged(Player);
+        if (!playerEntity) return;
+
+        const playerObject = playerEntity.get(ThreeObject);
+        const playerPosition = playerObject.mesh.position;
+
+        const collectibles = world.getAllTagged(Collectible);
+
+        for (const collectibleEntity of collectibles) {
+          // FIX: Skip entities that are already being destroyed to prevent multiple events.
+          if (
+            collectibleEntity.state === 'destroying' ||
+            collectibleEntity.state === 'destroyed'
+          )
+            continue;
+
+          const collectibleObject = collectibleEntity.get(ThreeObject);
+          const collectiblePosition = collectibleObject.mesh.position;
+
+          const distance = playerPosition.distanceTo(collectiblePosition);
+
+          if (distance < 1.5) {
+            // NEW: Change color on collision, before firing the event.
+            collectibleObject.mesh.material.color.set(0xffaa00); // Orange
+            world.events.emit(new CollectEvent(collectibleEntity));
+          }
+        }
+      }
+
+      function scoreSystem({ event, world }) {
+        const gameState = world.getResource(GameState);
+        const threeScene = world.getResource(ThreeScene);
+        if (!gameState || !threeScene) return;
+
+        // Cleanly remove the 3D object from the scene
+        if (event.collectibleEntity.has(ThreeObject)) {
+          const threeObject = event.collectibleEntity.get(ThreeObject);
+          threeScene.scene.remove(threeObject.mesh);
+          threeObject.mesh.geometry.dispose();
+          threeObject.mesh.material.dispose();
+        }
+
+        // FIX: Destroy immediately to prevent multiple score increments for the same collectible.
+        event.collectibleEntity.destroy();
+        gameState.score += 10;
+      }
+
+      function cameraSystem({ world }) {
+        const threeScene = world.getResource(ThreeScene);
+        const playerEntity = world.getTagged(Player);
+        const input = world.getResource(InputState);
+        const cameraState = world.getResource(CameraState);
+
+        if (!threeScene || !playerEntity || !input || !cameraState) return;
+
+        // Handle camera rotation input
+        if (input.a) cameraState.angle -= 0.02;
+        if (input.d) cameraState.angle += 0.02;
+
+        // Handle camera zoom input
+        if (input.w) cameraState.distance -= 0.2;
+        if (input.s) cameraState.distance += 0.2;
+
+        cameraState.distance = Math.max(
+          cameraState.minDistance,
+          Math.min(cameraState.maxDistance, cameraState.distance)
+        );
+
+        const playerObject = playerEntity.get(ThreeObject);
+        const playerPosition = playerObject.mesh.position;
+
+        const camX =
+          playerPosition.x + Math.sin(cameraState.angle) * cameraState.distance;
+        const camZ =
+          playerPosition.z + Math.cos(cameraState.angle) * cameraState.distance;
+
+        threeScene.camera.position.set(camX, playerPosition.y + 10, camZ);
+        threeScene.camera.lookAt(playerPosition);
+      }
+
+      function uiRenderSystem({ world }) {
+        const gameState = world.getResource(GameState);
+        if (!gameState) return;
+
+        const scoreElement = document.getElementById('score');
+        scoreElement.innerText = `Score: ${gameState.score}`;
+      }
+
+      function rendererSystem({ world }) {
+        const threeScene = world.getResource(ThreeScene);
+        if (!threeScene) return;
+        threeScene.renderer.render(threeScene.scene, threeScene.camera);
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                           SYSTEM REGISTRATION                            */
+      /* -------------------------------------------------------------------------- */
+
+      world.setPhaseOrder(['Input', 'Logic', 'Events', 'Render']);
+
+      world.addSystem([GameState], playerInputSystem, { phase: 'Input' });
+      world.addSystem([Velocity, ThreeObject], movementSystem, {
+        phase: 'Logic',
+      });
+      world.addSystem([Rotation, ThreeObject], rotationSystem, {
+        phase: 'Logic',
+      });
+      world.addSystem([GameState], collisionSystem, { phase: 'Logic' });
+      // world.addSystemListener(CollectEvent, scoreSystem, { phase: 'Events' });
+      world.addSystem([GameState], cameraSystem, { phase: 'Render' });
+      world.addSystem([GameState], uiRenderSystem, { phase: 'Render' });
+      world.addSystem([GameState], rendererSystem, { phase: 'Render' });
+
+      /* -------------------------------------------------------------------------- */
+      /*                               INITIALIZATION                               */
+      /* -------------------------------------------------------------------------- */
+
+      function initializeGame() {
+        world.setResource(new ThreeScene());
+        world.setResource(new InputState());
+        world.setResource(new GameState());
+        world.setResource(new CameraState());
+        world.createEntity().add(new GameState());
+
+        const threeScene = world.getResource(ThreeScene);
+        if (!threeScene) return;
+
+        const groundGeo = new THREE.PlaneGeometry(sceneSize, sceneSize);
+        const groundMat = new THREE.MeshStandardMaterial({
+          color: 0x444444,
+          side: THREE.DoubleSide,
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        threeScene.scene.add(ground);
+
+        const playerGeo = new THREE.BoxGeometry(1, 1, 1);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x0088ff });
+        const playerMesh = new THREE.Mesh(playerGeo, playerMat);
+        playerMesh.position.y = 0.5;
+        threeScene.scene.add(playerMesh);
+
+        world
+          .createEntity()
+          .add(new ThreeObject(playerMesh))
+          .add(new Velocity())
+          .addTag(Player);
+
+        for (let i = 0; i < 20; i++) {
+          const collectibleGeo = new THREE.TorusGeometry(0.5, 0.2, 8, 16);
+          const collectibleMat = new THREE.MeshStandardMaterial({
+            color: 0x00ff88,
+            roughness: 0.2,
+          });
+          const collectibleMesh = new THREE.Mesh(
+            collectibleGeo,
+            collectibleMat
+          );
+
+          collectibleMesh.position.set(
+            getRandomNumber(-sceneSize / 2, sceneSize / 2),
+            0.75,
+            getRandomNumber(-sceneSize / 2, sceneSize / 2)
+          );
+          threeScene.scene.add(collectibleMesh);
+
+          world
+            .createEntity()
+            .add(new ThreeObject(collectibleMesh))
+            .add(
+              new Rotation(
+                getRandomNumber(0.01, 0.05),
+                getRandomNumber(0.01, 0.05)
+              )
+            )
+            .addTag(Collectible);
+        }
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                INPUT HANDLING                              */
+      /* -------------------------------------------------------------------------- */
+
+      window.addEventListener('keydown', e => {
+        const input = world.getResource(InputState);
+        if (!input) return;
+        if (e.key === 'ArrowUp') input.up = true;
+        if (e.key === 'ArrowDown') input.down = true;
+        if (e.key === 'ArrowLeft') input.left = true;
+        if (e.key === 'ArrowRight') input.right = true;
+        if (e.key === 'w' || e.key === 'W') input.w = true;
+        if (e.key === 's' || e.key === 'S') input.s = true;
+        if (e.key === 'a' || e.key === 'A') input.a = true;
+        if (e.key === 'd' || e.key === 'D') input.d = true;
+      });
+
+      window.addEventListener('keyup', e => {
+        const input = world.getResource(InputState);
+        if (!input) return;
+        if (e.key === 'ArrowUp') input.up = false;
+        if (e.key === 'ArrowDown') input.down = false;
+        if (e.key === 'ArrowLeft') input.left = false;
+        if (e.key === 'ArrowRight') input.right = false;
+        if (e.key === 'w' || e.key === 'W') input.w = false;
+        if (e.key === 's' || e.key === 'S') input.s = false;
+        if (e.key === 'a' || e.key === 'A') input.a = false;
+        if (e.key === 'd' || e.key === 'D') input.d = false;
+      });
+
+      window.addEventListener('resize', () => {
+        const threeScene = world.getResource(ThreeScene);
+        if (!threeScene) return;
+        threeScene.camera.aspect = window.innerWidth / window.innerHeight;
+        threeScene.camera.updateProjectionMatrix();
+        threeScene.renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      /* -------------------------------------------------------------------------- */
+      /*                                  GAME LOOP                                 */
+      /* -------------------------------------------------------------------------- */
+
+      function gameLoop() {
+        world.systems.run();
+        requestAnimationFrame(gameLoop);
+      }
+
+      initializeGame();
+      gameLoop();
+    </script>
+  </body>
+</html>

@@ -36,10 +36,15 @@ describe('System', () => {
 
     world.addSystem([FirstComponent], firstSystem);
 
-    expect(
-      world.systems.systemFuncBySystemName.get(firstSystem.name)
-    ).to.deep.equal({
+    // @ts-ignore - Accessing private property for testing
+    const defaultPhaseSystems = world.systems.phases.get('__DEFAULT__');
+
+    expect(defaultPhaseSystems).to.exist;
+    expect(defaultPhaseSystems).to.have.lengthOf(1);
+
+    expect(defaultPhaseSystems?.[0]).to.deep.equal({
       func: firstSystem,
+      name: firstSystem.name,
       key: 'FirstComponent',
     });
   });
@@ -72,10 +77,10 @@ describe('System', () => {
     const fake4 = sinon.fake();
 
     world
-      .addSystem([FirstComponent], fake1, 'fake1')
-      .addSystem([SecondComponent], fake2, 'fake2')
-      .addSystem([ThirdComponent], fake3, 'fake3')
-      .addSystem([FirstComponent, SecondComponent], fake4, 'fake4');
+      .addSystem([FirstComponent], fake1, { name: 'fake1' })
+      .addSystem([SecondComponent], fake2, { name: 'fake2' })
+      .addSystem([ThirdComponent], fake3, { name: 'fake3' })
+      .addSystem([FirstComponent, SecondComponent], fake4, { name: 'fake4' });
 
     // entity 1;
     world.createEntity().add(new FirstComponent('first'));
@@ -113,6 +118,222 @@ describe('System', () => {
       world.createEntity().add(new FirstComponent('a'));
 
       world.systems.run();
+    });
+  });
+
+  describe('Execution Phases', () => {
+    it('adds systems with specific phases', () => {
+      const world = new World<CompTypes>();
+
+      const inputSystem = () => {};
+      const logicSystem = () => {};
+      const renderSystem = () => {};
+
+      world.addSystem([FirstComponent], inputSystem, {
+        phase: 'Input',
+        name: 'inputSys',
+      });
+      world.addSystem([FirstComponent], logicSystem, {
+        phase: 'Logic',
+        name: 'logicSys',
+      });
+      world.addSystem([FirstComponent], renderSystem, {
+        phase: 'Render',
+        name: 'renderSys',
+      });
+
+      // @ts-ignore - Accessing private property for testing
+      const inputPhaseSystems = world.systems.phases.get('Input');
+      // @ts-ignore - Accessing private property for testing
+      const logicPhaseSystems = world.systems.phases.get('Logic');
+      // @ts-ignore - Accessing private property for testing
+      const renderPhaseSystems = world.systems.phases.get('Render');
+
+      expect(inputPhaseSystems).to.exist;
+      expect(inputPhaseSystems).to.have.lengthOf(1);
+      expect(inputPhaseSystems?.[0]).to.deep.equal({
+        func: inputSystem,
+        name: 'inputSys',
+        key: 'FirstComponent',
+      });
+
+      expect(logicPhaseSystems).to.exist;
+      expect(logicPhaseSystems).to.have.lengthOf(1);
+      expect(logicPhaseSystems?.[0]).to.deep.equal({
+        func: logicSystem,
+        name: 'logicSys',
+        key: 'FirstComponent',
+      });
+
+      expect(renderPhaseSystems).to.exist;
+      expect(renderPhaseSystems).to.have.lengthOf(1);
+      expect(renderPhaseSystems?.[0]).to.deep.equal({
+        func: renderSystem,
+        name: 'renderSys',
+        key: 'FirstComponent',
+      });
+    });
+
+    it('executes systems in default phase order', () => {
+      const world = new World<CompTypes>();
+      const executionOrder: string[] = [];
+
+      const inputSystem = () => executionOrder.push('Input');
+      const logicSystem = () => executionOrder.push('Logic');
+      const eventsSystem = () => executionOrder.push('Events');
+      const renderSystem = () => executionOrder.push('Render');
+      const cleanupSystem = () => executionOrder.push('Cleanup');
+
+      world
+        .addSystem([FirstComponent], renderSystem, { phase: 'Render' })
+        .addSystem([FirstComponent], inputSystem, { phase: 'Input' })
+        .addSystem([FirstComponent], logicSystem, { phase: 'Logic' })
+        .addSystem([FirstComponent], eventsSystem, { phase: 'Events' })
+        .addSystem([FirstComponent], cleanupSystem, { phase: 'Cleanup' });
+
+      world.createEntity().add(new FirstComponent('test'));
+      world.systems.run();
+
+      expect(executionOrder).to.deep.equal([
+        'Input',
+        'Logic',
+        'Events',
+        'Render',
+        'Cleanup',
+      ]);
+    });
+
+    it('allows custom phase order', () => {
+      const world = new World<CompTypes>();
+      const executionOrder: string[] = [];
+
+      const phaseASystem = () => executionOrder.push('A');
+      const phaseBSystem = () => executionOrder.push('B');
+      const phaseCSystem = () => executionOrder.push('C');
+
+      world.systems.setPhaseOrder(['C', 'A', 'B']);
+
+      world
+        .addSystem([FirstComponent], phaseASystem, { phase: 'A' })
+        .addSystem([FirstComponent], phaseBSystem, { phase: 'B' })
+        .addSystem([FirstComponent], phaseCSystem, { phase: 'C' });
+
+      world.createEntity().add(new FirstComponent('test'));
+      world.systems.run();
+
+      expect(executionOrder).to.deep.equal(['C', 'A', 'B']);
+    });
+
+    it('prevents mixing phased and non-phased systems', () => {
+      const world = new World<CompTypes>();
+
+      const phasedSystem = () => {};
+      const nonPhasedSystem = () => {};
+
+      world.addSystem([FirstComponent], phasedSystem, { phase: 'Input' });
+      world.addSystem([SecondComponent], nonPhasedSystem);
+
+      expect(() => world.systems.run()).to.throw(
+        'Ambiguous system execution order: Some systems are registered with a phase, while others are not. Please assign a phase to all systems if you intend to use execution phases.'
+      );
+    });
+
+    it('executes custom phases not in default order', () => {
+      const world = new World<CompTypes>();
+      const executionOrder: string[] = [];
+
+      const inputPhaseSystem = () => executionOrder.push('Input');
+      const customPhaseSystem = () => executionOrder.push('Custom');
+
+      world
+        .addSystem([FirstComponent], inputPhaseSystem, { phase: 'Input' })
+        .addSystem([FirstComponent], customPhaseSystem, {
+          phase: 'CustomPhase',
+        });
+
+      world.createEntity().add(new FirstComponent('test'));
+      world.systems.run();
+
+      // Custom phases should be executed after default phases
+      expect(executionOrder).to.deep.equal(['Input', 'Custom']);
+    });
+
+    it('executes systems in same phase in addition order', () => {
+      const world = new World<CompTypes>();
+      const executionOrder: string[] = [];
+
+      const system1 = () => executionOrder.push('system1');
+      const system2 = () => executionOrder.push('system2');
+      const system3 = () => executionOrder.push('system3');
+
+      world
+        .addSystem([FirstComponent], system1, { phase: 'Logic', name: 'sys1' })
+        .addSystem([FirstComponent], system2, { phase: 'Logic', name: 'sys2' })
+        .addSystem([FirstComponent], system3, { phase: 'Logic', name: 'sys3' });
+
+      world.createEntity().add(new FirstComponent('test'));
+      world.systems.run();
+
+      expect(executionOrder).to.deep.equal(['system1', 'system2', 'system3']);
+    });
+
+    it('handles multiple entities across phases correctly', () => {
+      const world = new World<CompTypes>();
+      const executionLog: string[] = [];
+
+      const inputSystem = (args: SystemFuncArgs<CompTypes>) => {
+        executionLog.push(`Input-${args.index}`);
+      };
+      const logicSystem = (args: SystemFuncArgs<CompTypes>) => {
+        executionLog.push(`Logic-${args.index}`);
+      };
+
+      world
+        .addSystem([FirstComponent], inputSystem, {
+          phase: 'Input',
+          name: 'input',
+        })
+        .addSystem([FirstComponent], logicSystem, {
+          phase: 'Logic',
+          name: 'logic',
+        });
+
+      // Create multiple entities
+      world.createEntity().add(new FirstComponent('ent1'));
+      world.createEntity().add(new FirstComponent('ent2'));
+      world.createEntity().add(new FirstComponent('ent3'));
+
+      world.systems.run();
+
+      // Should execute all Input systems first (one per entity), then all Logic systems
+      const expectedLog = [
+        'Input-0',
+        'Input-1',
+        'Input-2', // Input phase for all entities
+        'Logic-0',
+        'Logic-1',
+        'Logic-2', // Logic phase for all entities
+      ];
+
+      expect(executionLog).to.deep.equal(expectedLog);
+    });
+
+    it('skips phases with no systems', () => {
+      const world = new World<CompTypes>();
+      const executionOrder: string[] = [];
+
+      const inputSystem = () => executionOrder.push('Input');
+      const renderSystem = () => executionOrder.push('Render');
+
+      // Add systems to Input and Render phases, skipping Logic and Events
+      world
+        .addSystem([FirstComponent], inputSystem, { phase: 'Input' })
+        .addSystem([FirstComponent], renderSystem, { phase: 'Render' });
+
+      world.createEntity().add(new FirstComponent('test'));
+      world.systems.run();
+
+      expect(executionOrder).to.deep.equal(['Input', 'Render']);
     });
   });
 });

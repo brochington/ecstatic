@@ -4,3 +4,4 @@ dist/hot
 # Benchmark results
 benchmark-results.json
 *.bench.json
+.playwright-mcp/
