@@ -236,8 +236,14 @@ function initializeGame(world) {
   );
   world.setResource(new InputState());
   world.setResource(new GameConfig());
-  world.setResource(new WeaponSystem());
-  world.setResource(new MobileControls());
+
+  // Initialize mobile controls first to determine if we're on mobile
+  const mobileControls = new MobileControls();
+  world.setResource(mobileControls);
+
+  // Pass mobile flag to weapon system for performance optimization
+  world.setResource(new WeaponSystem(mobileControls.isMobile));
+
   world.createEntity().add(new GameState());
 
   createSkybox(threeScene.scene);
@@ -576,17 +582,55 @@ function setupInput(world) {
     mobileControls.onWeaponSwitch = (weaponIndex) => {
       const weaponSystem = world.getResource(WeaponSystem);
       if (weaponSystem) {
-        weaponSystem.switchWeapon(weaponIndex);
+        if (weaponIndex === -1) {
+          // Cycle to next weapon
+          weaponSystem.nextWeapon();
+        } else {
+          // Switch to specific weapon
+          weaponSystem.switchWeapon(weaponIndex);
+        }
       }
     };
   }
 
   window.addEventListener('resize', () => {
     const threeScene = world.getResource(ThreeScene);
+    const mobileControls = world.getResource(MobileControls);
     if (!threeScene) return;
+
+    // Set appropriate resolution based on device
+    const isMobile = mobileControls && mobileControls.isMobile;
+    let renderWidth, renderHeight;
+
+    if (isMobile) {
+      // Use a reasonable resolution for mobile devices (around 720p equivalent)
+      const maxMobileWidth = 1280;
+      const maxMobileHeight = 720;
+      const aspectRatio = window.innerWidth / window.innerHeight;
+
+      if (aspectRatio > 16/9) {
+        // Wide screen (landscape)
+        renderWidth = maxMobileWidth;
+        renderHeight = Math.round(maxMobileWidth / aspectRatio);
+      } else {
+        // Tall screen (portrait or near-square)
+        renderHeight = maxMobileHeight;
+        renderWidth = Math.round(maxMobileHeight * aspectRatio);
+      }
+
+      // Ensure minimum resolution
+      renderWidth = Math.max(renderWidth, 640);
+      renderHeight = Math.max(renderHeight, 360);
+    } else {
+      // Desktop: use window size
+      renderWidth = window.innerWidth;
+      renderHeight = window.innerHeight;
+    }
+
     threeScene.camera.aspect = window.innerWidth / window.innerHeight;
     threeScene.camera.updateProjectionMatrix();
-    threeScene.renderer.setSize(window.innerWidth, window.innerHeight);
+    threeScene.renderer.setSize(renderWidth, renderHeight);
+
   });
 
   gameOverScreen.addEventListener('click', () => {
@@ -613,6 +657,7 @@ function resetGame(world) {
   world.removeResource(InputState);
   world.removeResource(GameConfig);
   world.removeResource(WeaponSystem);
+  world.removeResource(MobileControls);
 
   document.getElementById('game-over-screen').style.display = 'none';
   document.getElementById('health-bar').style.width = '100%';
@@ -831,6 +876,10 @@ export function startGame() {
   initializeGame(world);
   setupInput(world);
   gameLoop(world);
+
+  // Expose for debugging
+  window.gameWorld = world;
+  window.MobileControls = MobileControls;
 
   return world;
 }

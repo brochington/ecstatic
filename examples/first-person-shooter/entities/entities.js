@@ -69,27 +69,44 @@ export function createBullet(
   damage = 5
 ) {
   const threeScene = world.getResource(ThreeScene);
+  const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
   const isPlayerBullet = firedByTag === Player;
   const color = isPlayerBullet ? 0x00ffff : 0xff00ff;
+  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
 
-  // Make bullets larger and more visible
-  const geo = new THREE.SphereGeometry(0.2, 8, 8);
-  const mat = new THREE.MeshPhongMaterial({
-    color,
-    emissive: color,
-    emissiveIntensity: 2, // Increased from 1
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.copy(position);
+  let geo, mat, mesh;
 
-  // Make the light stronger and larger range
-  const light = new THREE.PointLight(color, 2, 15);
-  mesh.add(light);
+  if (isLowPerformanceMode) {
+    // Mobile-optimized: simpler geometry, no lighting, basic material
+    geo = new THREE.SphereGeometry(0.15, 4, 4); // Reduced from 8x8 to 4x4 (16 triangles vs 64)
+    mat = new THREE.MeshBasicMaterial({
+      color,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
 
-  const velocity = direction.clone().multiplyScalar(0.8); // Reduced speed to prevent tunneling
+    // No point light on mobile for performance
+  } else {
+    // Desktop version: full effects
+    geo = new THREE.SphereGeometry(0.2, 8, 8);
+    mat = new THREE.MeshPhongMaterial({
+      color,
+      emissive: color,
+      emissiveIntensity: 2,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
+
+    // Add point light for desktop
+    const light = new THREE.PointLight(color, 2, 15);
+    mesh.add(light);
+  }
+
+  const velocity = direction.clone().multiplyScalar(0.8);
   const collider = new Collider(new THREE.Box3().setFromObject(mesh));
 
   threeScene.scene.add(mesh);
@@ -99,7 +116,7 @@ export function createBullet(
     .add(new ThreeObject(mesh))
     .add(new Velocity(velocity.x, velocity.y, velocity.z))
     .add(collider)
-    .add(new Expires(180))
+    .add(new Expires(isLowPerformanceMode ? 120 : 180)) // Shorter lifetime on mobile
     .add(new Projectile(firedByTag, damage))
     .addTag(Bullet);
 }
@@ -112,10 +129,14 @@ export function createShotgunBlast(
   damage = 8
 ) {
   const threeScene = world.getResource(ThreeScene);
+  const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  // Create 8 pellets in a spread
-  for (let i = 0; i < 8; i++) {
+  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+  const pelletCount = isLowPerformanceMode ? 4 : 8; // Reduced from 8 to 4 pellets on mobile
+
+  // Create pellets in a spread
+  for (let i = 0; i < pelletCount; i++) {
     const pelletDirection = direction.clone();
     // Add random spread
     pelletDirection.x += getRandomNumber(-0.15, 0.15);
@@ -123,13 +144,26 @@ export function createShotgunBlast(
     pelletDirection.z += getRandomNumber(-0.15, 0.15);
     pelletDirection.normalize();
 
-    const geo = new THREE.SphereGeometry(0.12, 6, 6);
-    const mat = new THREE.MeshPhongMaterial({
-      color: 0xffaa00,
-      emissive: 0x442200,
-      emissiveIntensity: 1.5,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    let geo, mat;
+
+    if (isLowPerformanceMode) {
+      // Mobile-optimized: simpler geometry and material
+      geo = new THREE.SphereGeometry(0.08, 3, 3); // Much simpler geometry
+      mat = new THREE.MeshBasicMaterial({
+        color: 0xffaa00,
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+    } else {
+      // Desktop version
+      geo = new THREE.SphereGeometry(0.12, 6, 6);
+      mat = new THREE.MeshPhongMaterial({
+        color: 0xffaa00,
+        emissive: 0x442200,
+        emissiveIntensity: 1.5,
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+    }
+
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
 
@@ -143,7 +177,7 @@ export function createShotgunBlast(
       .add(new ThreeObject(mesh))
       .add(new Velocity(velocity.x, velocity.y, velocity.z))
       .add(collider)
-      .add(new Expires(60))
+      .add(new Expires(isLowPerformanceMode ? 45 : 60)) // Shorter lifetime on mobile
       .add(new Projectile(firedByTag, damage))
       .addTag(Bullet)
       .addTag('shotgunPellet');
@@ -208,24 +242,44 @@ export function createRocket(
   damage = 50
 ) {
   const threeScene = world.getResource(ThreeScene);
+  const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  const geo = new THREE.CylinderGeometry(0.15, 0.25, 1.0, 8);
-  const mat = new THREE.MeshPhongMaterial({
-    color: 0x444444,
-    emissive: 0x220000,
-    emissiveIntensity: 0.8,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.copy(position);
-  mesh.lookAt(position.clone().add(direction));
+  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
 
-  // Add rocket trail effect - make it much brighter
-  const trailLight = new THREE.PointLight(0xff4400, 2, 10);
-  mesh.add(trailLight);
+  let geo, mat, mesh;
 
-  const velocity = direction.clone().multiplyScalar(0.8); // Reduced speed to prevent tunneling
+  if (isLowPerformanceMode) {
+    // Mobile-optimized: simpler geometry, no lighting
+    geo = new THREE.CylinderGeometry(0.12, 0.2, 0.8, 6); // Simpler geometry
+    mat = new THREE.MeshBasicMaterial({
+      color: 0x444444,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
+    mesh.lookAt(position.clone().add(direction));
+
+    // No trail light on mobile for performance
+  } else {
+    // Desktop version
+    geo = new THREE.CylinderGeometry(0.15, 0.25, 1.0, 8);
+    mat = new THREE.MeshPhongMaterial({
+      color: 0x444444,
+      emissive: 0x220000,
+      emissiveIntensity: 0.8,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
+    mesh.lookAt(position.clone().add(direction));
+
+    // Add rocket trail effect for desktop
+    const trailLight = new THREE.PointLight(0xff4400, 2, 10);
+    mesh.add(trailLight);
+  }
+
+  const velocity = direction.clone().multiplyScalar(0.8);
   const collider = new Collider(new THREE.Box3().setFromObject(mesh));
 
   threeScene.scene.add(mesh);
@@ -235,7 +289,7 @@ export function createRocket(
     .add(new ThreeObject(mesh))
     .add(new Velocity(velocity.x, velocity.y, velocity.z))
     .add(collider)
-    .add(new Expires(240))
+    .add(new Expires(isLowPerformanceMode ? 180 : 240)) // Shorter lifetime on mobile
     .add(new Projectile(firedByTag, damage))
     .addTag('rocket');
 }
@@ -321,54 +375,76 @@ export function createMuzzleFlash(
   weaponType = 'pistol'
 ) {
   const threeScene = world.getResource(ThreeScene);
+  const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  // Different colors and effects based on weapon type
+  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+
+  // Different colors and effects based on weapon type (reduced for mobile)
   let flashColor, particleCount, flashSize;
   switch (weaponType) {
     case 'pistol':
       flashColor = 0xffff00; // Yellow
-      particleCount = 3;
+      particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.05;
       break;
     case 'shotgun':
       flashColor = 0xffaa00; // Orange
-      particleCount = 6;
+      particleCount = isLowPerformanceMode ? 2 : 6;
       flashSize = 0.08;
       break;
     case 'machinegun':
       flashColor = 0x00ffff; // Cyan
-      particleCount = 4;
+      particleCount = isLowPerformanceMode ? 2 : 4;
       flashSize = 0.06;
       break;
     case 'rocket':
       flashColor = 0xff4444; // Red
-      particleCount = 8;
+      particleCount = isLowPerformanceMode ? 3 : 8;
       flashSize = 0.1;
       break;
     case 'flamethrower':
       flashColor = 0xff6600; // Orange
-      particleCount = 3; // Reduced for performance
+      particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.06;
       break;
     default:
       flashColor = 0xffff00;
-      particleCount = 3;
+      particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.05;
   }
 
   for (let i = 0; i < particleCount; i++) {
-    const geo = new THREE.SphereGeometry(
-      flashSize + Math.random() * flashSize,
-      6,
-      6
-    );
-    const mat = new THREE.MeshBasicMaterial({
-      color: flashColor,
-      transparent: true,
-      opacity: 0.8,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    let geo, mat;
+
+    if (isLowPerformanceMode) {
+      // Mobile-optimized: simpler geometry
+      geo = new THREE.SphereGeometry(
+        flashSize + Math.random() * flashSize,
+        3,
+        3
+      );
+      mat = new THREE.MeshBasicMaterial({
+        color: flashColor,
+        transparent: true,
+        opacity: 0.6, // Slightly more transparent for performance
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+    } else {
+      // Desktop version
+      geo = new THREE.SphereGeometry(
+        flashSize + Math.random() * flashSize,
+        6,
+        6
+      );
+      mat = new THREE.MeshBasicMaterial({
+        color: flashColor,
+        transparent: true,
+        opacity: 0.8,
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+    }
+
     const mesh = new THREE.Mesh(geo, mat);
 
     const flashPos = position

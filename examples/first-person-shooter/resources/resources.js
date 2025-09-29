@@ -86,13 +86,16 @@ export class Weapon {
 }
 
 export class WeaponSystem {
-  constructor() {
+  constructor(isMobile = false) {
+    // Adjust firing rates for mobile performance
+    const mobileMultiplier = isMobile ? 1.5 : 1; // 50% slower firing on mobile
+
     this.weapons = [
-      new Weapon('pistol', 'Pistol', 15, 0), // No cooldown for pistol
-      new Weapon('shotgun', 'Shotgun', 8, 45, 30), // 8 damage per pellet
-      new Weapon('machinegun', 'Machine Gun', 6, 8, 100), // Rapid fire
-      new Weapon('rocket', 'Rocket Launcher', 50, 120, 5), // High damage, area effect
-      new Weapon('flamethrower', 'Flamethrower', 3, 3, 200), // Slower fire rate for performance
+      new Weapon('pistol', 'Pistol', 15, Math.round(0 * mobileMultiplier)), // No cooldown for pistol
+      new Weapon('shotgun', 'Shotgun', 8, Math.round(45 * mobileMultiplier), 30), // 8 damage per pellet
+      new Weapon('machinegun', 'Machine Gun', 6, Math.round(8 * mobileMultiplier), 100), // Rapid fire
+      new Weapon('rocket', 'Rocket Launcher', 50, Math.round(120 * mobileMultiplier), 5), // High damage, area effect
+      new Weapon('flamethrower', 'Flamethrower', 3, Math.round(3 * mobileMultiplier), 200), // Slower fire rate for performance
     ];
     this.currentWeaponIndex = 0;
     this.switchCooldown = 30;

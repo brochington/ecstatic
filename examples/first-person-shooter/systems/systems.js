@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { getRandomNumber } from '../utils/utils.js';
+import { MobileControls } from '../mobile-controls.js';
 import {
   InputState,
   Controls,
@@ -76,7 +77,7 @@ export function playerMovementSystem({ world }) {
   const input = world.getResource(InputState);
   const playerEntity = world.getTagged(Player);
   const controls = world.getResource(Controls);
-  const mobileControls = world.getResource('MobileControls');
+  const mobileControls = world.getResource(MobileControls);
   if (!input || !playerEntity || !controls) return;
 
   const velocity = playerEntity.get(Velocity);
@@ -92,20 +93,29 @@ export function playerMovementSystem({ world }) {
 
   // Handle desktop controls
   if (!mobileControls || !mobileControls.isMobile) {
+    // Create a temporary matrix with only the player's horizontal rotation
+    // (excluding camera's vertical rotation for proper movement)
+    const playerRotationMatrix = new THREE.Matrix4();
+    playerRotationMatrix.makeRotationY(threeObject.mesh.rotation.y);
+
     if (input.forward) {
-      camera.getWorldDirection(direction);
+      direction.set(0, 0, -1); // Forward in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed));
     }
     if (input.backward) {
-      camera.getWorldDirection(direction);
+      direction.set(0, 0, -1); // Forward in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.sub(direction.multiplyScalar(speed));
     }
     if (input.right) {
-      direction.setFromMatrixColumn(camera.matrix, 0);
+      direction.set(1, 0, 0); // Right in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed));
     }
     if (input.left) {
-      direction.setFromMatrixColumn(camera.matrix, 0);
+      direction.set(1, 0, 0); // Right in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.sub(direction.multiplyScalar(speed));
     }
   } else {
@@ -113,12 +123,19 @@ export function playerMovementSystem({ world }) {
     const movementVector = mobileControls.getMovementVector();
 
     if (movementVector.x !== 0 || movementVector.y !== 0) {
-      // Forward/backward movement
-      camera.getWorldDirection(direction);
+      // Create a temporary matrix with only the player's horizontal rotation
+      // (excluding camera's vertical rotation for proper movement)
+      const playerRotationMatrix = new THREE.Matrix4();
+      playerRotationMatrix.makeRotationY(threeObject.mesh.rotation.y);
+
+      // Forward/backward movement relative to player's facing direction
+      direction.set(0, 0, -1); // Forward in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed * -movementVector.y));
 
-      // Left/right movement
-      direction.setFromMatrixColumn(camera.matrix, 0);
+      // Left/right movement (strafing) relative to player's facing direction
+      direction.set(1, 0, 0); // Right in local space
+      direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed * movementVector.x));
     }
   }
@@ -165,7 +182,7 @@ export function playerShootingSystem({ world }) {
   const player = world.getTagged(Player);
   const controls = world.getResource(Controls);
   const weaponSystem = world.getResource(WeaponSystem);
-  const mobileControls = world.getResource('MobileControls');
+  const mobileControls = world.getResource(MobileControls);
 
   if (!input || !player || !controls || !weaponSystem) return;
 
@@ -1311,7 +1328,7 @@ export function uiRenderSystem({ world }) {
     }
 
     // Update mobile weapon buttons
-    const mobileControls = world.getResource('MobileControls');
+    const mobileControls = world.getResource(MobileControls);
     if (mobileControls && mobileControls.isMobile) {
       mobileControls.updateWeaponButtons(currentWeaponIndex);
     }
@@ -1368,7 +1385,7 @@ function updateMinimap(world) {
     }
   }
 
-  const mapSize = 150; // Minimap size in pixels
+  const mapSize = 60; // Minimap size in pixels (matches CSS scaling)
 
   // Update player position on minimap
   if (player.has(ThreeObject)) {
@@ -1552,7 +1569,7 @@ export function damageIndicatorSystem({ world }) {
 
 export function cameraControlSystem({ world }) {
   const controls = world.getResource(Controls);
-  const mobileControls = world.getResource('MobileControls');
+  const mobileControls = world.getResource(MobileControls);
   const player = world.getTagged(Player);
 
   if (!controls || !player) return;
@@ -1564,14 +1581,14 @@ export function cameraControlSystem({ world }) {
   if (mobileControls && mobileControls.isMobile) {
     const cameraRotation = mobileControls.getCameraRotation();
 
-    // Apply rotation from touch input
+    // Apply rotation deltas from camera joystick
     if (cameraRotation.x !== 0 || cameraRotation.y !== 0) {
-      // Rotate player container horizontally (left/right)
-      threeObject.mesh.rotation.y -= cameraRotation.x * 0.01;
+      // Rotate player container horizontally (left/right look)
+      threeObject.mesh.rotation.y += cameraRotation.x;
 
-      // Rotate camera vertically (up/down)
-      const cameraVerticalRotation = camera.rotation.x - cameraRotation.y * 0.01;
-      camera.rotation.x = THREE.MathUtils.clamp(cameraVerticalRotation, -Math.PI/2, Math.PI/2);
+      // Rotate camera vertically (up/down look)
+      camera.rotation.x -= cameraRotation.y; // Inverted for natural feel
+      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/2, Math.PI/2);
     }
   }
 }
