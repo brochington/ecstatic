@@ -159,32 +159,30 @@ export function createFlameThrowerBlast(
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
 
-  // Create flame particles that persist and deal damage over time
-  for (let i = 0; i < 5; i++) {
+  // Create fewer, simpler flame particles for better performance
+  for (let i = 0; i < 3; i++) {
     const flameDirection = direction.clone();
-    // Add some spread to the flames
-    flameDirection.x += getRandomNumber(-0.1, 0.1);
-    flameDirection.y += getRandomNumber(-0.1, 0.1);
-    flameDirection.z += getRandomNumber(-0.1, 0.1);
+    // Reduced spread for more concentrated flames
+    flameDirection.x += getRandomNumber(-0.05, 0.05);
+    flameDirection.y += getRandomNumber(-0.05, 0.05);
+    flameDirection.z += getRandomNumber(-0.05, 0.05);
     flameDirection.normalize();
 
-    const geo = new THREE.SphereGeometry(0.15, 6, 6);
-    const mat = new THREE.MeshPhongMaterial({
-      color: 0xff4400, // Orange-red flame color
-      emissive: 0x662200,
-      emissiveIntensity: 1.2,
+    // Simpler geometry - smaller sphere with fewer segments
+    const geo = new THREE.SphereGeometry(0.12, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xff6600, // Bright orange flame color
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.8,
       clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
 
-    // Add a small light to each flame particle
-    const flameLight = new THREE.PointLight(0xff4400, 0.5, 2);
-    mesh.add(flameLight);
+    // No individual point lights - too expensive for many particles
+    // The emissive color provides some glow without lights
 
-    const velocity = flameDirection.clone().multiplyScalar(0.5); // Slower than bullets
+    const velocity = flameDirection.clone().multiplyScalar(0.3); // Even slower, shorter range
     const collider = new Collider(new THREE.Box3().setFromObject(mesh));
 
     threeScene.scene.add(mesh);
@@ -194,7 +192,7 @@ export function createFlameThrowerBlast(
       .add(new ThreeObject(mesh))
       .add(new Velocity(velocity.x, velocity.y, velocity.z))
       .add(collider)
-      .add(new Expires(30)) // Flames last longer
+      .add(new Expires(12)) // Much shorter lifetime - flames don't travel far
       .add(new Projectile(firedByTag, damage))
       .addTag('flame')
       .addTag(Bullet);
@@ -349,8 +347,8 @@ export function createMuzzleFlash(
       break;
     case 'flamethrower':
       flashColor = 0xff6600; // Orange
-      particleCount = 6;
-      flashSize = 0.08;
+      particleCount = 3; // Reduced for performance
+      flashSize = 0.06;
       break;
     default:
       flashColor = 0xffff00;
@@ -762,40 +760,99 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
     weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
   }
 
-  // Different appearances based on weapon type
+  // Very distinct appearances based on weapon type - make ammo types obvious!
   let geometry, material;
+  const extraElements = [];
   switch (weaponType) {
     case 'shotgun':
-      geometry = new THREE.BoxGeometry(0.8, 0.3, 0.2);
+      // SHOTGUN: Wide brown shotgun shape with shells visible
+      geometry = new THREE.BoxGeometry(1.2, 0.4, 0.3);
       material = new THREE.MeshPhongMaterial({
-        color: 0x8b4513, // Brown wood-like
+        color: 0x8B4513, // Rich brown wood
         emissive: 0x331100,
-        emissiveIntensity: 0.2,
-      });
-      break;
-    case 'machinegun':
-      geometry = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 8);
-      material = new THREE.MeshPhongMaterial({
-        color: 0x666666, // Metallic gray
-        emissive: 0x222222,
-        emissiveIntensity: 0.3,
-      });
-      break;
-    case 'rocket':
-      geometry = new THREE.ConeGeometry(0.25, 0.8, 8);
-      material = new THREE.MeshPhongMaterial({
-        color: 0x444444, // Dark gray
-        emissive: 0x220000,
         emissiveIntensity: 0.4,
       });
+      // Add visible shotgun shells
+      for (let i = 0; i < 3; i++) {
+        const shellGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 6);
+        const shellMat = new THREE.MeshPhongMaterial({
+          color: 0xFFD700, // Gold shells
+          emissive: 0x442200,
+          emissiveIntensity: 0.6,
+        });
+        const shell = new THREE.Mesh(shellGeo, shellMat);
+        shell.position.set(-0.3 + i * 0.2, 0.3, 0);
+        extraElements.push(shell);
+      }
+      break;
+    case 'machinegun':
+      // MACHINE GUN: Long metallic cylinder with belt of bullets
+      geometry = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 8);
+      material = new THREE.MeshPhongMaterial({
+        color: 0xC0C0C0, // Bright silver
+        emissive: 0x404040,
+        emissiveIntensity: 0.5,
+      });
+      // Add bullet belt
+      for (let i = 0; i < 5; i++) {
+        const bulletGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.25, 6);
+        const bulletMat = new THREE.MeshPhongMaterial({
+          color: 0xFFFF00, // Bright yellow bullets
+          emissive: 0x444400,
+          emissiveIntensity: 0.8,
+        });
+        const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+        bullet.position.set(0.4, -0.3 + i * 0.15, 0);
+        extraElements.push(bullet);
+      }
+      break;
+    case 'rocket':
+      // ROCKET: Large red rocket shape
+      geometry = new THREE.ConeGeometry(0.4, 1.5, 8);
+      material = new THREE.MeshPhongMaterial({
+        color: 0xFF0000, // Bright red
+        emissive: 0x880000,
+        emissiveIntensity: 0.6,
+      });
+      // Add rocket fins
+      for (let i = 0; i < 4; i++) {
+        const finGeo = new THREE.BoxGeometry(0.1, 0.3, 0.05);
+        const finMat = new THREE.MeshPhongMaterial({
+          color: 0x444444,
+          emissive: 0x222222,
+          emissiveIntensity: 0.3,
+        });
+        const fin = new THREE.Mesh(finGeo, finMat);
+        const angle = (i / 4) * Math.PI * 2;
+        fin.position.set(Math.cos(angle) * 0.3, -0.4, Math.sin(angle) * 0.3);
+        fin.rotation.y = angle;
+        extraElements.push(fin);
+      }
       break;
     case 'flamethrower':
-      geometry = new THREE.CylinderGeometry(0.2, 0.3, 0.8, 8);
+      // FLAMETHROWER: Blue flame-shaped object
+      geometry = new THREE.CylinderGeometry(0.25, 0.35, 1.0, 8);
       material = new THREE.MeshPhongMaterial({
-        color: 0x333333, // Dark metal
-        emissive: 0x441100,
-        emissiveIntensity: 0.3,
+        color: 0x0088FF, // Bright blue
+        emissive: 0x004488,
+        emissiveIntensity: 0.7,
       });
+      // Add flame effects
+      for (let i = 0; i < 4; i++) {
+        const flameGeo = new THREE.ConeGeometry(0.1, 0.4, 6);
+        const flameMat = new THREE.MeshBasicMaterial({
+          color: 0xFF6600, // Orange flame
+          transparent: true,
+          opacity: 0.8,
+        });
+        const flame = new THREE.Mesh(flameGeo, flameMat);
+        flame.position.set(
+          (Math.random() - 0.5) * 0.3,
+          0.6 + Math.random() * 0.2,
+          (Math.random() - 0.5) * 0.3
+        );
+        extraElements.push(flame);
+      }
       break;
     default:
       return; // Invalid weapon type
@@ -803,6 +860,12 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
 
   material.clippingPlanes = [world.getResource(ThreeScene).groundClippingPlane];
   const weaponMesh = new THREE.Mesh(geometry, material);
+
+  // Add extra visual elements to make ammo type obvious
+  extraElements.forEach(element => {
+    element.material.clippingPlanes = [world.getResource(ThreeScene).groundClippingPlane];
+    weaponMesh.add(element);
+  });
 
   // Add a subtle pulsing light
   const weaponLight = new THREE.PointLight(0x00ff88, 0.3, 3);
@@ -963,19 +1026,37 @@ export function createBoulder(world, position, size) {
     0.25 + Math.random() * 0.4 // Dark to medium brightness
   );
 
-  // Decide on formation type: pile, outcropping, or scattered rocks
+  // Decide on formation type: massive monoliths, piles, outcroppings, or scattered rocks
   const formationType = Math.random();
   let numRocks;
 
-  if (formationType < 0.4) {
-    // Rock pile - clustered rocks
-    numRocks = getRandomNumber(4, 8);
-  } else if (formationType < 0.7) {
-    // Outcropping - larger rocks emerging from ground
-    numRocks = getRandomNumber(2, 5);
+  if (size > 12) {
+    // Very large formations - Joshua Tree style monoliths
+    if (formationType < 0.3) {
+      numRocks = getRandomNumber(1, 2); // Single massive rock
+    } else if (formationType < 0.6) {
+      numRocks = getRandomNumber(2, 4); // Small cluster of large rocks
+    } else {
+      numRocks = getRandomNumber(3, 6); // Medium formation
+    }
+  } else if (size > 8) {
+    // Large formations
+    if (formationType < 0.4) {
+      numRocks = getRandomNumber(2, 4); // Outcropping
+    } else if (formationType < 0.7) {
+      numRocks = getRandomNumber(4, 8); // Rock pile
+    } else {
+      numRocks = getRandomNumber(1, 3); // Large individual rocks
+    }
   } else {
-    // Scattered rocks - individual boulders
-    numRocks = getRandomNumber(1, 3);
+    // Smaller formations
+    if (formationType < 0.4) {
+      numRocks = getRandomNumber(4, 8); // Rock pile
+    } else if (formationType < 0.7) {
+      numRocks = getRandomNumber(2, 5); // Outcropping
+    } else {
+      numRocks = getRandomNumber(1, 3); // Scattered rocks
+    }
   }
 
   const rocks = [];
@@ -1017,68 +1098,188 @@ export function createBoulder(world, position, size) {
     rocks.push(rock);
   }
 
-  // Position rocks to create natural formations
-  if (formationType < 0.4) {
-    // Rock pile - cluster rocks together with some buried in ground
-    rocks.forEach((rock, index) => {
-      const angle = (index / rocks.length) * Math.PI * 2;
-      const radius = size * (0.3 + Math.random() * 0.4);
-      const height = -size * 0.3 + Math.random() * size * 0.8; // Some buried, some above
+  // Position rocks to create Joshua Tree-style formations
+  if (size > 12) {
+    // Massive monoliths that tower above the landscape
+    if (formationType < 0.3) {
+      // Single massive rock
+      rocks.forEach(rock => {
+        rock.position.set(
+          (Math.random() - 0.5) * size * 0.2,
+          size * 0.3 + Math.random() * size * 0.4, // High above ground
+          (Math.random() - 0.5) * size * 0.2
+        );
+        rock.rotation.set(
+          Math.random() * Math.PI * 0.3 - Math.PI * 0.15, // Slight tilt
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 0.3 - Math.PI * 0.15
+        );
+        boulderGroup.add(rock);
+      });
+    } else if (formationType < 0.6) {
+      // Small cluster of massive rocks
+      rocks.forEach((rock, index) => {
+        const angle = (index / rocks.length) * Math.PI * 2;
+        const radius = size * 0.4;
+        const height = size * 0.2 + Math.random() * size * 0.6;
 
-      rock.position.set(
-        Math.cos(angle) * radius,
-        height,
-        Math.sin(angle) * radius
-      );
+        rock.position.set(
+          Math.cos(angle) * radius,
+          height,
+          Math.sin(angle) * radius
+        );
 
-      // Add some random offset
-      rock.position.x += (Math.random() - 0.5) * size * 0.3;
-      rock.position.z += (Math.random() - 0.5) * size * 0.3;
+        rock.rotation.set(
+          Math.random() * Math.PI * 0.4 - Math.PI * 0.2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 0.4 - Math.PI * 0.2
+        );
 
-      // Rotate randomly for natural look
-      rock.rotation.set(
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
-      );
+        boulderGroup.add(rock);
+      });
+    } else {
+      // Large formation with rocks at different heights
+      rocks.forEach((rock, index) => {
+        const height = index * size * 0.25 + Math.random() * size * 0.3;
+        rock.position.set(
+          (Math.random() - 0.5) * size * 0.8,
+          height,
+          (Math.random() - 0.5) * size * 0.8
+        );
 
-      boulderGroup.add(rock);
-    });
-  } else if (formationType < 0.7) {
-    // Outcropping - larger rocks emerging from ground
-    rocks.forEach((rock, index) => {
-      const baseHeight = -size * 0.5 + index * size * 0.3;
-      rock.position.set(
-        (Math.random() - 0.5) * size * 0.6,
-        baseHeight + Math.random() * size * 0.4,
-        (Math.random() - 0.5) * size * 0.6
-      );
+        rock.rotation.set(
+          Math.random() * Math.PI * 0.6 - Math.PI * 0.3,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 0.6 - Math.PI * 0.3
+        );
 
-      rock.rotation.set(
-        Math.random() * Math.PI * 0.5 - Math.PI * 0.25, // Tilt slightly
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 0.5 - Math.PI * 0.25
-      );
+        boulderGroup.add(rock);
+      });
+    }
+  } else if (size > 8) {
+    // Large formations
+    if (formationType < 0.4) {
+      // Large outcropping
+      rocks.forEach((rock, index) => {
+        const baseHeight = -size * 0.3 + index * size * 0.4;
+        rock.position.set(
+          (Math.random() - 0.5) * size * 0.7,
+          baseHeight + Math.random() * size * 0.5,
+          (Math.random() - 0.5) * size * 0.7
+        );
 
-      boulderGroup.add(rock);
-    });
+        rock.rotation.set(
+          Math.random() * Math.PI * 0.5 - Math.PI * 0.25,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 0.5 - Math.PI * 0.25
+        );
+
+        boulderGroup.add(rock);
+      });
+    } else if (formationType < 0.7) {
+      // Large rock pile
+      rocks.forEach((rock, index) => {
+        const angle = (index / rocks.length) * Math.PI * 2;
+        const radius = size * (0.4 + Math.random() * 0.3);
+        const height = -size * 0.2 + Math.random() * size * 1.0;
+
+        rock.position.set(
+          Math.cos(angle) * radius,
+          height,
+          Math.sin(angle) * radius
+        );
+
+        rock.position.x += (Math.random() - 0.5) * size * 0.4;
+        rock.position.z += (Math.random() - 0.5) * size * 0.4;
+
+        rock.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
+
+        boulderGroup.add(rock);
+      });
+    } else {
+      // Large individual boulders
+      rocks.forEach(rock => {
+        rock.position.set(
+          (Math.random() - 0.5) * size * 2.5,
+          -size * 0.1 + Math.random() * size * 0.6,
+          (Math.random() - 0.5) * size * 2.5
+        );
+
+        rock.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
+
+        boulderGroup.add(rock);
+      });
+    }
   } else {
-    // Scattered rocks - individual boulders
-    rocks.forEach(rock => {
-      rock.position.set(
-        (Math.random() - 0.5) * size * 2,
-        -size * 0.2 + Math.random() * size * 0.4, // Partially buried
-        (Math.random() - 0.5) * size * 2
-      );
+    // Smaller formations - original logic
+    if (formationType < 0.4) {
+      // Rock pile - cluster rocks together with some buried in ground
+      rocks.forEach((rock, index) => {
+        const angle = (index / rocks.length) * Math.PI * 2;
+        const radius = size * (0.3 + Math.random() * 0.4);
+        const height = -size * 0.3 + Math.random() * size * 0.8;
 
-      rock.rotation.set(
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
-      );
+        rock.position.set(
+          Math.cos(angle) * radius,
+          height,
+          Math.sin(angle) * radius
+        );
 
-      boulderGroup.add(rock);
-    });
+        rock.position.x += (Math.random() - 0.5) * size * 0.3;
+        rock.position.z += (Math.random() - 0.5) * size * 0.3;
+
+        rock.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
+
+        boulderGroup.add(rock);
+      });
+    } else if (formationType < 0.7) {
+      // Outcropping - larger rocks emerging from ground
+      rocks.forEach((rock, index) => {
+        const baseHeight = -size * 0.5 + index * size * 0.3;
+        rock.position.set(
+          (Math.random() - 0.5) * size * 0.6,
+          baseHeight + Math.random() * size * 0.4,
+          (Math.random() - 0.5) * size * 0.6
+        );
+
+        rock.rotation.set(
+          Math.random() * Math.PI * 0.5 - Math.PI * 0.25,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 0.5 - Math.PI * 0.25
+        );
+
+        boulderGroup.add(rock);
+      });
+    } else {
+      // Scattered rocks - individual boulders
+      rocks.forEach(rock => {
+        rock.position.set(
+          (Math.random() - 0.5) * size * 2,
+          -size * 0.2 + Math.random() * size * 0.4,
+          (Math.random() - 0.5) * size * 2
+        );
+
+        rock.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
+
+        boulderGroup.add(rock);
+      });
+    }
   }
 
   boulderGroup.position.copy(position);
@@ -1090,27 +1291,81 @@ export function createBoulder(world, position, size) {
 export function createTree(world, position) {
   const treeGroup = new THREE.Group();
 
-  // Tree trunk
-  const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
-  const trunkMat = new THREE.MeshPhongMaterial({
-    color: 0x8b4513, // Brown
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
-  const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-  trunk.position.y = 2;
-  treeGroup.add(trunk);
+  // Randomly choose between regular trees and Joshua Tree yuccas
+  const isJoshuaTree = Math.random() < 0.4; // 40% chance for Joshua Tree style
 
-  // Tree foliage (multiple layers)
-  const foliageColors = [0x228b22, 0x32cd32, 0x006400]; // Different green shades
-  for (let i = 0; i < 3; i++) {
-    const foliageGeo = new THREE.ConeGeometry(2 - i * 0.3, 2, 8);
-    const foliageMat = new THREE.MeshPhongMaterial({
-      color: foliageColors[i % foliageColors.length],
+  if (isJoshuaTree) {
+    // Joshua Tree yucca - twisted trunk with sparse spiky leaves
+    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 6, 8);
+    const trunkMat = new THREE.MeshPhongMaterial({
+      color: 0x654321, // Darker brown for desert tree
       clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
     });
-    const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-    foliage.position.y = 3 + i * 0.8;
-    treeGroup.add(foliage);
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+
+    // Twist the trunk slightly for character
+    trunk.rotation.y = Math.random() * Math.PI * 0.3 - Math.PI * 0.15;
+    trunk.rotation.x = Math.random() * Math.PI * 0.2 - Math.PI * 0.1;
+    trunk.position.y = 3;
+    treeGroup.add(trunk);
+
+    // Sparse spiky leaves pointing outward
+    const leafColors = [0x228B22, 0x32CD32, 0x006400, 0x90EE90];
+    for (let i = 0; i < 8; i++) {
+      const leafGeo = new THREE.ConeGeometry(0.1, 1.5 + Math.random() * 1, 6);
+      const leafMat = new THREE.MeshPhongMaterial({
+        color: leafColors[Math.floor(Math.random() * leafColors.length)],
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+      const leaf = new THREE.Mesh(leafGeo, leafMat);
+
+      const angle = (i / 8) * Math.PI * 2;
+      const distance = 0.8 + Math.random() * 0.4;
+      const height = 4 + Math.random() * 2;
+
+      leaf.position.set(
+        Math.cos(angle) * distance,
+        height,
+        Math.sin(angle) * distance
+      );
+
+      // Point leaves outward from center
+      leaf.lookAt(
+        new THREE.Vector3(
+          Math.cos(angle) * 2,
+          height,
+          Math.sin(angle) * 2
+        )
+      );
+
+      // Add some random rotation
+      leaf.rotation.z += (Math.random() - 0.5) * 0.3;
+
+      treeGroup.add(leaf);
+    }
+  } else {
+    // Regular desert tree
+    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
+    const trunkMat = new THREE.MeshPhongMaterial({
+      color: 0x8b4513, // Brown
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.y = 2;
+    treeGroup.add(trunk);
+
+    // Tree foliage (multiple layers)
+    const foliageColors = [0x228b22, 0x32cd32, 0x006400]; // Different green shades
+    for (let i = 0; i < 3; i++) {
+      const foliageGeo = new THREE.ConeGeometry(2 - i * 0.3, 2, 8);
+      const foliageMat = new THREE.MeshPhongMaterial({
+        color: foliageColors[i % foliageColors.length],
+        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+      });
+      const foliage = new THREE.Mesh(foliageGeo, foliageMat);
+      foliage.position.y = 3 + i * 0.8;
+      treeGroup.add(foliage);
+    }
   }
 
   treeGroup.position.copy(position);
@@ -1137,6 +1392,161 @@ export function createBushes(world, position, count = 3) {
 
   bushGroup.position.copy(position);
   return bushGroup;
+}
+
+export function createCrate(world, position) {
+  const crateGroup = new THREE.Group();
+
+  // Wooden crate
+  const crateGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+  const crateMat = new THREE.MeshPhongMaterial({
+    color: 0x8b4513, // Brown wood
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const crate = new THREE.Mesh(crateGeo, crateMat);
+  crateGroup.add(crate);
+
+  crateGroup.position.copy(position);
+  return crateGroup;
+}
+
+export function createBarrel(world, position) {
+  const barrelGroup = new THREE.Group();
+
+  // Metal barrel
+  const barrelGeo = new THREE.CylinderGeometry(0.8, 0.8, 2, 12);
+  const barrelMat = new THREE.MeshPhongMaterial({
+    color: 0x666666, // Gray metal
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+  barrelGroup.add(barrel);
+
+  // Barrel rings
+  for (let i = 0; i < 3; i++) {
+    const ringGeo = new THREE.TorusGeometry(0.85, 0.05, 8, 16);
+    const ringMat = new THREE.MeshPhongMaterial({
+      color: 0x444444,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.y = -0.8 + i * 0.8;
+    barrelGroup.add(ring);
+  }
+
+  barrelGroup.position.copy(position);
+  return barrelGroup;
+}
+
+export function createFallenLog(world, position) {
+  const logGroup = new THREE.Group();
+
+  // Fallen log
+  const logGeo = new THREE.CylinderGeometry(0.4, 0.6, 3, 8);
+  const logMat = new THREE.MeshPhongMaterial({
+    color: 0x654321, // Dark brown wood
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const log = new THREE.Mesh(logGeo, logMat);
+  log.rotation.z = Math.PI / 2; // Lay it flat
+  log.position.y = 0.3;
+  logGroup.add(log);
+
+  logGroup.position.copy(position);
+  return logGroup;
+}
+
+export function createStonePillar(world, position) {
+  const pillarGroup = new THREE.Group();
+
+  // Stone pillar
+  const pillarGeo = new THREE.CylinderGeometry(0.6, 0.8, 3, 8);
+  const pillarMat = new THREE.MeshPhongMaterial({
+    color: 0x888888, // Light gray stone
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+  pillar.position.y = 1.5;
+  pillarGroup.add(pillar);
+
+  // Add some moss/lichen on top
+  const mossGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.1, 8);
+  const mossMat = new THREE.MeshPhongMaterial({
+    color: 0x228B22, // Forest green
+    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  });
+  const moss = new THREE.Mesh(mossGeo, mossMat);
+  moss.position.y = 3.05;
+  pillarGroup.add(moss);
+
+  pillarGroup.position.copy(position);
+  return pillarGroup;
+}
+
+export function createGrassPatch(world, position) {
+  const grassGroup = new THREE.Group();
+
+  // Create multiple grass blades
+  for (let i = 0; i < 15; i++) {
+    const bladeGeo = new THREE.PlaneGeometry(0.1, 0.8);
+    const bladeMat = new THREE.MeshPhongMaterial({
+      color: 0x228B22, // Green
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.8,
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    const blade = new THREE.Mesh(bladeGeo, bladeMat);
+
+    blade.position.set(
+      (Math.random() - 0.5) * 3,
+      Math.random() * 0.4,
+      (Math.random() - 0.5) * 3
+    );
+    blade.rotation.y = Math.random() * Math.PI * 2;
+    blade.rotation.x = (Math.random() - 0.5) * 0.3; // Slight tilt
+
+    grassGroup.add(blade);
+  }
+
+  grassGroup.position.copy(position);
+  return grassGroup;
+}
+
+export function createRuin(world, position) {
+  const ruinGroup = new THREE.Group();
+
+  // Broken stone wall pieces
+  const stoneColors = [0x888888, 0x999999, 0x777777];
+
+  for (let i = 0; i < 5; i++) {
+    const stoneGeo = new THREE.BoxGeometry(
+      1 + Math.random() * 2,
+      0.5 + Math.random() * 1.5,
+      0.8 + Math.random() * 1.2
+    );
+    const stoneMat = new THREE.MeshPhongMaterial({
+      color: stoneColors[Math.floor(Math.random() * stoneColors.length)],
+      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+    });
+    const stone = new THREE.Mesh(stoneGeo, stoneMat);
+
+    stone.position.set(
+      (Math.random() - 0.5) * 4,
+      Math.random() * 1,
+      (Math.random() - 0.5) * 4
+    );
+    stone.rotation.set(
+      Math.random() * 0.5,
+      Math.random() * Math.PI * 2,
+      Math.random() * 0.5
+    );
+
+    ruinGroup.add(stone);
+  }
+
+  ruinGroup.position.copy(position);
+  return ruinGroup;
 }
 
 export function createBoundaryWalls(world, threeScene) {

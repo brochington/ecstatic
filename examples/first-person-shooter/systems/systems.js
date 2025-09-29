@@ -936,29 +936,29 @@ export function deathSystem({ world, entity, components }) {
       const position = entity.get(ThreeObject).mesh.position;
       createExplosion(world, position, 0xff4444);
 
-      // Chance to drop items when enemy dies
-      let healthDropChance = 0.15; // 15% base chance for health
-      let weaponDropChance = 0.25; // 25% base chance for weapons
+      // Every enemy death guarantees either ammo or health drop
+      const dropType = Math.random();
 
-      if (entity.hasTag(Tank)) {
-        healthDropChance = 0.3; // 30% chance for tanks
-        weaponDropChance = 0.4; // 40% chance for tanks
-      } else if (entity.hasTag(Sniper)) {
-        healthDropChance = 0.2; // 20% chance for snipers
-        weaponDropChance = 0.35; // 35% chance for snipers
-      } else if (entity.hasTag(Scout)) {
-        healthDropChance = 0.1; // 10% chance for scouts
-        weaponDropChance = 0.2; // 20% chance for scouts
-      }
-
-      // Drop health pack
-      if (Math.random() < healthDropChance) {
+      if (dropType < 0.5) {
+        // Drop health pack (50% chance)
         dropHealthPack(world, position);
-      }
-
-      // Drop weapon pickup
-      if (Math.random() < weaponDropChance) {
-        spawnWeaponPickup(world, null, position);
+      } else {
+        // Drop ammo (50% chance) - make ammo type obvious
+        let weaponType;
+        if (entity.hasTag(Tank)) {
+          // Tanks drop rocket ammo (most powerful)
+          weaponType = 'rocket';
+        } else if (entity.hasTag(Sniper)) {
+          // Snipers drop machine gun ammo (rapid fire)
+          weaponType = 'machinegun';
+        } else if (entity.hasTag(Scout)) {
+          // Scouts drop shotgun ammo (spread damage)
+          weaponType = 'shotgun';
+        } else {
+          // Regular enemies randomly drop flamethrower (area damage)
+          weaponType = 'flamethrower';
+        }
+        spawnWeaponPickup(world, weaponType, position);
       }
     }
     entity.destroy();
@@ -1157,7 +1157,6 @@ function updateMinimap(world) {
   const existingDots = minimap.querySelectorAll('.minimap-enemy, .minimap-item, .minimap-armor');
   existingDots.forEach(dot => dot.remove());
 
-  const sceneSize = 100; // From game.js
   const mapSize = 150; // Minimap size in pixels
 
   // Update player position on minimap

@@ -78,9 +78,15 @@ import {
   createBoulder,
   createTree,
   createBushes,
+  createCrate,
+  createBarrel,
+  createFallenLog,
+  createStonePillar,
+  createGrassPatch,
+  createRuin,
 } from '../entities/entities.js';
 
-export const sceneSize = 100;
+export const sceneSize = 400;
 
 /* -------------------------------------------------------------------------- */
 /*                           SYSTEM REGISTRATION                            */
@@ -258,15 +264,15 @@ function initializeGame(world) {
     .add(new Collider(groundBox))
     .addTag(Obstacle);
 
-  // Create natural rock formations of varying sizes
-  const numFormations = 8 + Math.floor(Math.random() * 4); // 8-11 formations
+  // Create massive rock formations like Joshua Tree Desert
+  const numFormations = 80 + Math.floor(Math.random() * 40); // 80-120 formations
 
   for (let i = 0; i < numFormations; i++) {
-    // Vary sizes significantly more - from small rocks to large formations
-    const boulderSize = getRandomNumber(0.8, 6);
+    // Vary sizes dramatically - from small rocks to massive formations
+    const boulderSize = getRandomNumber(1.5, 18); // Much larger range
 
-    // Position formations with more spacing to accommodate larger ones
-    const minDistance = 6 + boulderSize; // Larger formations need more space
+    // Position formations with spacing to accommodate massive ones
+    const minDistance = 8 + boulderSize; // Larger formations need much more space
     const boulderPosition = new THREE.Vector3(
       getRandomNumber(
         -sceneSize / 2 + minDistance,
@@ -288,8 +294,8 @@ function initializeGame(world) {
       .addTag(Obstacle);
   }
 
-  // Add some trees for atmosphere (position them with more spacing)
-  for (let i = 0; i < 6; i++) {
+  // Add abundant desert trees like Joshua Tree Desert
+  for (let i = 0; i < 65; i++) {
     const treePosition = new THREE.Vector3(
       getRandomNumber(-sceneSize / 2 + 12, sceneSize / 2 - 12),
       0,
@@ -299,8 +305,8 @@ function initializeGame(world) {
     threeScene.scene.add(tree);
   }
 
-  // Add some bushes (smaller spacing since they're less obstructive)
-  for (let i = 0; i < 8; i++) {
+  // Add many bushes
+  for (let i = 0; i < 35; i++) {
     const bushPosition = new THREE.Vector3(
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8),
       0,
@@ -308,6 +314,112 @@ function initializeGame(world) {
     );
     const bush = createBushes(world, bushPosition);
     threeScene.scene.add(bush);
+  }
+
+  // Add crates for cover and atmosphere
+  for (let i = 0; i < 18; i++) {
+    const cratePosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10),
+      0,
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
+    );
+    const crate = createCrate(world, cratePosition);
+    threeScene.scene.add(crate);
+
+    // Create bounding box for collision detection
+    const crateBox = new THREE.Box3().setFromObject(crate);
+    world
+      .createEntity()
+      .add(new ThreeObject(crate))
+      .add(new Collider(crateBox))
+      .addTag(Obstacle);
+  }
+
+  // Add barrels for cover
+  for (let i = 0; i < 15; i++) {
+    const barrelPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8),
+      0,
+      getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
+    );
+    const barrel = createBarrel(world, barrelPosition);
+    threeScene.scene.add(barrel);
+
+    // Create bounding box for collision detection
+    const barrelBox = new THREE.Box3().setFromObject(barrel);
+    world
+      .createEntity()
+      .add(new ThreeObject(barrel))
+      .add(new Collider(barrelBox))
+      .addTag(Obstacle);
+  }
+
+  // Add fallen logs
+  for (let i = 0; i < 12; i++) {
+    const logPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8),
+      0,
+      getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
+    );
+    const log = createFallenLog(world, logPosition);
+    threeScene.scene.add(log);
+
+    // Create bounding box for collision detection
+    const logBox = new THREE.Box3().setFromObject(log);
+    world
+      .createEntity()
+      .add(new ThreeObject(log))
+      .add(new Collider(logBox))
+      .addTag(Obstacle);
+  }
+
+  // Add stone pillars
+  for (let i = 0; i < 10; i++) {
+    const pillarPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10),
+      0,
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
+    );
+    const pillar = createStonePillar(world, pillarPosition);
+    threeScene.scene.add(pillar);
+
+    // Create bounding box for collision detection
+    const pillarBox = new THREE.Box3().setFromObject(pillar);
+    world
+      .createEntity()
+      .add(new ThreeObject(pillar))
+      .add(new Collider(pillarBox))
+      .addTag(Obstacle);
+  }
+
+  // Add grass patches
+  for (let i = 0; i < 20; i++) {
+    const grassPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      0,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+    const grass = createGrassPatch(world, grassPosition);
+    threeScene.scene.add(grass);
+  }
+
+  // Add ancient ruins
+  for (let i = 0; i < 6; i++) {
+    const ruinPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 15, sceneSize / 2 - 15),
+      0,
+      getRandomNumber(-sceneSize / 2 + 15, sceneSize / 2 - 15)
+    );
+    const ruin = createRuin(world, ruinPosition);
+    threeScene.scene.add(ruin);
+
+    // Create bounding box for collision detection (rough approximation)
+    const ruinBox = new THREE.Box3().setFromObject(ruin);
+    world
+      .createEntity()
+      .add(new ThreeObject(ruin))
+      .add(new Collider(ruinBox))
+      .addTag(Obstacle);
   }
 
   const playerContainer = new THREE.Object3D();
@@ -556,7 +668,10 @@ function setupEventListeners(world) {
         // Add armor to player (up to max armor)
         if (player.has(Armor)) {
           const armor = player.get(Armor);
-          armor.value = Math.min(armor.maxValue, armor.value + armorPickup.armorAmount);
+          armor.value = Math.min(
+            armor.maxValue,
+            armor.value + armorPickup.armorAmount
+          );
         }
 
         // Destroy the pickup

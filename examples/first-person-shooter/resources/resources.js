@@ -39,14 +39,14 @@ export class ThreeScene {
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 0.5;
     dirLight.shadow.camera.far = 500;
-    dirLight.shadow.camera.left = -100;
-    dirLight.shadow.camera.right = 100;
-    dirLight.shadow.camera.top = 100;
-    dirLight.shadow.camera.bottom = -100;
+    dirLight.shadow.camera.left = -400;
+    dirLight.shadow.camera.right = 400;
+    dirLight.shadow.camera.top = 400;
+    dirLight.shadow.camera.bottom = -400;
     this.scene.add(dirLight);
 
     // Add atmospheric fog
-    this.scene.fog = new THREE.Fog(0x87ceeb, 50, 200);
+    this.scene.fog = new THREE.Fog(0x87ceeb, 50, 800);
   }
 }
 
@@ -90,7 +90,7 @@ export class WeaponSystem {
       new Weapon('shotgun', 'Shotgun', 8, 45, 30), // 8 damage per pellet
       new Weapon('machinegun', 'Machine Gun', 6, 8, 100), // Rapid fire
       new Weapon('rocket', 'Rocket Launcher', 50, 120, 5), // High damage, area effect
-      new Weapon('flamethrower', 'Flamethrower', 3, 2, 200), // Rapid fire, damage over time
+      new Weapon('flamethrower', 'Flamethrower', 3, 3, 200), // Slower fire rate for performance
     ];
     this.currentWeaponIndex = 0;
     this.switchCooldown = 30;
