@@ -26,10 +26,13 @@
     <p>Click and hold on the canvas to create a stream of balls!</p>
     <canvas id="ecs-canvas"></canvas>
 
-    <!-- <script
-      type="module"
-      src="https://unpkg.com/@brochington/ecstatic@0.3.0"
-    ></script> -->
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.1/dist/ecstatic.esm.js"
+        }
+      }
+    </script>
     <script type="module">
       /* -------------------------------------------------------------------------- */
       /*                               HELPER FUNCTIONS                             */
@@ -55,7 +58,7 @@
       /*                                    WORLD                                   */
       /* -------------------------------------------------------------------------- */
 
-      import * as ecstatic from '../dist/ecstatic.esm.js';
+      import * as ecstatic from 'ecstatic';
       const { World } = ecstatic;
       const world = new World();
 

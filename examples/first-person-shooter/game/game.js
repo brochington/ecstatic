@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { World } from 'ecstatic';
+import * as ecstatic from 'ecstatic';
 import { getRandomNumber } from '../utils/utils.js';
 import {
   ThreeScene,
@@ -91,6 +91,8 @@ import {
 } from '../entities/entities.js';
 
 export const sceneSize = 400;
+
+const { World } = ecstatic;
 
 /* -------------------------------------------------------------------------- */
 /*                           SYSTEM REGISTRATION                            */
