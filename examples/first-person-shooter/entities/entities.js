@@ -25,6 +25,7 @@ import {
   Particle,
   WeaponPickupArrow,
   ArmorPickup,
+  Collectable,
 } from '../components/components.js';
 import { sceneSize } from '../game/game.js';
 
@@ -706,11 +707,30 @@ export function spawnHealthPack(world) {
   const packLight = new THREE.PointLight(0x00ff88, 0.5, 5);
   packMesh.add(packLight);
 
-  packMesh.position.set(
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
-    1,
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
-  );
+  // Generate random position for health pack, avoiding obstacles
+  let packPosition;
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  do {
+    packPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      1,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+    attempts++;
+  } while (attempts < maxAttempts && isPositionBlocked(world, packPosition));
+
+  // If we couldn't find a good position, just use a random one anyway
+  if (attempts >= maxAttempts) {
+    packPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      1,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+  }
+
+  packMesh.position.copy(packPosition);
   threeScene.scene.add(packMesh);
 
   world
@@ -876,11 +896,27 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
     weaponPosition = position.clone();
     weaponPosition.y = 1; // Ensure it's on the ground
   } else {
-    weaponPosition = new THREE.Vector3(
-      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
-      1,
-      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
-    );
+    // Generate random position for weapon pickup, avoiding obstacles
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    do {
+      weaponPosition = new THREE.Vector3(
+        getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+        1,
+        getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+      );
+      attempts++;
+    } while (attempts < maxAttempts && isPositionBlocked(world, weaponPosition));
+
+    // If we couldn't find a good position, just use a random one anyway
+    if (attempts >= maxAttempts) {
+      weaponPosition = new THREE.Vector3(
+        getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+        1,
+        getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+      );
+    }
   }
 
   weaponMesh.position.copy(weaponPosition);
@@ -943,11 +979,28 @@ export function spawnArmorPickup(world, armorAmount = 50) {
   const armorLight = new THREE.PointLight(0x4444ff, 0.4, 4);
   armorMesh.add(armorLight);
 
-  const armorPosition = new THREE.Vector3(
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
-    1,
-    getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
-  );
+  // Generate random position for armor pickup, avoiding obstacles
+  let armorPosition;
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  do {
+    armorPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      1,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+    attempts++;
+  } while (attempts < maxAttempts && isPositionBlocked(world, armorPosition));
+
+  // If we couldn't find a good position, just use a random one anyway
+  if (attempts >= maxAttempts) {
+    armorPosition = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
+      1,
+      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
+    );
+  }
 
   armorMesh.position.copy(armorPosition);
   threeScene.scene.add(armorMesh);
@@ -986,6 +1039,57 @@ export function spawnArmorPickup(world, armorAmount = 50) {
     .createEntity()
     .add(new ThreeObject(arrowMesh))
     .add(new WeaponPickupArrow(armorEntity)); // Link to armor entity
+}
+
+export function spawnCollectable(world) {
+  const threeScene = world.getResource(ThreeScene);
+  if (!threeScene) return;
+
+  // Generate random position for collectable, avoiding obstacles
+  let position;
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  do {
+    position = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10),
+      0,
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
+    );
+    attempts++;
+  } while (attempts < maxAttempts && isPositionBlocked(world, position));
+
+  // If we couldn't find a good position, just use a random one anyway
+  if (attempts >= maxAttempts) {
+    position = new THREE.Vector3(
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10),
+      0,
+      getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
+    );
+  }
+
+  createCollectable(world, position);
+}
+
+function isPositionBlocked(world, position) {
+  const obstacles = world.getAllTagged(Obstacle);
+  const testBox = new THREE.Box3(
+    new THREE.Vector3(position.x - 3, position.y - 1, position.z - 3),
+    new THREE.Vector3(position.x + 3, position.y + 3, position.z + 3)
+  );
+
+  for (const obstacle of obstacles) {
+    const obstacleCollider = obstacle.get(Collider);
+    const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+
+    for (const obstacleBox of obstacleBoxes) {
+      if (obstacleBox.intersectsBox(testBox)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 export function createSkybox(scene) {
@@ -1285,7 +1389,33 @@ export function createBoulder(world, position, size) {
   boulderGroup.position.copy(position);
   // Don't add extra height offset since rocks are positioned relative to ground
 
-  return boulderGroup;
+  // Create individual collision boxes for each rock instead of one large box
+  const collisionBoxes = [];
+  rocks.forEach(rock => {
+    // Create a bounding box for each individual rock
+    const rockBox = new THREE.Box3().setFromObject(rock);
+
+    // Shrink the collision box significantly to allow getting much closer to rocks
+    // Use a single aggressive shrink factor since all rocks should be walkable-around
+    const shrinkFactor = 0.5; // 50% of original size
+
+    // Get the center and size of the original box
+    const center = rockBox.getCenter(new THREE.Vector3());
+    const size = rockBox.getSize(new THREE.Vector3());
+
+    // Create a smaller box centered on the same point
+    const halfSize = size.clone().multiplyScalar(shrinkFactor * 0.5);
+    const min = center.clone().sub(halfSize);
+    const max = center.clone().add(halfSize);
+
+    const shrunkBox = new THREE.Box3(min, max);
+
+    // Transform the box to world coordinates (rock position + boulder group position)
+    shrunkBox.translate(boulderGroup.position);
+    collisionBoxes.push(shrunkBox);
+  });
+
+  return { mesh: boulderGroup, collisionBoxes };
 }
 
 export function createTree(world, position) {
@@ -1624,4 +1754,46 @@ export function createRocketExplosion(world, position) {
   // Apply splash damage in explosion radius
   const explosionRadius = 4;
   applySplashDamage(world, position, 40, null, explosionRadius); // null firedBy means it damages everyone
+}
+
+export function createCollectable(world, position) {
+  const threeScene = world.getResource(ThreeScene);
+
+  // Create a glowing crystal-like collectable
+  const geometry = new THREE.OctahedronGeometry(1, 0);
+
+  // Create glowing material with emissive properties
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xffd700, // Gold color
+    emissive: 0x444400, // Subtle emissive glow
+    emissiveIntensity: 0.3,
+    shininess: 100,
+    transparent: true,
+    opacity: 0.9,
+    clippingPlanes: [threeScene.groundClippingPlane],
+  });
+
+  const collectable = new THREE.Mesh(geometry, material);
+
+  // Add a point light to make it glow
+  const light = new THREE.PointLight(0xffd700, 1, 10);
+  light.position.copy(position);
+  collectable.add(light);
+
+  // Position the collectable slightly above ground
+  collectable.position.copy(position);
+  collectable.position.y += 1.5;
+
+  threeScene.scene.add(collectable);
+
+  // Create bounding box for collision detection
+  const collectableBox = new THREE.Box3().setFromObject(collectable);
+
+  world
+    .createEntity()
+    .add(new ThreeObject(collectable))
+    .add(new Collectable())
+    .add(new Collider(collectableBox));
+
+  return collectable;
 }

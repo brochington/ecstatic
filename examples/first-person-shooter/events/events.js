@@ -29,4 +29,10 @@ export class PlayerArmorPickupEvent {
   }
 }
 
+export class PlayerCollectablePickupEvent {
+  constructor(collectableEntity) {
+    this.collectableEntity = collectableEntity;
+  }
+}
+
 export class PlayerDeathEvent {}

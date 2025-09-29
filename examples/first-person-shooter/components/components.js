@@ -7,9 +7,11 @@ import * as THREE from 'three';
 export class GameState {
   score = 0;
   kills = 0;
+  collectablesCollected = 0;
   isGameOver = false;
   enemySpawnTimer = 0;
   healthPackSpawnTimer = 300;
+  collectableSpawnTimer = 0;
 }
 
 export class ThreeObject {
@@ -134,6 +136,15 @@ export class ArmorPickup {
     this.bobTimer = 0;
     this.bobOffset = 0;
     this.pickedUp = false;
+  }
+}
+
+export class Collectable {
+  constructor() {
+    this.bobTimer = 0;
+    this.bobOffset = 0;
+    this.rotationTimer = 0;
+    this.collected = false;
   }
 }
 

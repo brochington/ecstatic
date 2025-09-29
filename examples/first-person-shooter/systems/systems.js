@@ -33,6 +33,7 @@ import {
   Sniper,
   Obstacle,
   ArmorPickup,
+  Collectable,
 } from '../components/components.js';
 import {
   CollisionEvent,
@@ -41,6 +42,7 @@ import {
   PlayerHealedEvent,
   PlayerWeaponPickupEvent,
   PlayerArmorPickupEvent,
+  PlayerCollectablePickupEvent,
 } from '../events/events.js';
 import {
   createBullet,
@@ -60,6 +62,7 @@ import {
   dropHealthPack,
   spawnWeaponPickup,
   spawnArmorPickup,
+  spawnCollectable,
 } from '../entities/entities.js';
 import { sceneSize } from '../game/game.js';
 
@@ -567,6 +570,32 @@ export function armorPickupAnimationSystem({ components }) {
   threeObject.mesh.rotation.z = Math.cos(armorPickup.bobTimer * 0.4) * 0.1;
 }
 
+export function collectableAnimationSystem({ components }) {
+  const collectable = components.get(Collectable);
+
+  // Skip animation for collected items
+  if (collectable.collected) return;
+
+  const threeObject = components.get(ThreeObject);
+
+  // Bobbing animation
+  collectable.bobTimer += 0.03;
+  collectable.bobOffset = Math.sin(collectable.bobTimer) * 0.4;
+
+  // Rotation animation
+  collectable.rotationTimer += 0.02;
+  threeObject.mesh.rotation.x = collectable.rotationTimer * 0.5;
+  threeObject.mesh.rotation.y = collectable.rotationTimer;
+  threeObject.mesh.rotation.z = collectable.rotationTimer * 0.3;
+
+  // Set base position with bobbing
+  threeObject.mesh.position.y = collectable.bobOffset + 1.5;
+
+  // Pulsing emissive intensity for extra glow effect
+  const emissivePulse = Math.sin(collectable.bobTimer * 2) * 0.2 + 0.8;
+  threeObject.mesh.material.emissiveIntensity = emissivePulse * 0.4;
+}
+
 export function weaponPickupArrowAnimationSystem({ components }) {
   const arrow = components.get(WeaponPickupArrow);
   const threeObject = components.get(ThreeObject);
@@ -598,7 +627,7 @@ export function lifecycleSystem({ entity, components }) {
 }
 
 export function updateCollidersSystem({ entity, components }) {
-  if (entity.hasTag(Player)) return;
+  if (entity.hasTag(Player) || entity.hasTag(Obstacle)) return;
 
   const threeObject = components.get(ThreeObject);
   const collider = components.get(Collider);
@@ -616,6 +645,29 @@ export function updatePlayerColliderSystem({ world }) {
   collider.box.setFromCenterAndSize(playerPosition, new THREE.Vector3(1, 2, 1));
 }
 
+// Helper function to check collision between entity and obstacle (handles both single boxes and arrays)
+function checkObstacleCollision(entityBox, obstacleCollider) {
+  const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+
+  for (const obstacleBox of obstacleBoxes) {
+    if (entityBox.intersectsBox(obstacleBox)) {
+      // Calculate overlap on each axis
+      const overlapX =
+        Math.min(entityBox.max.x, obstacleBox.max.x) -
+        Math.max(entityBox.min.x, obstacleBox.min.x);
+      const overlapY =
+        Math.min(entityBox.max.y, obstacleBox.max.y) -
+        Math.max(entityBox.min.y, obstacleBox.min.y);
+      const overlapZ =
+        Math.min(entityBox.max.z, obstacleBox.max.z) -
+        Math.max(entityBox.min.z, obstacleBox.min.z);
+
+      return { overlapX, overlapY, overlapZ, obstacleBox };
+    }
+  }
+  return null;
+}
+
 export function entityObstacleCollisionSystem({ world }) {
   const obstacles = world.getAllTagged(Obstacle);
 
@@ -624,31 +676,23 @@ export function entityObstacleCollisionSystem({ world }) {
   if (player && player.state === 'created') {
     const playerCollider = player.get(Collider);
     const playerObject = player.get(ThreeObject);
+    const playerBox = playerCollider.box;
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      if (playerCollider.box.intersectsBox(obstacleCollider.box)) {
-        const playerBox = playerCollider.box;
-        const obstacleBox = obstacleCollider.box;
+      const collision = checkObstacleCollision(playerBox, obstacleCollider);
 
-        // Calculate overlap on each axis
-        const overlapX =
-          Math.min(playerBox.max.x, obstacleBox.max.x) -
-          Math.max(playerBox.min.x, obstacleBox.min.x);
-        const overlapZ =
-          Math.min(playerBox.max.z, obstacleBox.max.z) -
-          Math.max(playerBox.min.z, obstacleBox.min.z);
+      if (collision) {
+        const { overlapX, overlapZ, obstacleBox } = collision;
 
         if (Math.abs(overlapX) < Math.abs(overlapZ)) {
           const sign = Math.sign(
-            playerObject.mesh.position.x -
-              obstacle.get(ThreeObject).mesh.position.x
+            playerObject.mesh.position.x - obstacleBox.getCenter(new THREE.Vector3()).x
           );
           playerObject.mesh.position.x += overlapX * sign;
         } else {
           const sign = Math.sign(
-            playerObject.mesh.position.z -
-              obstacle.get(ThreeObject).mesh.position.z
+            playerObject.mesh.position.z - obstacleBox.getCenter(new THREE.Vector3()).z
           );
           playerObject.mesh.position.z += overlapZ * sign;
         }
@@ -695,20 +739,10 @@ export function entityObstacleCollisionSystem({ world }) {
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      if (enemyCollider.box.intersectsBox(obstacleCollider.box)) {
-        const enemyBox = enemyCollider.box;
-        const obstacleBox = obstacleCollider.box;
+      const collision = checkObstacleCollision(enemyCollider.box, obstacleCollider);
 
-        // Calculate overlap on each axis
-        const overlapX =
-          Math.min(enemyBox.max.x, obstacleBox.max.x) -
-          Math.max(enemyBox.min.x, obstacleBox.min.x);
-        const overlapY =
-          Math.min(enemyBox.max.y, obstacleBox.max.y) -
-          Math.max(enemyBox.min.y, obstacleBox.min.y);
-        const overlapZ =
-          Math.min(enemyBox.max.z, obstacleBox.max.z) -
-          Math.max(enemyBox.min.z, obstacleBox.min.z);
+      if (collision) {
+        const { overlapX, overlapY, overlapZ, obstacleBox } = collision;
 
         // Find the axis with the smallest overlap
         const minOverlap = Math.min(
@@ -720,23 +754,20 @@ export function entityObstacleCollisionSystem({ world }) {
         if (minOverlap === Math.abs(overlapY)) {
           // Y axis collision (ground/ceiling)
           const sign = Math.sign(
-            enemyObject.mesh.position.y -
-              obstacle.get(ThreeObject).mesh.position.y
+            enemyObject.mesh.position.y - obstacleBox.getCenter(new THREE.Vector3()).y
           );
           enemyObject.mesh.position.y += overlapY * sign;
           enemyVelocity.y = 0; // Stop vertical movement
         } else if (Math.abs(overlapX) < Math.abs(overlapZ)) {
           // X axis collision
           const sign = Math.sign(
-            enemyObject.mesh.position.x -
-              obstacle.get(ThreeObject).mesh.position.x
+            enemyObject.mesh.position.x - obstacleBox.getCenter(new THREE.Vector3()).x
           );
           enemyObject.mesh.position.x += overlapX * sign;
         } else {
           // Z axis collision
           const sign = Math.sign(
-            enemyObject.mesh.position.z -
-              obstacle.get(ThreeObject).mesh.position.z
+            enemyObject.mesh.position.z - obstacleBox.getCenter(new THREE.Vector3()).z
           );
           enemyObject.mesh.position.z += overlapZ * sign;
         }
@@ -765,10 +796,15 @@ export function rocketExplosionSystem({ world }) {
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      if (rocketCollider.box.intersectsBox(obstacleCollider.box)) {
-        shouldExplode = true;
-        break;
+      const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+
+      for (const obstacleBox of obstacleBoxes) {
+        if (rocketCollider.box.intersectsBox(obstacleBox)) {
+          shouldExplode = true;
+          break;
+        }
       }
+      if (shouldExplode) break;
     }
 
     // Rockets also explode on impact with enemies or players
@@ -857,10 +893,15 @@ export function collisionSystem({ world }) {
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      if (bulletCollider.box.intersectsBox(obstacleCollider.box)) {
-        bullet.destroy();
-        break;
+      const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+
+      for (const obstacleBox of obstacleBoxes) {
+        if (bulletCollider.box.intersectsBox(obstacleBox)) {
+          bullet.destroy();
+          break;
+        }
       }
+      if (!bullet.state || bullet.state === 'destroying') break;
     }
   }
 
@@ -901,6 +942,20 @@ export function collisionSystem({ world }) {
       ) {
         armorPickup.pickedUp = true;
         world.events.emit(new PlayerArmorPickupEvent(pickup));
+      }
+    }
+
+    // Handle collectable collision with player
+    const collectables = world.locateAll([Collectable]);
+    for (const collectable of collectables) {
+      const collectableCollider = collectable.get(Collider);
+      const collectableComponent = collectable.get(Collectable);
+      if (
+        playerCollider.box.intersectsBox(collectableCollider.box) &&
+        !collectableComponent.collected
+      ) {
+        collectableComponent.collected = true;
+        world.events.emit(new PlayerCollectablePickupEvent(collectable));
       }
     }
   }
@@ -1085,6 +1140,7 @@ export function uiRenderSystem({ world }) {
   // Update basic stats
   document.getElementById('score').innerText = gameState.score;
   document.getElementById('kills').innerText = gameState.kills;
+  document.getElementById('collectables').innerText = `${gameState.collectablesCollected}/20`;
 
   // Update health bar
   if (player && player.has(Health)) {
@@ -1426,6 +1482,20 @@ export function armorPickupSpawnerSystem({ world, components }) {
       spawnArmorPickup(world);
       gameState.armorPickupSpawnTimer =
         gameConfig.armorPickupSpawnRate || 1200;
+    }
+  }
+}
+
+export function collectableSpawnerSystem({ world, components }) {
+  const gameState = components.get(GameState);
+
+  // Only spawn collectables at the start of the game (not continuously)
+  const currentCollectables = world.locateAll([Collectable]).length;
+
+  // Spawn 20 collectables if none exist yet
+  if (currentCollectables === 0 && gameState.collectablesCollected === 0) {
+    for (let i = 0; i < 20; i++) {
+      spawnCollectable(world);
     }
   }
 }

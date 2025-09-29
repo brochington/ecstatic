@@ -28,11 +28,13 @@ import {
   ArmorPickup,
   WeaponPickupArrow,
   HitFlash,
+  Collectable,
 } from '../components/components.js';
 import {
   PlayerHealedEvent,
   PlayerWeaponPickupEvent,
   PlayerArmorPickupEvent,
+  PlayerCollectablePickupEvent,
   CollisionEvent,
   PlayerDeathEvent,
 } from '../events/events.js';
@@ -44,6 +46,7 @@ import {
   healthPackSpawnerSystem,
   weaponPickupSpawnerSystem,
   armorPickupSpawnerSystem,
+  collectableSpawnerSystem,
   lifecycleSystem,
   updateCollidersSystem,
   updatePlayerColliderSystem,
@@ -54,6 +57,7 @@ import {
   healthPackAnimationSystem,
   weaponPickupAnimationSystem,
   armorPickupAnimationSystem,
+  collectableAnimationSystem,
   weaponPickupArrowAnimationSystem,
   hitFlashSystem,
   enemyAISystem,
@@ -117,6 +121,9 @@ function registerSystems(world) {
   world.addSystem([GameState], armorPickupSpawnerSystem, {
     phase: 'Logic',
   });
+  world.addSystem([GameState], collectableSpawnerSystem, {
+    phase: 'Logic',
+  });
   world.addSystem([lifecycleSystem], lifecycleSystem, {
     phase: 'Logic',
   });
@@ -151,6 +158,9 @@ function registerSystems(world) {
     phase: 'Logic',
   });
   world.addSystem([ArmorPickup, ThreeObject], armorPickupAnimationSystem, {
+    phase: 'Logic',
+  });
+  world.addSystem([Collectable, ThreeObject], collectableAnimationSystem, {
     phase: 'Logic',
   });
   world.addSystem(
@@ -282,15 +292,14 @@ function initializeGame(world) {
       getRandomNumber(-sceneSize / 2 + minDistance, sceneSize / 2 - minDistance)
     );
 
-    const boulder = createBoulder(world, boulderPosition, boulderSize);
-    threeScene.scene.add(boulder);
+    const boulderData = createBoulder(world, boulderPosition, boulderSize);
+    threeScene.scene.add(boulderData.mesh);
 
-    // Create bounding box for collision detection
-    const boulderBox = new THREE.Box3().setFromObject(boulder);
+    // Use individual rock collision boxes instead of one large box for more accurate collision
     world
       .createEntity()
-      .add(new ThreeObject(boulder))
-      .add(new Collider(boulderBox))
+      .add(new ThreeObject(boulderData.mesh))
+      .add(new Collider(boulderData.collisionBoxes)) // Store array of collision boxes
       .addTag(Obstacle);
   }
 
@@ -326,8 +335,9 @@ function initializeGame(world) {
     const crate = createCrate(world, cratePosition);
     threeScene.scene.add(crate);
 
-    // Create bounding box for collision detection
+    // Create bounding box for collision detection with some padding
     const crateBox = new THREE.Box3().setFromObject(crate);
+    crateBox.expandByScalar(0.2); // Small padding for crates
     world
       .createEntity()
       .add(new ThreeObject(crate))
@@ -345,8 +355,9 @@ function initializeGame(world) {
     const barrel = createBarrel(world, barrelPosition);
     threeScene.scene.add(barrel);
 
-    // Create bounding box for collision detection
+    // Create bounding box for collision detection with some padding
     const barrelBox = new THREE.Box3().setFromObject(barrel);
+    barrelBox.expandByScalar(0.2); // Small padding for barrels
     world
       .createEntity()
       .add(new ThreeObject(barrel))
@@ -364,8 +375,9 @@ function initializeGame(world) {
     const log = createFallenLog(world, logPosition);
     threeScene.scene.add(log);
 
-    // Create bounding box for collision detection
+    // Create bounding box for collision detection with some padding
     const logBox = new THREE.Box3().setFromObject(log);
+    logBox.expandByScalar(0.3); // More padding for logs since they can be long
     world
       .createEntity()
       .add(new ThreeObject(log))
@@ -383,8 +395,9 @@ function initializeGame(world) {
     const pillar = createStonePillar(world, pillarPosition);
     threeScene.scene.add(pillar);
 
-    // Create bounding box for collision detection
+    // Create bounding box for collision detection with some padding
     const pillarBox = new THREE.Box3().setFromObject(pillar);
+    pillarBox.expandByScalar(0.2); // Small padding for pillars
     world
       .createEntity()
       .add(new ThreeObject(pillar))
@@ -413,8 +426,9 @@ function initializeGame(world) {
     const ruin = createRuin(world, ruinPosition);
     threeScene.scene.add(ruin);
 
-    // Create bounding box for collision detection (rough approximation)
+    // Create bounding box for collision detection with padding to prevent getting stuck
     const ruinBox = new THREE.Box3().setFromObject(ruin);
+    ruinBox.expandByScalar(0.5); // More padding for complex ruin structures
     world
       .createEntity()
       .add(new ThreeObject(ruin))
@@ -572,6 +586,7 @@ function resetGame(world) {
   document.getElementById('weapon-icon').innerText = '🔫';
   document.getElementById('kills').textContent = '0';
   document.getElementById('score').textContent = '0';
+  document.getElementById('collectables').textContent = '0/20';
 
   initializeGame(world);
   setupInput(world);
@@ -682,6 +697,79 @@ function setupEventListeners(world) {
       phase: 'Events',
     }
   );
+
+  world.addSystemListener(
+    PlayerCollectablePickupEvent,
+    ({ event }) => {
+      const gameStateEntity = world.locate(GameState);
+      if (!gameStateEntity) return;
+
+      const collectable = event.collectableEntity;
+
+      // Check if the collectable entity still exists and has the Collectable component
+      if (collectable && collectable.has(Collectable)) {
+        const gameState = gameStateEntity.get(GameState);
+        gameState.collectablesCollected++;
+
+        // Check for win condition
+        if (gameState.collectablesCollected >= 20) {
+          // Player wins! Show win screen
+          showWinScreen(world);
+        }
+
+        // Destroy the collectable
+        collectable.destroy();
+      }
+    },
+    {
+      phase: 'Events',
+    }
+  );
+}
+
+function showWinScreen(world) {
+  const gameStateEntity = world.locate(GameState);
+  if (!gameStateEntity) return;
+  const gameState = gameStateEntity.get(GameState);
+
+  // Create win screen overlay
+  const winScreen = document.createElement('div');
+  winScreen.id = 'win-screen';
+  winScreen.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 1000;
+  `;
+
+  winScreen.innerHTML = `
+    <h1 style="font-size: 4em; color: #ffd700; margin: 0; text-shadow: 2px 2px 4px black;">VICTORY!</h1>
+    <p style="font-size: 1.5em; margin: 20px 0;">You collected all 20 collectables!</p>
+    <p style="font-size: 1.2em; margin: 10px 0;">Kills: ${gameState.kills}</p>
+    <p style="font-size: 1.2em; margin: 10px 0;">Score: ${gameState.score}</p>
+    <p style="font-size: 1.2em; margin: 20px 0;">Click to Play Again</p>
+  `;
+
+  winScreen.addEventListener('click', () => {
+    winScreen.remove();
+    resetGame(world);
+  });
+
+  document.body.appendChild(winScreen);
+
+  // Set game as over to prevent further updates
+  gameState.isGameOver = true;
 }
 
 export function startGame() {
