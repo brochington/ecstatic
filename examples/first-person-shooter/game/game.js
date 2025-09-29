@@ -29,6 +29,7 @@ import {
   WeaponPickupArrow,
   HitFlash,
   Collectable,
+  Boulder,
 } from '../components/components.js';
 import {
   PlayerHealedEvent,
@@ -64,7 +65,6 @@ import {
   scoutAISystem,
   tankAISystem,
   sniperAISystem,
-  rocketExplosionSystem,
   deathSystem,
   damageSystem,
   armorRegenerationSystem,
@@ -185,9 +185,6 @@ function registerSystems(world) {
   world.addSystem([SniperAI, ThreeObject, Velocity], sniperAISystem, {
     phase: 'Logic',
   });
-  world.addSystem([GameState], rocketExplosionSystem, {
-    phase: 'Logic',
-  });
   world.addSystem([Health], deathSystem, {
     phase: 'Logic',
   });
@@ -300,7 +297,8 @@ function initializeGame(world) {
       .createEntity()
       .add(new ThreeObject(boulderData.mesh))
       .add(new Collider(boulderData.collisionBoxes)) // Store array of collision boxes
-      .addTag(Obstacle);
+      .addTag(Obstacle)
+      .addTag(Boulder);
   }
 
   // Add abundant desert trees like Joshua Tree Desert
@@ -312,6 +310,15 @@ function initializeGame(world) {
     );
     const tree = createTree(world, treePosition);
     threeScene.scene.add(tree);
+
+    // Create bounding box for collision detection
+    const treeBox = new THREE.Box3().setFromObject(tree);
+    treeBox.expandByScalar(0.5); // Add some padding for trees
+    world
+      .createEntity()
+      .add(new ThreeObject(tree))
+      .add(new Collider(treeBox))
+      .addTag(Obstacle);
   }
 
   // Add many bushes
@@ -323,6 +330,15 @@ function initializeGame(world) {
     );
     const bush = createBushes(world, bushPosition);
     threeScene.scene.add(bush);
+
+    // Create bounding box for collision detection
+    const bushBox = new THREE.Box3().setFromObject(bush);
+    bushBox.expandByScalar(0.3); // Smaller padding for bushes
+    world
+      .createEntity()
+      .add(new ThreeObject(bush))
+      .add(new Collider(bushBox))
+      .addTag(Obstacle);
   }
 
   // Add crates for cover and atmosphere
@@ -586,7 +602,7 @@ function resetGame(world) {
   document.getElementById('weapon-icon').innerText = '🔫';
   document.getElementById('kills').textContent = '0';
   document.getElementById('score').textContent = '0';
-  document.getElementById('collectables').textContent = '0/20';
+  document.getElementById('collectables').textContent = '0/10';
 
   initializeGame(world);
   setupInput(world);
@@ -651,12 +667,27 @@ function setupEventListeners(world) {
       if (pickup && pickup.has(WeaponPickup)) {
         const weaponPickup = pickup.get(WeaponPickup);
 
-        // Auto-switch to the picked up weapon
+        // Find the weapon and add ammo instead of switching
         const weaponIndex = weaponSystem.weapons.findIndex(
           w => w.type === weaponPickup.weaponType
         );
         if (weaponIndex !== -1) {
-          weaponSystem.switchWeapon(weaponIndex);
+          const weapon = weaponSystem.weapons[weaponIndex];
+          // Add ammo to the weapon (give a reasonable amount)
+          const ammoToAdd = weapon.type === 'shotgun' ? 10 :
+                           weapon.type === 'machinegun' ? 30 :
+                           weapon.type === 'rocket' ? 3 :
+                           weapon.type === 'flamethrower' ? 50 : 0;
+
+          if (weapon.ammo !== Infinity) {
+            weapon.ammo = Math.min(weapon.ammo + ammoToAdd, weapon.maxAmmo);
+          }
+
+          // Only switch to the weapon if it's currently out of ammo
+          const currentWeapon = weaponSystem.getCurrentWeapon();
+          if (currentWeapon.ammo <= 0) {
+            weaponSystem.switchWeapon(weaponIndex);
+          }
         }
 
         // Destroy the pickup
@@ -712,7 +743,7 @@ function setupEventListeners(world) {
         gameState.collectablesCollected++;
 
         // Check for win condition
-        if (gameState.collectablesCollected >= 20) {
+        if (gameState.collectablesCollected >= 10) {
           // Player wins! Show win screen
           showWinScreen(world);
         }
@@ -755,7 +786,7 @@ function showWinScreen(world) {
 
   winScreen.innerHTML = `
     <h1 style="font-size: 4em; color: #ffd700; margin: 0; text-shadow: 2px 2px 4px black;">VICTORY!</h1>
-    <p style="font-size: 1.5em; margin: 20px 0;">You collected all 20 collectables!</p>
+    <p style="font-size: 1.5em; margin: 20px 0;">You collected all 10 collectables!</p>
     <p style="font-size: 1.2em; margin: 10px 0;">Kills: ${gameState.kills}</p>
     <p style="font-size: 1.2em; margin: 10px 0;">Score: ${gameState.score}</p>
     <p style="font-size: 1.2em; margin: 20px 0;">Click to Play Again</p>

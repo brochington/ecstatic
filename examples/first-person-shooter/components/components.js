@@ -185,3 +185,4 @@ export const Sniper = 'sniper';
 export const Bullet = 'bullet';
 export const Obstacle = 'obstacle';
 export const Particle = 'particle';
+export const Boulder = 'boulder';

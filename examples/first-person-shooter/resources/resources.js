@@ -67,7 +67,8 @@ export class InputState {
 
 export class GameConfig {
   maxEnemies = 8;
-  enemySpawnRate = 240;
+  // enemySpawnRate = 240;
+  enemySpawnRate = 120;
   healthPackSpawnRate = 300;
   weaponPickupSpawnRate = 900; // Spawn weapon pickups less frequently
 }
@@ -79,6 +80,7 @@ export class Weapon {
     this.damage = damage;
     this.fireRate = fireRate; // frames between shots
     this.ammo = ammo;
+    this.maxAmmo = ammo; // Store the original max ammo
     this.lastFired = 0;
   }
 }

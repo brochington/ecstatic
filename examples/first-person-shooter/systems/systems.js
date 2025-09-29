@@ -34,6 +34,8 @@ import {
   Obstacle,
   ArmorPickup,
   Collectable,
+  Bullet,
+  Boulder,
 } from '../components/components.js';
 import {
   CollisionEvent,
@@ -191,7 +193,13 @@ export function playerShootingSystem({ world }) {
         createRocket(world, startPosition, direction, Player, weapon.damage);
         break;
       case 'flamethrower':
-        createFlameThrowerBlast(world, startPosition, direction, Player, weapon.damage);
+        createFlameThrowerBlast(
+          world,
+          startPosition,
+          direction,
+          Player,
+          weapon.damage
+        );
         break;
     }
 
@@ -508,10 +516,29 @@ export function sniperAISystem({ world, components }) {
   velocity.add(ai.avoidanceForce);
 }
 
-export function movementSystem({ components }) {
+export function movementSystem({ entity, components }) {
   const velocity = components.get(Velocity);
   const threeObject = components.get(ThreeObject);
   threeObject.mesh.position.add(velocity);
+
+  // Boundary check for projectiles - destroy if too far outside scene
+  if (
+    entity.hasTag &&
+    (entity.hasTag(Bullet) ||
+      entity.hasTag('shotgunPellet') ||
+      entity.hasTag('flame'))
+  ) {
+    const pos = threeObject.mesh.position;
+    const boundary = sceneSize / 2 + 10; // Allow some buffer outside scene
+    if (
+      Math.abs(pos.x) > boundary ||
+      Math.abs(pos.z) > boundary ||
+      pos.y < -10 ||
+      pos.y > 50
+    ) {
+      entity.destroy();
+    }
+  }
 }
 
 export function particleMovementSystem({ components }) {
@@ -618,10 +645,15 @@ export function weaponPickupArrowAnimationSystem({ components }) {
   threeObject.mesh.rotation.z = Math.sin(arrow.bobTimer * 0.7) * 0.2;
 }
 
-export function lifecycleSystem({ entity, components }) {
+export function lifecycleSystem({ entity, components, world }) {
   const expires = components.get(Expires);
   expires.life--;
   if (expires.life <= 0) {
+    // Rockets explode when they expire (run out of fuel)
+    if (entity.hasTag && entity.hasTag('rocket')) {
+      const position = entity.get(ThreeObject).mesh.position;
+      createRocketExplosion(world, position);
+    }
     entity.destroy();
   }
 }
@@ -647,7 +679,9 @@ export function updatePlayerColliderSystem({ world }) {
 
 // Helper function to check collision between entity and obstacle (handles both single boxes and arrays)
 function checkObstacleCollision(entityBox, obstacleCollider) {
-  const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+  const obstacleBoxes = Array.isArray(obstacleCollider.box)
+    ? obstacleCollider.box
+    : [obstacleCollider.box];
 
   for (const obstacleBox of obstacleBoxes) {
     if (entityBox.intersectsBox(obstacleBox)) {
@@ -687,12 +721,14 @@ export function entityObstacleCollisionSystem({ world }) {
 
         if (Math.abs(overlapX) < Math.abs(overlapZ)) {
           const sign = Math.sign(
-            playerObject.mesh.position.x - obstacleBox.getCenter(new THREE.Vector3()).x
+            playerObject.mesh.position.x -
+              obstacleBox.getCenter(new THREE.Vector3()).x
           );
           playerObject.mesh.position.x += overlapX * sign;
         } else {
           const sign = Math.sign(
-            playerObject.mesh.position.z - obstacleBox.getCenter(new THREE.Vector3()).z
+            playerObject.mesh.position.z -
+              obstacleBox.getCenter(new THREE.Vector3()).z
           );
           playerObject.mesh.position.z += overlapZ * sign;
         }
@@ -739,7 +775,10 @@ export function entityObstacleCollisionSystem({ world }) {
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      const collision = checkObstacleCollision(enemyCollider.box, obstacleCollider);
+      const collision = checkObstacleCollision(
+        enemyCollider.box,
+        obstacleCollider
+      );
 
       if (collision) {
         const { overlapX, overlapY, overlapZ, obstacleBox } = collision;
@@ -754,20 +793,23 @@ export function entityObstacleCollisionSystem({ world }) {
         if (minOverlap === Math.abs(overlapY)) {
           // Y axis collision (ground/ceiling)
           const sign = Math.sign(
-            enemyObject.mesh.position.y - obstacleBox.getCenter(new THREE.Vector3()).y
+            enemyObject.mesh.position.y -
+              obstacleBox.getCenter(new THREE.Vector3()).y
           );
           enemyObject.mesh.position.y += overlapY * sign;
           enemyVelocity.y = 0; // Stop vertical movement
         } else if (Math.abs(overlapX) < Math.abs(overlapZ)) {
           // X axis collision
           const sign = Math.sign(
-            enemyObject.mesh.position.x - obstacleBox.getCenter(new THREE.Vector3()).x
+            enemyObject.mesh.position.x -
+              obstacleBox.getCenter(new THREE.Vector3()).x
           );
           enemyObject.mesh.position.x += overlapX * sign;
         } else {
           // Z axis collision
           const sign = Math.sign(
-            enemyObject.mesh.position.z - obstacleBox.getCenter(new THREE.Vector3()).z
+            enemyObject.mesh.position.z -
+              obstacleBox.getCenter(new THREE.Vector3()).z
           );
           enemyObject.mesh.position.z += overlapZ * sign;
         }
@@ -782,66 +824,69 @@ export function entityObstacleCollisionSystem({ world }) {
   }
 }
 
-export function rocketExplosionSystem({ world }) {
-  const rockets = world.locateAll(['rocket', Collider]);
-
-  for (const rocket of rockets) {
-    if (rocket.state !== 'created') continue;
-    const rocketCollider = rocket.get(Collider);
-    const projectile = rocket.get(Projectile);
-
-    // Check for collision with obstacles or expiry
-    let shouldExplode = false;
-    const obstacles = world.getAllTagged(Obstacle);
-
-    for (const obstacle of obstacles) {
-      const obstacleCollider = obstacle.get(Collider);
-      const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
-
-      for (const obstacleBox of obstacleBoxes) {
-        if (rocketCollider.box.intersectsBox(obstacleBox)) {
-          shouldExplode = true;
-          break;
-        }
-      }
-      if (shouldExplode) break;
-    }
-
-    // Rockets also explode on impact with enemies or players
-    if (projectile.firedBy === Player) {
-      const enemies = world.locateAll([
-        EnemyAI,
-        ScoutAI,
-        TankAI,
-        SniperAI,
-        Collider,
-      ]);
-      for (const enemy of enemies) {
-        if (enemy.state === 'created') {
-          const enemyCollider = enemy.get(Collider);
-          if (rocketCollider.box.intersectsBox(enemyCollider.box)) {
-            shouldExplode = true;
-            break;
-          }
-        }
-      }
-    } else {
-      const player = world.getTagged(Player);
-      if (player && player.state === 'created') {
-        const playerCollider = player.get(Collider);
-        if (rocketCollider.box.intersectsBox(playerCollider.box)) {
-          shouldExplode = true;
-        }
-      }
-    }
-
-    if (shouldExplode) {
-      const position = rocket.get(ThreeObject).mesh.position;
-      createRocketExplosion(world, position);
-      rocket.destroy();
-    }
-  }
-}
+// Rocket explosion handling has been moved to collisionSystem and lifecycleSystem
+// export function rocketExplosionSystem({ world }) {
+//   const rockets = world.locateAll(['rocket', Collider]);
+//
+//   for (const rocket of rockets) {
+//     if (rocket.state !== 'created') continue;
+//     const rocketCollider = rocket.get(Collider);
+//     const projectile = rocket.get(Projectile);
+//
+//     // Check for collision with obstacles or expiry
+//     let shouldExplode = false;
+//     const obstacles = world.getAllTagged(Obstacle);
+//
+//     for (const obstacle of obstacles) {
+//       const obstacleCollider = obstacle.get(Collider);
+//       const obstacleBoxes = Array.isArray(obstacleCollider.box)
+//         ? obstacleCollider.box
+//         : [obstacleCollider.box];
+//
+//       for (const obstacleBox of obstacleBoxes) {
+//         if (rocketCollider.box.intersectsBox(obstacleBox)) {
+//           shouldExplode = true;
+//           break;
+//         }
+//       }
+//       if (shouldExplode) break;
+//     }
+//
+//     // Rockets also explode on impact with enemies or players
+//     if (projectile.firedBy === Player) {
+//       const enemies = world.locateAll([
+//         EnemyAI,
+//         ScoutAI,
+//         TankAI,
+//         SniperAI,
+//         Collider,
+//       ]);
+//       for (const enemy of enemies) {
+//         if (enemy.state === 'created') {
+//           const enemyCollider = enemy.get(Collider);
+//           if (rocketCollider.box.intersectsBox(enemyCollider.box)) {
+//             shouldExplode = true;
+//             break;
+//           }
+//         }
+//       }
+//     } else {
+//       const player = world.getTagged(Player);
+//       if (player && player.state === 'created') {
+//         const playerCollider = player.get(Collider);
+//         if (rocketCollider.box.intersectsBox(playerCollider.box)) {
+//           shouldExplode = true;
+//         }
+//       }
+//     }
+//
+//     if (shouldExplode) {
+//       const position = rocket.get(ThreeObject).mesh.position;
+//       createRocketExplosion(world, position);
+//       rocket.destroy();
+//     }
+//   }
+// }
 
 export function collisionSystem({ world }) {
   const bullets = world.locateAll([Projectile, Collider]);
@@ -869,7 +914,14 @@ export function collisionSystem({ world }) {
     if (isEnemyBullet && player && player.state === 'created') {
       const playerCollider = player.get(Collider);
       if (bulletCollider.box.intersectsBox(playerCollider.box)) {
-        world.events.emit(new CollisionEvent(bullet, player));
+        // Enemy rockets explode on impact with player
+        if (bullet.hasTag && bullet.hasTag('rocket')) {
+          const position = bullet.get(ThreeObject).mesh.position;
+          createRocketExplosion(world, position);
+          bullet.destroy();
+        } else {
+          world.events.emit(new CollisionEvent(bullet, player));
+        }
         continue;
       }
     }
@@ -879,12 +931,25 @@ export function collisionSystem({ world }) {
         if (enemy.state !== 'created') continue;
         const enemyCollider = enemy.get(Collider);
         if (bulletCollider.box.intersectsBox(enemyCollider.box)) {
-          world.events.emit(new CollisionEvent(bullet, enemy));
+          // Rockets explode on impact with enemies
+          if (bullet.hasTag && bullet.hasTag('rocket')) {
+            const position = bullet.get(ThreeObject).mesh.position;
+            createRocketExplosion(world, position);
+            bullet.destroy();
+          } else {
+            world.events.emit(new CollisionEvent(bullet, enemy));
 
-          // Handle splash damage for shotgun pellets
-          if (bullet.hasTag && bullet.hasTag('shotgunPellet')) {
-            const bulletPos = bullet.get(ThreeObject).mesh.position;
-            applySplashDamage(world, bulletPos, projectile.damage, projectile.firedBy, 3);
+            // Handle splash damage for shotgun pellets
+            if (bullet.hasTag && bullet.hasTag('shotgunPellet')) {
+              const bulletPos = bullet.get(ThreeObject).mesh.position;
+              applySplashDamage(
+                world,
+                bulletPos,
+                projectile.damage,
+                projectile.firedBy,
+                3
+              );
+            }
           }
           break;
         }
@@ -893,10 +958,17 @@ export function collisionSystem({ world }) {
 
     for (const obstacle of obstacles) {
       const obstacleCollider = obstacle.get(Collider);
-      const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+      const obstacleBoxes = Array.isArray(obstacleCollider.box)
+        ? obstacleCollider.box
+        : [obstacleCollider.box];
 
       for (const obstacleBox of obstacleBoxes) {
         if (bulletCollider.box.intersectsBox(obstacleBox)) {
+          // Rockets explode on impact with obstacles
+          if (bullet.hasTag && bullet.hasTag('rocket')) {
+            const position = bullet.get(ThreeObject).mesh.position;
+            createRocketExplosion(world, position);
+          }
           bullet.destroy();
           break;
         }
@@ -1071,7 +1143,10 @@ export function damageSystem({ event: collision, world }) {
         // Calculate direction from player to bullet
         const playerPos = target.get(ThreeObject).mesh.position;
         const bulletPos = bullet.get(ThreeObject).mesh.position;
-        const direction = Math.atan2(bulletPos.x - playerPos.x, bulletPos.z - playerPos.z);
+        const direction = Math.atan2(
+          bulletPos.x - playerPos.x,
+          bulletPos.z - playerPos.z
+        );
         world.createEntity().add(new DamageIndicator(direction, damage));
       }
     }
@@ -1140,7 +1215,8 @@ export function uiRenderSystem({ world }) {
   // Update basic stats
   document.getElementById('score').innerText = gameState.score;
   document.getElementById('kills').innerText = gameState.kills;
-  document.getElementById('collectables').innerText = `${gameState.collectablesCollected}/20`;
+  document.getElementById('collectables').innerText =
+    `${gameState.collectablesCollected}/10`;
 
   // Update health bar
   if (player && player.has(Health)) {
@@ -1202,16 +1278,50 @@ export function uiRenderSystem({ world }) {
 
 function updateMinimap(world) {
   const player = world.getTagged(Player);
-  const threeScene = world.getResource('ThreeScene');
+  const threeScene = world.getResource(ThreeScene);
 
-  if (!player || !threeScene) return;
+  if (!player || !threeScene) {
+    return;
+  }
 
   const minimap = document.getElementById('minimap');
-  if (!minimap) return;
+  if (!minimap) {
+    return;
+  }
 
   // Clear existing dots
-  const existingDots = minimap.querySelectorAll('.minimap-enemy, .minimap-item, .minimap-armor');
+  const existingDots = minimap.querySelectorAll(
+    '.minimap-enemy, .minimap-item, .minimap-armor, .minimap-collectable, .minimap-obstacle, .minimap-health'
+  );
   existingDots.forEach(dot => dot.remove());
+
+  const entityDetails = [];
+  for (const entity of world.entities.values()) {
+    const details = [];
+    if (entity.has(Obstacle)) {
+      details.push('Obstacle');
+    }
+    if (entity.has(Player)) {
+      details.push('Player');
+    }
+    if (entity.has(Collectable)) {
+      details.push('Collectable');
+    }
+    if (
+      entity.has(Enemy) ||
+      entity.has(Scout) ||
+      entity.has(Tank) ||
+      entity.has(Sniper)
+    ) {
+      if (entity.has(Enemy)) details.push('Enemy');
+      if (entity.has(Scout)) details.push('Scout');
+      if (entity.has(Tank)) details.push('Tank');
+      if (entity.has(Sniper)) details.push('Sniper');
+    }
+    if (details.length > 0) {
+      entityDetails.push(details.join('+'));
+    }
+  }
 
   const mapSize = 150; // Minimap size in pixels
 
@@ -1225,8 +1335,8 @@ function updateMinimap(world) {
       const playerPos = new THREE.Vector3();
       camera.getWorldPosition(playerPos);
 
-      const playerX = ((playerPos.x + sceneSize/2) / sceneSize) * mapSize;
-      const playerZ = ((playerPos.z + sceneSize/2) / sceneSize) * mapSize;
+      const playerX = ((playerPos.x + sceneSize / 2) / sceneSize) * mapSize;
+      const playerZ = ((playerPos.z + sceneSize / 2) / sceneSize) * mapSize;
 
       // Ensure coordinates are within bounds
       const clampedX = Math.max(0, Math.min(mapSize, playerX));
@@ -1240,11 +1350,16 @@ function updateMinimap(world) {
   // Add enemy positions - collect all enemy types
   const enemyTags = [Enemy, Scout, Tank, Sniper];
   const enemies = [];
-  for (const tag of enemyTags) {
-    enemies.push(...world.getTaggedAll(tag));
+  for (const entity of world.entities.values()) {
+    for (const tag of enemyTags) {
+      if (entity.has(tag)) {
+        enemies.push(entity);
+        break; // Don't add the same entity multiple times if it has multiple enemy tags
+      }
+    }
   }
 
-  enemies.forEach(enemy => {
+  enemies.forEach((enemy) => {
     if (enemy.has(ThreeObject)) {
       const enemyMesh = enemy.get(ThreeObject).mesh;
       const dot = document.createElement('div');
@@ -1256,8 +1371,39 @@ function updateMinimap(world) {
 
       // Convert world coordinates to minimap coordinates
       // World goes from -50 to +50, map from 0 to 150
-      const x = ((enemyPos.x + sceneSize/2) / sceneSize) * mapSize;
-      const z = ((enemyPos.z + sceneSize/2) / sceneSize) * mapSize;
+      const x = ((enemyPos.x + sceneSize / 2) / sceneSize) * mapSize;
+      const z = ((enemyPos.z + sceneSize / 2) / sceneSize) * mapSize;
+
+      // Ensure coordinates are within bounds
+      const clampedX = Math.max(0, Math.min(mapSize, x));
+      const clampedZ = Math.max(0, Math.min(mapSize, z));
+
+      dot.style.left = `${clampedX}px`;
+      dot.style.top = `${clampedZ}px`;
+      minimap.appendChild(dot);
+    }
+  });
+
+  // Add obstacle positions (terrain)
+  const obstacles = [];
+  for (const entity of world.entities.values()) {
+    if (entity.has(Obstacle)) {
+      obstacles.push(entity);
+    }
+  }
+  obstacles.forEach((obstacle) => {
+    if (obstacle.has(ThreeObject)) {
+      const obstacleMesh = obstacle.get(ThreeObject).mesh;
+      const dot = document.createElement('div');
+      dot.className = 'minimap-obstacle';
+
+      // Get world position of the obstacle mesh
+      const obstaclePos = new THREE.Vector3();
+      obstacleMesh.getWorldPosition(obstaclePos);
+
+      // Convert world coordinates to minimap coordinates
+      const x = ((obstaclePos.x + sceneSize / 2) / sceneSize) * mapSize;
+      const z = ((obstaclePos.z + sceneSize / 2) / sceneSize) * mapSize;
 
       // Ensure coordinates are within bounds
       const clampedX = Math.max(0, Math.min(mapSize, x));
@@ -1271,26 +1417,51 @@ function updateMinimap(world) {
 
   // Add pickup positions
   const pickups = world.entities.values();
+
   for (const entity of pickups) {
-    if ((entity.has(WeaponPickup) || entity.has(ArmorPickup)) && entity.has(ThreeObject)) {
-      const pickupMesh = entity.get(ThreeObject).mesh;
-      const dot = document.createElement('div');
-      dot.className = entity.has(ArmorPickup) ? 'minimap-armor' : 'minimap-item';
+    if (entity.has(ThreeObject)) {
+      let dotClass = '';
+      let shouldShow = false;
 
-      // Get world position of the pickup mesh
-      const pickupPos = new THREE.Vector3();
-      pickupMesh.getWorldPosition(pickupPos);
+      // Determine what type of pickup this is and set appropriate class
+      if (entity.has(ArmorPickup)) {
+        dotClass = 'minimap-armor';
+        shouldShow = true;
+      } else if (entity.has(WeaponPickup)) {
+        dotClass = 'minimap-item';
+        shouldShow = true;
+      } else if (entity.has(Collectable)) {
+        // Only show collectables that haven't been collected yet
+        const collectable = entity.get(Collectable);
+        if (!collectable.collected) {
+          dotClass = 'minimap-collectable';
+          shouldShow = true;
+        }
+      } else if (entity.has(HealthPack)) {
+        dotClass = 'minimap-health';
+        shouldShow = true;
+      }
 
-      const x = ((pickupPos.x + sceneSize/2) / sceneSize) * mapSize;
-      const z = ((pickupPos.z + sceneSize/2) / sceneSize) * mapSize;
+      if (shouldShow) {
+        const pickupMesh = entity.get(ThreeObject).mesh;
+        const dot = document.createElement('div');
+        dot.className = dotClass;
 
-      // Ensure coordinates are within bounds
-      const clampedX = Math.max(0, Math.min(mapSize, x));
-      const clampedZ = Math.max(0, Math.min(mapSize, z));
+        // Get world position of the pickup mesh
+        const pickupPos = new THREE.Vector3();
+        pickupMesh.getWorldPosition(pickupPos);
 
-      dot.style.left = `${clampedX}px`;
-      dot.style.top = `${clampedZ}px`;
-      minimap.appendChild(dot);
+        const x = ((pickupPos.x + sceneSize / 2) / sceneSize) * mapSize;
+        const z = ((pickupPos.z + sceneSize / 2) / sceneSize) * mapSize;
+
+        // Ensure coordinates are within bounds
+        const clampedX = Math.max(0, Math.min(mapSize, x));
+        const clampedZ = Math.max(0, Math.min(mapSize, z));
+
+        dot.style.left = `${clampedX}px`;
+        dot.style.top = `${clampedZ}px`;
+        minimap.appendChild(dot);
+      }
     }
   }
 }
@@ -1349,7 +1520,12 @@ export function applySplashDamage(world, position, damage, firedBy, radius) {
   const player = world.getTagged(Player);
 
   // Damage enemies in splash radius (unless fired by enemy)
-  if (firedBy !== Enemy && firedBy !== Scout && firedBy !== Tank && firedBy !== Sniper) {
+  if (
+    firedBy !== Enemy &&
+    firedBy !== Scout &&
+    firedBy !== Tank &&
+    firedBy !== Sniper
+  ) {
     for (const enemy of enemies) {
       if (enemy.state !== 'created') continue;
       const enemyPos = enemy.get(ThreeObject).mesh.position;
@@ -1473,15 +1649,13 @@ export function armorPickupSpawnerSystem({ world, components }) {
   if (currentPickups < 1) {
     // Use a separate timer for armor pickups (spawn less frequently than weapon pickups)
     if (!gameState.armorPickupSpawnTimer) {
-      gameState.armorPickupSpawnTimer =
-        gameConfig.armorPickupSpawnRate || 1200; // Default to 1200 if not set
+      gameState.armorPickupSpawnTimer = gameConfig.armorPickupSpawnRate || 1200; // Default to 1200 if not set
     }
 
     gameState.armorPickupSpawnTimer--;
     if (gameState.armorPickupSpawnTimer <= 0) {
       spawnArmorPickup(world);
-      gameState.armorPickupSpawnTimer =
-        gameConfig.armorPickupSpawnRate || 1200;
+      gameState.armorPickupSpawnTimer = gameConfig.armorPickupSpawnRate || 1200;
     }
   }
 }
@@ -1492,10 +1666,47 @@ export function collectableSpawnerSystem({ world, components }) {
   // Only spawn collectables at the start of the game (not continuously)
   const currentCollectables = world.locateAll([Collectable]).length;
 
-  // Spawn 20 collectables if none exist yet
+  // Spawn 10 collectables if none exist yet
   if (currentCollectables === 0 && gameState.collectablesCollected === 0) {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       spawnCollectable(world);
+    }
+
+    // After spawning collectables, check if any boulders contain them and remove colliders
+    removeCollidersFromBouldersWithCollectables(world);
+  }
+}
+
+function removeCollidersFromBouldersWithCollectables(world) {
+  const boulders = world.getAllTagged(Boulder);
+  const collectables = world.locateAll([Collectable]);
+
+  for (const boulder of boulders) {
+    if (!boulder.has(ThreeObject) || !boulder.has(Collider)) continue;
+
+    const boulderObject = boulder.get(ThreeObject);
+
+    // Get boulder bounding box
+    const boulderBox = new THREE.Box3().setFromObject(boulderObject.mesh);
+
+    // Check if this boulder contains any collectable
+    let containsCollectable = false;
+    for (const collectable of collectables) {
+      if (!collectable.has(ThreeObject)) continue;
+
+      const collectableObject = collectable.get(ThreeObject);
+      const collectableBox = new THREE.Box3().setFromObject(collectableObject.mesh);
+
+      if (boulderBox.intersectsBox(collectableBox)) {
+        containsCollectable = true;
+        break;
+      }
+    }
+
+    // If boulder contains a collectable, remove its collider and obstacle tag
+    if (containsCollectable) {
+      boulder.remove(Collider);
+      boulder.removeTag(Obstacle);
     }
   }
 }

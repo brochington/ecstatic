@@ -143,7 +143,7 @@ export function createShotgunBlast(
       .add(new ThreeObject(mesh))
       .add(new Velocity(velocity.x, velocity.y, velocity.z))
       .add(collider)
-      .add(new Expires(120))
+      .add(new Expires(60))
       .add(new Projectile(firedByTag, damage))
       .addTag(Bullet)
       .addTag('shotgunPellet');
@@ -1073,9 +1073,11 @@ export function spawnCollectable(world) {
 
 function isPositionBlocked(world, position) {
   const obstacles = world.getAllTagged(Obstacle);
+  // Create a test box sized for collectables (1-unit octahedron) with some padding
+  // Collectables are positioned at y=1.5 and have roughly 1x1x1 collision boxes
   const testBox = new THREE.Box3(
-    new THREE.Vector3(position.x - 3, position.y - 1, position.z - 3),
-    new THREE.Vector3(position.x + 3, position.y + 3, position.z + 3)
+    new THREE.Vector3(position.x - 1.5, position.y - 0.5, position.z - 1.5),
+    new THREE.Vector3(position.x + 1.5, position.y + 2.5, position.z + 1.5)
   );
 
   for (const obstacle of obstacles) {
