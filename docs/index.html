@@ -8,8 +8,33 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 	<script async src="assets/js/search.js" id="search-script"></script>
+	<style>
+		.nav-header {
+			background: #f8f9fa;
+			border-bottom: 1px solid #e9ecef;
+			padding: 10px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		.nav-link {
+			color: #667eea;
+			text-decoration: none;
+			font-weight: 500;
+			padding: 8px 16px;
+			border-radius: 6px;
+			transition: background 0.2s;
+		}
+		.nav-link:hover {
+			background: rgba(102, 126, 234, 0.1);
+		}
+	</style>
 </head>
 <body>
+	<div class="nav-header">
+		<a href="../" class="nav-link">← Back to Ecstatic</a>
+		<a href="../examples/" class="nav-link">Examples</a>
+	</div>
 <header>
 	<div class="tsd-page-toolbar">
 		<div class="container">

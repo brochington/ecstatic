@@ -1,4 +1,4 @@
-name: Deploy Examples to GitHub Pages
+name: Deploy Site to GitHub Pages
 
 on:
   push:
@@ -24,10 +24,15 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Copy examples to build directory
+      - name: Create build directory and copy content
         run: |
           mkdir -p build
-          cp -r examples/* build/
+          # Copy main index page
+          cp index.html build/
+          # Copy examples
+          cp -r examples build/
+          # Copy docs
+          cp -r docs build/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

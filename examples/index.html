@@ -15,6 +15,27 @@
             line-height: 1.6;
         }
 
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .nav-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .nav-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
         .header {
             text-align: center;
             margin-bottom: 40px;
@@ -102,6 +123,11 @@
     </style>
 </head>
 <body>
+    <div class="nav-header">
+        <a href="../" class="nav-link">← Back to Ecstatic</a>
+        <a href="../docs/" class="nav-link">API Docs</a>
+    </div>
+
     <div class="header">
         <h1>Ecstatic Examples</h1>
         <p>Interactive demos showcasing the Ecstatic ECS library</p>
