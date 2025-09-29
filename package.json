@@ -46,7 +46,7 @@
     "dist/",
     "ecstatic.d.ts"
   ],
-  "homepage": "https://github.com/brochington/ecstatic#readme",
+  "homepage": "https://brochington.github.io/ecstatic/",
   "types": "ecstatic.d.ts",
   "dependencies": {
     "class-transformer": "^0.5.1",
