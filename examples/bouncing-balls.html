@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecstatic Demo: Bouncing Balls</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f0f0f0;
+        text-align: center;
+      }
+
+      canvas {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Ecstatic Demo: Bouncing Balls</h1>
+    <p>Click on the canvas to add more balls!</p>
+    <canvas id="ecs-canvas"></canvas>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.1/dist/ecstatic.esm.js"
+        }
+      }
+    </script>
+    <script type="module">
+      /* -------------------------------------------------------------------------- */
+      /*                               HELPER FUNCTIONS                             */
+      /* -------------------------------------------------------------------------- */
+
+      function getRandomNumber(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                    WORLD                                   */
+      /* -------------------------------------------------------------------------- */
+
+      // All entities, components, and systems will live within the World.
+      import * as ecstatic from 'ecstatic';
+      const { World } = ecstatic;
+      const world = new World();
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 COMPONENTS                                 */
+      /* -------------------------------------------------------------------------- */
+
+      // Components are simple classes that hold data. They don't have methods.
+
+      // Holds a reference to the canvas and its context.
+      class CanvasContext {
+        constructor(elementId, width, height) {
+          this.canvas = document.getElementById(elementId);
+          this.context = this.canvas.getContext('2d');
+          this.width = width;
+          this.height = height;
+          this.canvas.width = width;
+          this.canvas.height = height;
+        }
+      }
+
+      // Represents the 2D position of an entity.
+      class Position {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+        }
+      }
+
+      // Represents the 2D velocity of an entity.
+      class Velocity {
+        constructor(dx, dy) {
+          this.dx = dx;
+          this.dy = dy;
+        }
+      }
+
+      // Defines the shape of a circle.
+      class Circle {
+        constructor(radius) {
+          this.radius = radius;
+        }
+      }
+
+      // Defines the fill color of an entity.
+      class Color {
+        constructor(value) {
+          this.value = value;
+        }
+      }
+
+      // A "marker" component. Its presence indicates that an entity should be drawn.
+      class Renderable {}
+
+      /* -------------------------------------------------------------------------- */
+      /*                                   SYSTEMS                                  */
+      /* -------------------------------------------------------------------------- */
+
+      // Systems contain the logic. They operate on entities that have a specific
+      // set of components.
+
+      /**
+       * Updates the position of entities based on their velocity.
+       */
+      function movementSystem(args) {
+        const { components } = args;
+        const pos = components.get(Position);
+        const vel = components.get(Velocity);
+
+        pos.x += vel.dx;
+        pos.y += vel.dy;
+      }
+
+      /**
+       * Handles bouncing off the canvas walls.
+       */
+      function boundarySystem(args) {
+        const { entity, components, world } = args;
+
+        // We know there's only one canvas, so we can grab it directly.
+        // This is a common pattern for accessing global-like state.
+        const { component: canvas } = world.grab(CanvasContext);
+
+        const pos = components.get(Position);
+        const vel = components.get(Velocity);
+        const circle = components.get(Circle);
+
+        if (pos.x + circle.radius > canvas.width || pos.x - circle.radius < 0) {
+          vel.dx *= -1;
+        }
+
+        if (
+          pos.y + circle.radius > canvas.height ||
+          pos.y - circle.radius < 0
+        ) {
+          vel.dy *= -1;
+        }
+      }
+
+      /**
+       * Clears the canvas and draws all renderable circles.
+       */
+      function renderSystem(args) {
+        const { components, world, isFirst } = args;
+
+        const { component: canvas } = world.grab(CanvasContext);
+
+        // On the first entity of the frame, clear the entire canvas.
+        if (isFirst) {
+          canvas.context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        const pos = components.get(Position);
+        const circle = components.get(Circle);
+        const color = components.get(Color);
+
+        canvas.context.beginPath();
+        canvas.context.arc(pos.x, pos.y, circle.radius, 0, Math.PI * 2);
+        canvas.context.fillStyle = color.value;
+        canvas.context.fill();
+        canvas.context.closePath();
+      }
+
+      // Register systems with the world. The world will ensure they run on the
+      // correct entities.
+      world.addSystem([Position, Velocity], movementSystem);
+      world.addSystem([Position, Velocity, Circle], boundarySystem);
+      world.addSystem([Position, Circle, Color, Renderable], renderSystem);
+
+      /* -------------------------------------------------------------------------- */
+      /*                              INITIALIZE STATE                              */
+      /* -------------------------------------------------------------------------- */
+
+      // Create a single entity to hold our canvas context.
+      const canvasEntity = world
+        .createEntity()
+        .add(new CanvasContext('ecs-canvas', 800, 600));
+
+      // A helper function to create a new ball entity.
+      function createBall(x, y) {
+        world
+          .createEntity()
+          .add(new Position(x, y))
+          .add(new Velocity(getRandomNumber(-2, 2), getRandomNumber(-2, 2)))
+          .add(new Circle(getRandomNumber(5, 20)))
+          .add(new Color(getRandomColor()))
+          .add(new Renderable());
+      }
+
+      // Create some initial balls.
+      for (let i = 0; i < 20; i++) {
+        createBall(getRandomNumber(50, 750), getRandomNumber(50, 550));
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                             USER INTERACTION                             */
+      /* -------------------------------------------------------------------------- */
+
+      // Logic that doesn't need to run every frame, like user input, can
+      // be handled with standard event listeners.
+      const canvasComp = canvasEntity.get(CanvasContext);
+      canvasComp.canvas.addEventListener('click', event => {
+        const rect = canvasComp.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        createBall(x, y);
+      });
+
+      /* -------------------------------------------------------------------------- */
+      /*                                  GAME LOOP                                 */
+      /* -------------------------------------------------------------------------- */
+
+      function gameLoop() {
+        // This single call runs all registered systems on their matching entities.
+        world.systems.run();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the loop!
+      gameLoop();
+    </script>
+  </body>
+</html>

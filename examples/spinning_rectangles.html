@@ -14,11 +14,16 @@
 
     <button id="change-colors-btn">Change Colors</button>
 
-    <script
-      type="module"
-      src="https://unpkg.com/@brochington/ecstatic@0.2"
-    ></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.1/dist/ecstatic.esm.js"
+        }
+      }
+    </script>
     <script type="module">
+      import * as ecstatic from 'ecstatic';
+
       /* Helper functions */
 
       function getRandomNumber(min, max) {

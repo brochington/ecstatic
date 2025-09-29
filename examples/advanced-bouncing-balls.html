@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecstatic Demo: Bouncing Balls with Gravity</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f0f0f0;
+        text-align: center;
+      }
+
+      canvas {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Ecstatic Demo: Bouncing Balls with Gravity</h1>
+    <p>Click and hold on the canvas to create a stream of balls!</p>
+    <canvas id="ecs-canvas"></canvas>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.1/dist/ecstatic.esm.js"
+        }
+      }
+    </script>
+    <script type="module">
+      /* -------------------------------------------------------------------------- */
+      /*                               HELPER FUNCTIONS                             */
+      /* -------------------------------------------------------------------------- */
+
+      function getRandomNumber(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function getRandomOKLCHColor() {
+        const l = 0.7; // Lightness
+        const c = 0.2; // Chroma
+        const h = getRandomNumber(0, 360); // Hue
+        return { l, c, h };
+      }
+
+      function getSimilarOKLCHColor({ l, c, h }) {
+        const newH = (h + getRandomNumber(-15, 15) + 360) % 360; // Vary the hue slightly
+        return `oklch(${l * 100}% ${c} ${newH})`;
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                    WORLD                                   */
+      /* -------------------------------------------------------------------------- */
+
+      import * as ecstatic from 'ecstatic';
+      const { World } = ecstatic;
+      const world = new World();
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 COMPONENTS                                 */
+      /* -------------------------------------------------------------------------- */
+
+      // --- Singleton Components (for global-like state) ---
+      class CanvasContext {
+        constructor(elementId, width, height) {
+          this.canvas = document.getElementById(elementId);
+          this.context = this.canvas.getContext('2d');
+          this.width = width;
+          this.height = height;
+          this.canvas.width = width;
+          this.canvas.height = height;
+        }
+      }
+
+      class MouseInputState {
+        isMouseDown = false;
+        x = 0;
+        y = 0;
+        baseColor = null;
+      }
+
+      // NEW: Component to hold global physics constants.
+      class PhysicsConstants {
+        gravity = 0.1; // A small downward force applied each frame.
+      }
+
+      // --- Entity Components ---
+      class Position {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+        }
+      }
+
+      class Velocity {
+        constructor(dx, dy) {
+          this.dx = dx;
+          this.dy = dy;
+        }
+      }
+
+      class Circle {
+        constructor(radius) {
+          this.radius = radius;
+        }
+      }
+
+      class Color {
+        constructor(value) {
+          this.value = value;
+        }
+      }
+
+      class PhysicsBody {
+        mass = 1;
+        friction = 0.995; // Slightly increased friction for a more natural feel with gravity.
+        bounciness = 0.8; // Energy retained after a bounce.
+        inactiveTimer = 0;
+
+        constructor(radius) {
+          this.mass = Math.PI * radius * radius;
+        }
+      }
+
+      class Renderable {}
+
+      class CreatedAt {
+        constructor(timestamp = performance.now()) {
+          this.timestamp = timestamp;
+        }
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                                   SYSTEMS                                  */
+      /* -------------------------------------------------------------------------- */
+
+      function ballCreationSystem(args) {
+        const { world } = args;
+        const { component: input } = world.grab(MouseInputState);
+
+        if (input.isMouseDown) {
+          createBall(input.x, input.y, input.baseColor);
+        }
+      }
+
+      /**
+       * MODIFIED: Applies gravity and friction, then updates position.
+       */
+      function movementSystem(args) {
+        const { components, world } = args;
+        const { component: constants } = world.grab(PhysicsConstants);
+
+        const pos = components.get(Position);
+        const vel = components.get(Velocity);
+        const physics = components.get(PhysicsBody);
+
+        // Apply gravity to the vertical velocity
+        vel.dy += constants.gravity;
+
+        // Apply friction to slow down the ball over time
+        vel.dx *= physics.friction;
+        vel.dy *= physics.friction;
+
+        pos.x += vel.dx;
+        pos.y += vel.dy;
+      }
+
+      /**
+       * MODIFIED: Handles bouncing off walls, now with bounciness.
+       */
+      function boundarySystem(args) {
+        const { world, components } = args;
+        const { component: canvas } = world.grab(CanvasContext);
+
+        const pos = components.get(Position);
+        const vel = components.get(Velocity);
+        const circle = components.get(Circle);
+        const physics = components.get(PhysicsBody);
+
+        if (pos.x + circle.radius > canvas.width) {
+          pos.x = canvas.width - circle.radius;
+          vel.dx *= -physics.bounciness;
+        } else if (pos.x - circle.radius < 0) {
+          pos.x = circle.radius;
+          vel.dx *= -physics.bounciness;
+        }
+
+        if (pos.y + circle.radius > canvas.height) {
+          pos.y = canvas.height - circle.radius;
+          vel.dy *= -physics.bounciness;
+        } else if (pos.y - circle.radius < 0) {
+          pos.y = circle.radius;
+          vel.dy *= -physics.bounciness;
+        }
+      }
+
+      function collisionSystem(args) {
+        const { entity: entityA, components, world } = args;
+        const posA = components.get(Position);
+        const velA = components.get(Velocity);
+        const circleA = components.get(Circle);
+        const physA = components.get(PhysicsBody);
+
+        const allBalls = world.locateAll([
+          Position,
+          Velocity,
+          Circle,
+          PhysicsBody,
+        ]);
+        const currentIndex = allBalls.findIndex(e => e.id === entityA.id);
+
+        for (let i = currentIndex + 1; i < allBalls.length; i++) {
+          const entityB = allBalls[i];
+          const posB = entityB.get(Position);
+          const velB = entityB.get(Velocity);
+          const circleB = entityB.get(Circle);
+          const physB = entityB.get(PhysicsBody);
+
+          const dx = posB.x - posA.x;
+          const dy = posB.y - posA.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const minDistance = circleA.radius + circleB.radius;
+
+          if (distance < minDistance) {
+            const overlap = minDistance - distance;
+            const overlapX = (dx / distance) * overlap;
+            const overlapY = (dy / distance) * overlap;
+            posA.x -= overlapX / 2;
+            posA.y -= overlapY / 2;
+            posB.x += overlapX / 2;
+            posB.y += overlapY / 2;
+
+            const angle = Math.atan2(dy, dx);
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+            const vxA = velA.dx * cos + velA.dy * sin;
+            const vyA = velA.dy * cos - velA.dx * sin;
+            const vxB = velB.dx * cos + velB.dy * sin;
+            const vyB = velB.dy * cos - velB.dx * sin;
+
+            const totalMass = physA.mass + physB.mass;
+            const newVxA =
+              ((physA.mass - physB.mass) * vxA + 2 * physB.mass * vxB) /
+              totalMass;
+            const newVxB =
+              ((physB.mass - physA.mass) * vxB + 2 * physA.mass * vxA) /
+              totalMass;
+
+            velA.dx = newVxA * cos - vyA * sin;
+            velA.dy = vyA * cos + newVxA * sin;
+            velB.dx = newVxB * cos - vyB * sin;
+            velB.dy = vyB * cos + newVxB * sin;
+          }
+        }
+      }
+
+      const INACTIVITY_THRESHOLD = 0.1; // Increased threshold for settling with gravity
+      const TIME_TO_DESTROY = 4;
+      const FRAME_TIME = 1 / 60;
+      const MAX_TIME_TO_DESTROY = 5000;
+
+      function inactivitySystem(args) {
+        const currentTime = performance.now();
+        const { entity, components } = args;
+        const createdAt = components.get(CreatedAt);
+        const vel = components.get(Velocity);
+        const physics = components.get(PhysicsBody);
+
+        const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+        if (speed < INACTIVITY_THRESHOLD) {
+          physics.inactiveTimer += FRAME_TIME;
+        } else {
+          physics.inactiveTimer = 0;
+        }
+
+        if (
+          physics.inactiveTimer > TIME_TO_DESTROY ||
+          currentTime - createdAt.timestamp > MAX_TIME_TO_DESTROY
+        ) {
+          entity.destroy();
+        }
+      }
+
+      function renderSystem(args) {
+        const { world, components, isFirst } = args;
+        const { component: canvas } = world.grab(CanvasContext);
+        if (isFirst) {
+          canvas.context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        const pos = components.get(Position);
+        const circle = components.get(Circle);
+        const color = components.get(Color);
+        canvas.context.beginPath();
+        canvas.context.arc(pos.x, pos.y, circle.radius, 0, Math.PI * 2);
+        canvas.context.fillStyle = color.value;
+        canvas.context.fill();
+        canvas.context.closePath();
+      }
+
+      // --- System Registration ---
+      world.addSystem([MouseInputState], ballCreationSystem);
+      world.addSystem([Position, Velocity, PhysicsBody], movementSystem);
+      world.addSystem(
+        [Position, Velocity, Circle, PhysicsBody],
+        boundarySystem
+      ); // Added PhysicsBody for bounciness
+      world.addSystem(
+        [Position, Velocity, Circle, PhysicsBody],
+        collisionSystem
+      );
+      world.addSystem([Velocity, PhysicsBody, CreatedAt], inactivitySystem);
+      world.addSystem([Position, Circle, Color, Renderable], renderSystem);
+
+      /* -------------------------------------------------------------------------- */
+      /*                              INITIALIZE STATE                              */
+      /* -------------------------------------------------------------------------- */
+
+      const canvasEntity = world
+        .createEntity()
+        .add(new CanvasContext('ecs-canvas', 800, 600));
+
+      const inputEntity = world.createEntity().add(new MouseInputState());
+
+      // NEW: Create a singleton entity to hold physics constants.
+      const physicsEntity = world.createEntity().add(new PhysicsConstants());
+
+      function createBall(x, y, baseColor) {
+        const radius = getRandomNumber(5, 20);
+        world
+          .createEntity()
+          .add(new Position(x, y))
+          .add(new Velocity(getRandomNumber(-4, 4), getRandomNumber(-4, 4)))
+          .add(new Circle(radius))
+          .add(new Color(getSimilarOKLCHColor(baseColor)))
+          .add(new PhysicsBody(radius))
+          .add(new CreatedAt())
+          .add(new Renderable());
+      }
+
+      for (let i = 0; i < 20; i++) {
+        createBall(
+          getRandomNumber(50, 750),
+          getRandomNumber(50, 550),
+          getRandomOKLCHColor()
+        );
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /*                             USER INTERACTION                             */
+      /* -------------------------------------------------------------------------- */
+
+      const canvas = canvasEntity.get(CanvasContext).canvas;
+      const inputState = inputEntity.get(MouseInputState);
+
+      canvas.addEventListener('mousedown', event => {
+        inputState.isMouseDown = true;
+        inputState.baseColor = getRandomOKLCHColor();
+        const rect = canvas.getBoundingClientRect();
+        inputState.x = event.clientX - rect.left;
+        inputState.y = event.clientY - rect.top;
+      });
+
+      canvas.addEventListener('mousemove', event => {
+        if (inputState.isMouseDown) {
+          const rect = canvas.getBoundingClientRect();
+          inputState.x = event.clientX - rect.left;
+          inputState.y = event.clientY - rect.top;
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        inputState.isMouseDown = false;
+        inputState.baseColor = null;
+      });
+
+      /* -------------------------------------------------------------------------- */
+      /*                                  GAME LOOP                                 */
+      /* -------------------------------------------------------------------------- */
+
+      function gameLoop() {
+        world.systems.run();
+        requestAnimationFrame(gameLoop);
+      }
+
+      gameLoop();
+    </script>
+  </body>
+</html>

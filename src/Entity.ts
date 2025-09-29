@@ -20,6 +20,12 @@ export interface EntityCompEventArgs<CT> {
   component: CT;
 }
 
+export interface ComponentLifecycleEventArgs<CT> {
+  world: World<CT>;
+  entity: Entity<CT>;
+  component: CT;
+}
+
 export default class Entity<CT> {
   private _id: string;
   private _world: World<CT>;
@@ -100,6 +106,9 @@ export default class Entity<CT> {
    * Add a component to an Entity, doh.
    */
   add<T extends CT>(component: T): this {
+    if (!component) {
+      throw new Error(`Entity.add: Component is null or undefined`);
+    }
     this._world.add(this._id, component);
 
     return this;
