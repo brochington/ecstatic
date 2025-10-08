@@ -579,7 +579,7 @@ function setupInput(world) {
     document.addEventListener('wheel', handleWheel, { passive: false });
   } else {
     // Setup mobile weapon switching callback
-    mobileControls.onWeaponSwitch = (weaponIndex) => {
+    mobileControls.onWeaponSwitch = weaponIndex => {
       const weaponSystem = world.getResource(WeaponSystem);
       if (weaponSystem) {
         if (weaponIndex === -1) {
@@ -608,7 +608,7 @@ function setupInput(world) {
       const maxMobileHeight = 720;
       const aspectRatio = window.innerWidth / window.innerHeight;
 
-      if (aspectRatio > 16/9) {
+      if (aspectRatio > 16 / 9) {
         // Wide screen (landscape)
         renderWidth = maxMobileWidth;
         renderHeight = Math.round(maxMobileWidth / aspectRatio);
@@ -630,7 +630,6 @@ function setupInput(world) {
     threeScene.camera.aspect = window.innerWidth / window.innerHeight;
     threeScene.camera.updateProjectionMatrix();
     threeScene.renderer.setSize(renderWidth, renderHeight);
-
   });
 
   gameOverScreen.addEventListener('click', () => {
@@ -739,10 +738,16 @@ function setupEventListeners(world) {
         if (weaponIndex !== -1) {
           const weapon = weaponSystem.weapons[weaponIndex];
           // Add ammo to the weapon (give a reasonable amount)
-          const ammoToAdd = weapon.type === 'shotgun' ? 10 :
-                           weapon.type === 'machinegun' ? 30 :
-                           weapon.type === 'rocket' ? 3 :
-                           weapon.type === 'flamethrower' ? 50 : 0;
+          const ammoToAdd =
+            weapon.type === 'shotgun'
+              ? 10
+              : weapon.type === 'machinegun'
+                ? 30
+                : weapon.type === 'rocket'
+                  ? 3
+                  : weapon.type === 'flamethrower'
+                    ? 50
+                    : 0;
 
           if (weapon.ammo !== Infinity) {
             weapon.ammo = Math.min(weapon.ammo + ammoToAdd, weapon.maxAmmo);

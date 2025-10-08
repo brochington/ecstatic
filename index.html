@@ -1,188 +1,219 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ecstatic - A Simple ECS Library</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f8f9fa;
-            color: #333;
-            line-height: 1.6;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f8f9fa;
+        color: #333;
+        line-height: 1.6;
+      }
 
-        .hero {
-            text-align: center;
-            margin-bottom: 60px;
-            padding: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+      .hero {
+        text-align: center;
+        margin-bottom: 60px;
+        padding: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
 
+      .hero h1 {
+        margin: 0;
+        font-size: 3rem;
+        font-weight: 300;
+      }
+
+      .hero p {
+        margin: 20px 0 0 0;
+        opacity: 0.9;
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 20px auto 0 auto;
+      }
+
+      .navigation-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+
+      .nav-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .nav-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .nav-card h2 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+        font-size: 1.8rem;
+      }
+
+      .nav-card p {
+        margin: 0;
+        color: #666;
+        font-size: 1rem;
+      }
+
+      .nav-card .icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+      }
+
+      .examples-icon::before {
+        content: '🎮';
+      }
+      .docs-icon::before {
+        content: '📚';
+      }
+
+      .quick-links {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 40px;
+      }
+
+      .quick-links h3 {
+        margin-top: 0;
+        color: #2c3e50;
+      }
+
+      .quick-links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+
+      .quick-link {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+
+      .quick-link:hover {
+        background: #e9ecef;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        color: #666;
+      }
+
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
         .hero h1 {
-            margin: 0;
-            font-size: 3rem;
-            font-weight: 300;
-        }
-
-        .hero p {
-            margin: 20px 0 0 0;
-            opacity: 0.9;
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin: 20px auto 0 auto;
+          font-size: 2.5rem;
         }
 
         .navigation-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
+          grid-template-columns: 1fr;
         }
 
         .nav-card {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
+          padding: 20px;
         }
-
-        .nav-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .nav-card h2 {
-            margin: 0 0 15px 0;
-            color: #2c3e50;
-            font-size: 1.8rem;
-        }
-
-        .nav-card p {
-            margin: 0;
-            color: #666;
-            font-size: 1rem;
-        }
-
-        .nav-card .icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .examples-icon::before { content: "🎮"; }
-        .docs-icon::before { content: "📚"; }
-
-        .quick-links {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 40px;
-        }
-
-        .quick-links h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-
-        .quick-links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .quick-link {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #667eea;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        .quick-link:hover {
-            background: #e9ecef;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
-        }
-
-        .footer a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .navigation-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-card {
-                padding: 20px;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="hero">
-        <h1>Ecstatic</h1>
-        <p>A straightforward JavaScript implementation of the ECS pattern commonly found in games</p>
+      <h1>Ecstatic</h1>
+      <p>
+        A straightforward JavaScript implementation of the ECS pattern commonly
+        found in games
+      </p>
     </div>
 
     <div class="navigation-grid">
-        <a href="examples/" class="nav-card">
-            <span class="icon examples-icon"></span>
-            <h2>Examples</h2>
-            <p>Interactive demos showcasing Ecstatic in action. See bouncing balls, games, and more real-world examples.</p>
-        </a>
+      <a href="examples/" class="nav-card">
+        <span class="icon examples-icon"></span>
+        <h2>Examples</h2>
+        <p>
+          Interactive demos showcasing Ecstatic in action. See bouncing balls,
+          games, and more real-world examples.
+        </p>
+      </a>
 
-        <a href="docs/" class="nav-card">
-            <span class="icon docs-icon"></span>
-            <h2>API Documentation</h2>
-            <p>Complete TypeScript API documentation with guides, examples, and detailed class references.</p>
-        </a>
+      <a href="docs/" class="nav-card">
+        <span class="icon docs-icon"></span>
+        <h2>API Documentation</h2>
+        <p>
+          Complete TypeScript API documentation with guides, examples, and
+          detailed class references.
+        </p>
+      </a>
     </div>
 
     <div class="quick-links">
-        <h3>Quick Links</h3>
-        <div class="quick-links-grid">
-            <a href="https://github.com/brochington/ecstatic" class="quick-link" target="_blank">GitHub Repository</a>
-            <a href="https://www.npmjs.com/package/@brochington/ecstatic" class="quick-link" target="_blank">NPM Package</a>
-            <a href="examples/bouncing-balls.html" class="quick-link">Bouncing Balls Demo</a>
-            <a href="docs/modules.html" class="quick-link">API Reference</a>
-        </div>
+      <h3>Quick Links</h3>
+      <div class="quick-links-grid">
+        <a
+          href="https://github.com/brochington/ecstatic"
+          class="quick-link"
+          target="_blank"
+          >GitHub Repository</a
+        >
+        <a
+          href="https://www.npmjs.com/package/@brochington/ecstatic"
+          class="quick-link"
+          target="_blank"
+          >NPM Package</a
+        >
+        <a href="examples/bouncing-balls.html" class="quick-link"
+          >Bouncing Balls Demo</a
+        >
+        <a href="docs/modules.html" class="quick-link">API Reference</a>
+      </div>
     </div>
 
     <div class="footer">
-        <p>
-            Built with ❤️ | <a href="https://github.com/brochington/ecstatic" target="_blank">View on GitHub</a>
-        </p>
+      <p>
+        Built with ❤️ |
+        <a href="https://github.com/brochington/ecstatic" target="_blank"
+          >View on GitHub</a
+        >
+      </p>
     </div>
-</body>
+  </body>
 </html>

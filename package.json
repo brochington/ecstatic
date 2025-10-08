@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "type": "module",
   "description": "a damn fine ECS library",
   "main": "dist/ecstatic.cjs.js",

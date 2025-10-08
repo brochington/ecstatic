@@ -2,10 +2,15 @@
 
 export type Tag = string | number;
 
+export type State = string | number | symbol;
+
 export type ClassConstructor<T> = { new (...args: any[]): T };
 
-export type EntityId = string;
+export type SerializableClassConstructor<T> = ClassConstructor<T> & {
+  fromJSON?: (data: unknown) => T;
+};
 
+export type EntityId = string;
 
 export type EntityState =
   | "creating"
@@ -13,6 +18,62 @@ export type EntityState =
   | "destroying"
   | "destroyed"
   | "error";
+
+export interface EntityCompEventArgs<CT> {
+  world: World<CT>;
+  component: CT;
+}
+
+export interface ComponentLifecycleEventArgs<CT> {
+  world: World<CT>;
+  entity: Entity<CT>;
+  component: CT;
+}
+
+export interface ComponentLifecycle<CT> {
+  onAdd?: (args: {
+    world: World<CT>;
+    entity: Entity<CT>;
+    component: CT;
+  }) => void;
+  onRemove?: (args: {
+    world: World<CT>;
+    entity: Entity<CT>;
+    component: CT;
+  }) => void;
+  toJSON?: () => unknown;
+}
+
+export interface PrefabDefinition<CT> {
+  tags?: Tag[];
+  components: CT[];
+}
+
+export interface TypeMapping {
+  components: Record<string, SerializableClassConstructor<unknown>>;
+  resources: Record<string, SerializableClassConstructor<unknown>>;
+}
+
+export interface SerializedWorld {
+  resources: { name: string; data: unknown }[];
+  entities: {
+    id: EntityId;
+    tags: Tag[];
+    components: { name: string; data: unknown }[];
+  }[];
+}
+
+export interface EventListenerArgs<E, CT> {
+  event: E;
+  world: World<CT>;
+}
+
+export type EventListenerFunc<E, CT> = (args: EventListenerArgs<E, CT>) => void;
+
+export type Transitions<S extends State, D = undefined> = Record<
+  S,
+  (data: D, current: S) => S
+>;
 
 export class Entity<CT> {
   get id(): string;
@@ -24,6 +85,18 @@ export class Entity<CT> {
   get state(): EntityState;
 
   constructor(world: World<CT>);
+
+  /* LifeCycle methods, meant to be overridden */
+
+  onCreate(world: World<CT>): void;
+
+  onDestroy(world: World<CT>): void;
+
+  onComponentAdd(args: EntityCompEventArgs<CT>): void;
+
+  onTrackedComponentUpdate(args: EntityCompEventArgs<CT>): void;
+
+  onComponentRemove(args: EntityCompEventArgs<CT>): void;
 
   /**
    * Add a component to an Entity
@@ -125,6 +198,8 @@ export class DevEntity<CT> {
 
   systems: string[];
 
+  state: EntityState;
+
   constructor(entity: Entity<CT>, world: World<CT>);
 
   toTableRow(): DevEntityTableRow;
@@ -215,6 +290,12 @@ export class ComponentCollection<CT> {
    */
   get size(): number;
 
+  /**
+   * Make ComponentCollection iterable by delegating to the internal Map's iterator.
+   * This allows for...of loops, spreading [...collection], and Array.from(collection).
+   */
+  [Symbol.iterator](): IterableIterator<CT>;
+
   toDevComponents(): Record<string, CT>;
 }
 
@@ -243,7 +324,14 @@ declare class Systems<CT> {
 
   constructor(world: World<CT>);
 
-  add(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this;
+  setPhaseOrder(order: string[]): void;
+
+  add(
+    cTypes: ClassConstructor<CT>[],
+    systemFunc: SystemFunc<CT>,
+    canonicalKey: string,
+    options: { phase?: string; name?: string }
+  ): this;
 
   run(): void;
 }
@@ -267,6 +355,11 @@ declare class World<CT> {
    * Lots of cool things to help view the state of the world. Check it out!
    */
   dev: DevTools<CT>;
+
+  /**
+   * Event management system for handling custom events.
+   */
+  events: EventManager<CT>;
 
   /**
    * "finds" a single entity based on a predicate
@@ -355,9 +448,60 @@ declare class World<CT> {
   remove: (eid: EntityId, cType: ClassConstructor<CT>) => this;
 
   /**
+   * Registers a system-like listener for a specific event type.
+   */
+  addSystemListener<E>(
+    EventType: ClassConstructor<E>,
+    listenerFunc: EventListenerFunc<E, CT>,
+    options: { phase?: string }
+  ): this;
+
+  /**
+   * Stores a singleton resource in the world. Resources are global, unique data structures.
+   */
+  setResource<T>(resource: T): this;
+
+  /**
+   * Retrieves a singleton resource from the world.
+   */
+  getResource<T>(ResourceType: ClassConstructor<T>): T | undefined;
+
+  /**
+   * Checks if a resource exists in the world.
+   */
+  hasResource<T>(ResourceType: ClassConstructor<T>): boolean;
+
+  /**
+   * Removes a resource from the world.
+   */
+  removeResource<T>(ResourceType: ClassConstructor<T>): boolean;
+
+  /**
+   * Registers a prefab definition with the world, allowing for reusable entity templates.
+   */
+  registerPrefab(name: string, definition: PrefabDefinition<CT>): this;
+
+  /**
+   * Creates a new entity from a registered prefab.
+   */
+  createEntityFromPrefab(
+    name: string,
+    overrides: { [componentName: string]: Partial<CT> }
+  ): Entity<CT>;
+
+  /**
+   * Sets the execution order for system phases.
+   */
+  setPhaseOrder(order: string[]): this;
+
+  /**
    * Add a system to the world.
    */
-  addSystem(cTypes: ClassConstructor<CT>[], systemFunc: SystemFunc<CT>, funcName?: string): this;
+  addSystem(
+    cTypes: ClassConstructor<CT>[],
+    systemFunc: SystemFunc<CT>,
+    options: { phase?: string; name?: string }
+  ): this;
 
   /**
    * Setup an entity to exist in the given world. This is mostly an internal method, but exposed just in case.
@@ -379,4 +523,83 @@ declare class World<CT> {
    * Destroys an entity
    */
   destroyEntity(entityId: EntityId): this;
+
+  /**
+   * Serializes the entire state of the world into a JSON-compatible object.
+   */
+  toJSON(): SerializedWorld;
+
+  /**
+   * Creates a new World instance by hydrating it from a serialized state.
+   */
+  static fromJSON<CT>(
+    serializedWorld: SerializedWorld,
+    typeMapping: TypeMapping
+  ): World<CT>;
 }
+
+export declare class SimpleFSM<S extends State, D = undefined> {
+  current: S;
+  inital: S;
+  transitions: Transitions<S, D>;
+
+  constructor(initialState: S, transitions: Transitions<S, D>);
+
+  next(data: D): void;
+
+  reset(): void;
+
+  is(checkState: S): boolean;
+}
+
+export declare class EventManager<CT> {
+  constructor(world: World<CT>);
+
+  addListener<E>(
+    EventType: ClassConstructor<E>,
+    func: EventListenerFunc<E, CT>,
+    phase: string
+  ): void;
+
+  emit(event: object): void;
+
+  processQueueForPhase(phase: string): void;
+
+  clearQueue(): void;
+}
+
+export declare const TrackedCompSymbolKeys: {
+  isTracked: symbol;
+  world: symbol;
+  entityIDs: symbol;
+  getEntities: symbol;
+  setWorld: symbol;
+  onAdd: symbol;
+  onUpdate: symbol;
+  onRemove: symbol;
+};
+
+export declare function trackComponent<CT>(
+  CompClass: ClassConstructor<CT>,
+  trackedEventHandlers: {
+    onAdd?: (args: {
+      world: World<CT>;
+      component: CT;
+      entity: Entity<CT>;
+      entities: Map<EntityId, Entity<CT>>;
+    }) => void;
+    onUpdate?: (args: {
+      entities: Map<EntityId, Entity<CT>>;
+      component: CT;
+      world: World<CT>;
+      previousVal: CT[keyof CT];
+      property: keyof CT;
+    }) => void;
+    onRemove?: (args: {
+      world: World<CT>;
+      component: CT;
+      entity: Entity<CT>;
+      entities: Map<EntityId, Entity<CT>>;
+    }) => void;
+  }
+): any;

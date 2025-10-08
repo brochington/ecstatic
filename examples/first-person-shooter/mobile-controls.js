@@ -33,8 +33,11 @@ export class MobileControls {
   }
 
   detectMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-           window.innerWidth <= 768;
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.innerWidth <= 768
+    );
   }
 
   setupMobileControls() {
@@ -65,43 +68,57 @@ export class MobileControls {
 
     const updateJoystickCenter = () => {
       joystickRect = joystick.getBoundingClientRect();
-      this.movementJoystickCenter.x = joystickRect.left + joystickRect.width / 2;
-      this.movementJoystickCenter.y = joystickRect.top + joystickRect.height / 2;
+      this.movementJoystickCenter.x =
+        joystickRect.left + joystickRect.width / 2;
+      this.movementJoystickCenter.y =
+        joystickRect.top + joystickRect.height / 2;
     };
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = e => {
       e.preventDefault();
 
       // Find the touch that started on this joystick
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
         const rect = joystick.getBoundingClientRect();
-        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        if (
+          touch.clientX >= rect.left &&
+          touch.clientX <= rect.right &&
+          touch.clientY >= rect.top &&
+          touch.clientY <= rect.bottom
+        ) {
           this.movementTouchId = touch.identifier;
           this.movementJoystickActive = true;
           updateJoystickCenter();
-          this.updateMovementJoystickPosition(touch.clientX, touch.clientY, handle);
+          this.updateMovementJoystickPosition(
+            touch.clientX,
+            touch.clientY,
+            handle
+          );
           break;
         }
       }
     };
 
-    const handleTouchMove = (e) => {
+    const handleTouchMove = e => {
       e.preventDefault();
       if (this.movementJoystickActive && this.movementTouchId !== null) {
         // Find our touch
         for (let i = 0; i < e.touches.length; i++) {
           const touch = e.touches[i];
           if (touch.identifier === this.movementTouchId) {
-            this.updateMovementJoystickPosition(touch.clientX, touch.clientY, handle);
+            this.updateMovementJoystickPosition(
+              touch.clientX,
+              touch.clientY,
+              handle
+            );
             break;
           }
         }
       }
     };
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = e => {
       e.preventDefault();
 
       // Check if our touch ended
@@ -120,7 +137,9 @@ export class MobileControls {
       }
     };
 
-    joystick.addEventListener('touchstart', handleTouchStart, { passive: false });
+    joystick.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
     joystick.addEventListener('touchmove', handleTouchMove, { passive: false });
     joystick.addEventListener('touchend', handleTouchEnd, { passive: false });
 
@@ -144,39 +163,51 @@ export class MobileControls {
       this.cameraJoystickCenter.y = joystickRect.top + joystickRect.height / 2;
     };
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = e => {
       e.preventDefault();
 
       // Find the touch that started on this joystick
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
         const rect = joystick.getBoundingClientRect();
-        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        if (
+          touch.clientX >= rect.left &&
+          touch.clientX <= rect.right &&
+          touch.clientY >= rect.top &&
+          touch.clientY <= rect.bottom
+        ) {
           this.cameraTouchId = touch.identifier;
           this.cameraJoystickActive = true;
           updateJoystickCenter();
-          this.updateCameraJoystickPosition(touch.clientX, touch.clientY, handle);
+          this.updateCameraJoystickPosition(
+            touch.clientX,
+            touch.clientY,
+            handle
+          );
           break;
         }
       }
     };
 
-    const handleTouchMove = (e) => {
+    const handleTouchMove = e => {
       e.preventDefault();
       if (this.cameraJoystickActive && this.cameraTouchId !== null) {
         // Find our touch
         for (let i = 0; i < e.touches.length; i++) {
           const touch = e.touches[i];
           if (touch.identifier === this.cameraTouchId) {
-            this.updateCameraJoystickPosition(touch.clientX, touch.clientY, handle);
+            this.updateCameraJoystickPosition(
+              touch.clientX,
+              touch.clientY,
+              handle
+            );
             break;
           }
         }
       }
     };
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = e => {
       e.preventDefault();
 
       // Check if our touch ended
@@ -195,10 +226,14 @@ export class MobileControls {
       }
     };
 
-    joystick.addEventListener('touchstart', handleTouchStart, { passive: false });
+    joystick.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
     joystick.addEventListener('touchmove', handleTouchMove, { passive: false });
     joystick.addEventListener('touchend', handleTouchEnd, { passive: false });
-    joystick.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    joystick.addEventListener('touchcancel', handleTouchEnd, {
+      passive: false,
+    });
 
     // Update joystick center on resize
     window.addEventListener('resize', updateJoystickCenter);
@@ -217,8 +252,10 @@ export class MobileControls {
     const angle = Math.atan2(deltaY, deltaX);
 
     // Calculate normalized movement vector
-    this.movementVector.x = (deltaX / maxDistance) * (clampedDistance / maxDistance);
-    this.movementVector.y = (deltaY / maxDistance) * (clampedDistance / maxDistance);
+    this.movementVector.x =
+      (deltaX / maxDistance) * (clampedDistance / maxDistance);
+    this.movementVector.y =
+      (deltaY / maxDistance) * (clampedDistance / maxDistance);
 
     // Update handle position
     const handleX = Math.cos(angle) * clampedDistance;
@@ -239,8 +276,10 @@ export class MobileControls {
     const angle = Math.atan2(deltaY, deltaX);
 
     // Calculate normalized camera rotation vector (left/right reversed, up/down normal)
-    this.cameraRotation.x = -(deltaX / maxDistance) * (clampedDistance / maxDistance) * 0.02;
-    this.cameraRotation.y = (deltaY / maxDistance) * (clampedDistance / maxDistance) * 0.02;
+    this.cameraRotation.x =
+      -(deltaX / maxDistance) * (clampedDistance / maxDistance) * 0.02;
+    this.cameraRotation.y =
+      (deltaY / maxDistance) * (clampedDistance / maxDistance) * 0.02;
 
     // Update handle position
     const handleX = Math.cos(angle) * clampedDistance;
@@ -252,35 +291,41 @@ export class MobileControls {
     const cycleButton = document.getElementById('weapon-cycle-button');
     if (!cycleButton) return;
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = e => {
       e.preventDefault();
 
       // Trigger weapon cycle (will be handled by game logic)
       this.onWeaponSwitch?.(-1); // -1 indicates cycle to next weapon
     };
 
-    cycleButton.addEventListener('touchstart', handleTouchStart, { passive: false });
+    cycleButton.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
   }
 
   setupFireButton() {
     const fireButton = document.getElementById('fire-button');
     if (!fireButton) return;
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = e => {
       e.preventDefault();
       this.shootButtonPressed = true;
       fireButton.classList.add('active');
     };
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = e => {
       e.preventDefault();
       this.shootButtonPressed = false;
       fireButton.classList.remove('active');
     };
 
-    fireButton.addEventListener('touchstart', handleTouchStart, { passive: false });
+    fireButton.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
     fireButton.addEventListener('touchend', handleTouchEnd, { passive: false });
-    fireButton.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    fireButton.addEventListener('touchcancel', handleTouchEnd, {
+      passive: false,
+    });
   }
 
   setupOrientationHandling() {
@@ -288,14 +333,18 @@ export class MobileControls {
 
     const checkOrientation = () => {
       // More reliable orientation detection
-      const isLandscape = window.innerWidth > window.innerHeight ||
-                         window.orientation === 90 ||
-                         window.orientation === -90 ||
-                         screen.orientation?.angle === 90 ||
-                         screen.orientation?.angle === 270;
+      const isLandscape =
+        window.innerWidth > window.innerHeight ||
+        window.orientation === 90 ||
+        window.orientation === -90 ||
+        screen.orientation?.angle === 90 ||
+        screen.orientation?.angle === 270;
 
       // Only show warning if we're clearly in portrait AND on a small screen
-      const shouldShowWarning = !isLandscape && window.innerWidth <= 896 && window.innerHeight > window.innerWidth;
+      const shouldShowWarning =
+        !isLandscape &&
+        window.innerWidth <= 896 &&
+        window.innerHeight > window.innerWidth;
 
       if (orientationWarning) {
         if (shouldShowWarning) {
@@ -361,13 +410,14 @@ export class MobileControls {
 
   // Debug method for testing
   debug() {
+    // eslint-disable-next-line no-console
     console.log('MobileControls Debug:', {
       isMobile: this.isMobile,
       touchControlsEnabled: this.touchControlsEnabled,
       joystickActive: this.joystickActive,
       shootButtonPressed: this.shootButtonPressed,
       movementVector: this.movementVector,
-      cameraRotation: this.cameraRotation
+      cameraRotation: this.cameraRotation,
     });
   }
 }

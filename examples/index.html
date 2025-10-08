@@ -1,180 +1,209 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ecstatic Examples</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f8f9fa;
-            color: #333;
-            line-height: 1.6;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f8f9fa;
+        color: #333;
+        line-height: 1.6;
+      }
 
-        .nav-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 10px 0;
-        }
+      .nav-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 10px 0;
+      }
 
-        .nav-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
+      .nav-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
 
-        .nav-link:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
+      .nav-link:hover {
+        background: rgba(102, 126, 234, 0.1);
+      }
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
 
+      .header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 300;
+      }
+
+      .header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .example-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .example-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .example-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+      }
+
+      .example-description {
+        color: #666;
+        margin: 0;
+        font-size: 0.9rem;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        color: #666;
+      }
+
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 600px) {
         .header h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: 300;
-        }
-
-        .header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-            font-size: 1.1rem;
+          font-size: 2rem;
         }
 
         .examples-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+          grid-template-columns: 1fr;
         }
-
-        .example-card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .example-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .example-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: 0 0 8px 0;
-            color: #2c3e50;
-        }
-
-        .example-description {
-            color: #666;
-            margin: 0;
-            font-size: 0.9rem;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
-        }
-
-        .footer a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .examples-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="nav-header">
-        <a href="../" class="nav-link">← Back to Ecstatic</a>
-        <a href="../docs/" class="nav-link">API Docs</a>
+      <a href="../" class="nav-link">← Back to Ecstatic</a>
+      <a href="../docs/" class="nav-link">API Docs</a>
     </div>
 
     <div class="header">
-        <h1>Ecstatic Examples</h1>
-        <p>Interactive demos showcasing the Ecstatic ECS library</p>
+      <h1>Ecstatic Examples</h1>
+      <p>Interactive demos showcasing the Ecstatic ECS library</p>
     </div>
 
     <div class="examples-grid">
-        <a href="bouncing-balls.html" class="example-card">
-            <h3 class="example-title">Bouncing Balls</h3>
-            <p class="example-description">Simple physics simulation with bouncing balls. Click to add more balls!</p>
-        </a>
+      <a href="bouncing-balls.html" class="example-card">
+        <h3 class="example-title">Bouncing Balls</h3>
+        <p class="example-description">
+          Simple physics simulation with bouncing balls. Click to add more
+          balls!
+        </p>
+      </a>
 
-        <a href="advanced-bouncing-balls.html" class="example-card">
-            <h3 class="example-title">Bouncing Balls with Gravity</h3>
-            <p class="example-description">Enhanced physics with gravity, friction, and collision detection.</p>
-        </a>
+      <a href="advanced-bouncing-balls.html" class="example-card">
+        <h3 class="example-title">Bouncing Balls with Gravity</h3>
+        <p class="example-description">
+          Enhanced physics with gravity, friction, and collision detection.
+        </p>
+      </a>
 
-        <a href="blasteroids.html" class="example-card">
-            <h3 class="example-title">Blasteroids</h3>
-            <p class="example-description">Classic asteroids-style game with ECS architecture.</p>
-        </a>
+      <a href="blasteroids.html" class="example-card">
+        <h3 class="example-title">Blasteroids</h3>
+        <p class="example-description">
+          Classic asteroids-style game with ECS architecture.
+        </p>
+      </a>
 
-        <a href="first-person-shooter/first-person-shooter.html" class="example-card">
-            <h3 class="example-title">First-Person Shooter</h3>
-            <p class="example-description">Polished 3D FPS game demonstrating advanced ECS patterns.</p>
-        </a>
+      <a
+        href="first-person-shooter/first-person-shooter.html"
+        class="example-card"
+      >
+        <h3 class="example-title">First-Person Shooter</h3>
+        <p class="example-description">
+          Polished 3D FPS game demonstrating advanced ECS patterns.
+        </p>
+      </a>
 
-        <a href="threejs-demo.html" class="example-card">
-            <h3 class="example-title">3D Cube Collector</h3>
-            <p class="example-description">Three.js integration with ECS for 3D cube collection game.</p>
-        </a>
+      <a href="threejs-demo.html" class="example-card">
+        <h3 class="example-title">3D Cube Collector</h3>
+        <p class="example-description">
+          Three.js integration with ECS for 3D cube collection game.
+        </p>
+      </a>
 
-        <a href="spinning_rectangles.html" class="example-card">
-            <h3 class="example-title">Spinning Rectangles</h3>
-            <p class="example-description">Basic animation example with rotating rectangles.</p>
-        </a>
+      <a href="spinning_rectangles.html" class="example-card">
+        <h3 class="example-title">Spinning Rectangles</h3>
+        <p class="example-description">
+          Basic animation example with rotating rectangles.
+        </p>
+      </a>
 
-        <a href="web-components_calculator.html" class="example-card">
-            <h3 class="example-title">DOM Calculator</h3>
-            <p class="example-description">Web components calculator built with ECS principles.</p>
-        </a>
+      <a href="web-components_calculator.html" class="example-card">
+        <h3 class="example-title">DOM Calculator</h3>
+        <p class="example-description">
+          Web components calculator built with ECS principles.
+        </p>
+      </a>
     </div>
 
     <div class="footer">
-        <p>
-            Built with <a href="https://github.com/brochington/ecstatic" target="_blank">Ecstatic ECS</a> |
-            <a href="https://github.com/brochington/ecstatic/tree/master/examples" target="_blank">View Source</a>
-        </p>
+      <p>
+        Built with
+        <a href="https://github.com/brochington/ecstatic" target="_blank"
+          >Ecstatic ECS</a
+        >
+        |
+        <a
+          href="https://github.com/brochington/ecstatic/tree/master/examples"
+          target="_blank"
+          >View Source</a
+        >
+      </p>
     </div>
-</body>
+  </body>
 </html>

@@ -74,7 +74,8 @@ export function createBullet(
 
   const isPlayerBullet = firedByTag === Player;
   const color = isPlayerBullet ? 0x00ffff : 0xff00ff;
-  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+  const isLowPerformanceMode =
+    mobileControls && mobileControls.isLowPerformanceMode;
 
   let geo, mat, mesh;
 
@@ -132,7 +133,8 @@ export function createShotgunBlast(
   const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+  const isLowPerformanceMode =
+    mobileControls && mobileControls.isLowPerformanceMode;
   const pelletCount = isLowPerformanceMode ? 4 : 8; // Reduced from 8 to 4 pellets on mobile
 
   // Create pellets in a spread
@@ -245,7 +247,8 @@ export function createRocket(
   const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+  const isLowPerformanceMode =
+    mobileControls && mobileControls.isLowPerformanceMode;
 
   let geo, mat, mesh;
 
@@ -378,7 +381,8 @@ export function createMuzzleFlash(
   const mobileControls = world.getResource('MobileControls');
   if (!threeScene) return;
 
-  const isLowPerformanceMode = mobileControls && mobileControls.isLowPerformanceMode;
+  const isLowPerformanceMode =
+    mobileControls && mobileControls.isLowPerformanceMode;
 
   // Different colors and effects based on weapon type (reduced for mobile)
   let flashColor, particleCount, flashSize;
@@ -864,7 +868,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       // SHOTGUN: Wide brown shotgun shape with shells visible
       geometry = new THREE.BoxGeometry(1.2, 0.4, 0.3);
       material = new THREE.MeshPhongMaterial({
-        color: 0x8B4513, // Rich brown wood
+        color: 0x8b4513, // Rich brown wood
         emissive: 0x331100,
         emissiveIntensity: 0.4,
       });
@@ -872,7 +876,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       for (let i = 0; i < 3; i++) {
         const shellGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 6);
         const shellMat = new THREE.MeshPhongMaterial({
-          color: 0xFFD700, // Gold shells
+          color: 0xffd700, // Gold shells
           emissive: 0x442200,
           emissiveIntensity: 0.6,
         });
@@ -885,7 +889,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       // MACHINE GUN: Long metallic cylinder with belt of bullets
       geometry = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 8);
       material = new THREE.MeshPhongMaterial({
-        color: 0xC0C0C0, // Bright silver
+        color: 0xc0c0c0, // Bright silver
         emissive: 0x404040,
         emissiveIntensity: 0.5,
       });
@@ -893,7 +897,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       for (let i = 0; i < 5; i++) {
         const bulletGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.25, 6);
         const bulletMat = new THREE.MeshPhongMaterial({
-          color: 0xFFFF00, // Bright yellow bullets
+          color: 0xffff00, // Bright yellow bullets
           emissive: 0x444400,
           emissiveIntensity: 0.8,
         });
@@ -906,7 +910,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       // ROCKET: Large red rocket shape
       geometry = new THREE.ConeGeometry(0.4, 1.5, 8);
       material = new THREE.MeshPhongMaterial({
-        color: 0xFF0000, // Bright red
+        color: 0xff0000, // Bright red
         emissive: 0x880000,
         emissiveIntensity: 0.6,
       });
@@ -929,7 +933,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       // FLAMETHROWER: Blue flame-shaped object
       geometry = new THREE.CylinderGeometry(0.25, 0.35, 1.0, 8);
       material = new THREE.MeshPhongMaterial({
-        color: 0x0088FF, // Bright blue
+        color: 0x0088ff, // Bright blue
         emissive: 0x004488,
         emissiveIntensity: 0.7,
       });
@@ -937,7 +941,7 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       for (let i = 0; i < 4; i++) {
         const flameGeo = new THREE.ConeGeometry(0.1, 0.4, 6);
         const flameMat = new THREE.MeshBasicMaterial({
-          color: 0xFF6600, // Orange flame
+          color: 0xff6600, // Orange flame
           transparent: true,
           opacity: 0.8,
         });
@@ -959,7 +963,9 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
 
   // Add extra visual elements to make ammo type obvious
   extraElements.forEach(element => {
-    element.material.clippingPlanes = [world.getResource(ThreeScene).groundClippingPlane];
+    element.material.clippingPlanes = [
+      world.getResource(ThreeScene).groundClippingPlane,
+    ];
     weaponMesh.add(element);
   });
 
@@ -983,7 +989,10 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
         getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
       );
       attempts++;
-    } while (attempts < maxAttempts && isPositionBlocked(world, weaponPosition));
+    } while (
+      attempts < maxAttempts &&
+      isPositionBlocked(world, weaponPosition)
+    );
 
     // If we couldn't find a good position, just use a random one anyway
     if (attempts >= maxAttempts) {
@@ -1158,7 +1167,9 @@ function isPositionBlocked(world, position) {
 
   for (const obstacle of obstacles) {
     const obstacleCollider = obstacle.get(Collider);
-    const obstacleBoxes = Array.isArray(obstacleCollider.box) ? obstacleCollider.box : [obstacleCollider.box];
+    const obstacleBoxes = Array.isArray(obstacleCollider.box)
+      ? obstacleCollider.box
+      : [obstacleCollider.box];
 
     for (const obstacleBox of obstacleBoxes) {
       if (obstacleBox.intersectsBox(testBox)) {
@@ -1518,7 +1529,7 @@ export function createTree(world, position) {
     treeGroup.add(trunk);
 
     // Sparse spiky leaves pointing outward
-    const leafColors = [0x228B22, 0x32CD32, 0x006400, 0x90EE90];
+    const leafColors = [0x228b22, 0x32cd32, 0x006400, 0x90ee90];
     for (let i = 0; i < 8; i++) {
       const leafGeo = new THREE.ConeGeometry(0.1, 1.5 + Math.random() * 1, 6);
       const leafMat = new THREE.MeshPhongMaterial({
@@ -1539,11 +1550,7 @@ export function createTree(world, position) {
 
       // Point leaves outward from center
       leaf.lookAt(
-        new THREE.Vector3(
-          Math.cos(angle) * 2,
-          height,
-          Math.sin(angle) * 2
-        )
+        new THREE.Vector3(Math.cos(angle) * 2, height, Math.sin(angle) * 2)
       );
 
       // Add some random rotation
@@ -1680,7 +1687,7 @@ export function createStonePillar(world, position) {
   // Add some moss/lichen on top
   const mossGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.1, 8);
   const mossMat = new THREE.MeshPhongMaterial({
-    color: 0x228B22, // Forest green
+    color: 0x228b22, // Forest green
     clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const moss = new THREE.Mesh(mossGeo, mossMat);
@@ -1698,7 +1705,7 @@ export function createGrassPatch(world, position) {
   for (let i = 0; i < 15; i++) {
     const bladeGeo = new THREE.PlaneGeometry(0.1, 0.8);
     const bladeMat = new THREE.MeshPhongMaterial({
-      color: 0x228B22, // Green
+      color: 0x228b22, // Green
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.8,

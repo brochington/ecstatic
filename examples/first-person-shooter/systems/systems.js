@@ -89,7 +89,6 @@ export function playerMovementSystem({ world }) {
 
   const speed = 0.02;
   const direction = new THREE.Vector3();
-  const camera = controls.pointerLock.getObject();
 
   // Handle desktop controls
   if (!mobileControls || !mobileControls.isMobile) {
@@ -207,7 +206,8 @@ export function playerShootingSystem({ world }) {
       shouldFire = mobileControls.isShooting() && weaponSystem.canFire();
     } else {
       // Other weapons fire when mobile shoot button is pressed
-      shouldFire = mobileControls.isShooting() && !input.shoot && weaponSystem.canFire();
+      shouldFire =
+        mobileControls.isShooting() && !input.shoot && weaponSystem.canFire();
       if (mobileControls.isShooting()) {
         input.shootReleased = true; // Simulate button release for single-shot weapons
       }
@@ -1421,7 +1421,7 @@ function updateMinimap(world) {
     }
   }
 
-  enemies.forEach((enemy) => {
+  enemies.forEach(enemy => {
     if (enemy.has(ThreeObject)) {
       const enemyMesh = enemy.get(ThreeObject).mesh;
       const dot = document.createElement('div');
@@ -1453,7 +1453,7 @@ function updateMinimap(world) {
       obstacles.push(entity);
     }
   }
-  obstacles.forEach((obstacle) => {
+  obstacles.forEach(obstacle => {
     if (obstacle.has(ThreeObject)) {
       const obstacleMesh = obstacle.get(ThreeObject).mesh;
       const dot = document.createElement('div');
@@ -1588,7 +1588,11 @@ export function cameraControlSystem({ world }) {
 
       // Rotate camera vertically (up/down look)
       camera.rotation.x -= cameraRotation.y; // Inverted for natural feel
-      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/2, Math.PI/2);
+      camera.rotation.x = THREE.MathUtils.clamp(
+        camera.rotation.x,
+        -Math.PI / 2,
+        Math.PI / 2
+      );
     }
   }
 }
@@ -1783,7 +1787,9 @@ function removeCollidersFromBouldersWithCollectables(world) {
       if (!collectable.has(ThreeObject)) continue;
 
       const collectableObject = collectable.get(ThreeObject);
-      const collectableBox = new THREE.Box3().setFromObject(collectableObject.mesh);
+      const collectableBox = new THREE.Box3().setFromObject(
+        collectableObject.mesh
+      );
 
       if (boulderBox.intersectsBox(collectableBox)) {
         containsCollectable = true;
