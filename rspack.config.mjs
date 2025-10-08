@@ -43,6 +43,7 @@ const baseConfig = {
   optimization: {
     usedExports: true, // Enable tree shaking
     minimize: isProduction,
+    mangleExports: false, // Don't mangle export names
   },
   externals: isProduction ? {
     // Don't bundle peer dependencies in production builds
