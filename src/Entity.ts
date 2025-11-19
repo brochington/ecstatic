@@ -142,6 +142,17 @@ export default class Entity<CT> {
   }
 
   /**
+   * Determines if an entiy has one or more components related to it.
+   */
+  hasSome<T extends CT>(cTypes: ClassConstructor<T>[]): boolean {
+    const cc =
+      this._world.componentCollections.get(this._id) ||
+      new ComponentCollection<CT>();
+
+    return cc.has(cTypes);
+  }
+
+  /**
    * Check to see if an entity tagged with a given tag.
    */
   hasTag(tag: Tag): boolean {

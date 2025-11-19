@@ -63,6 +63,14 @@ export default class ComponentCollection<CT> {
   };
 
   /**
+   * Test to see if the collection contains at least one of the given Classes.
+   * @param cTypes array of component Classes.
+   */
+  hasSome = (cTypes: ClassConstructor<CT>[]): boolean => {
+    return cTypes.some(ct => this.components.has(ct.name) === true);
+  };
+
+  /**
    * Test to see if the collection has a component instance based on a
    * class name. Some build steps/minifiers will change the name of Classes,
    * so it's usually best to pass in a MyClass.name instead of 'MyClass'.

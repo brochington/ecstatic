@@ -79,6 +79,15 @@ describe('Component Collection (internal)', () => {
       expect(cc.has([FirstComponent, SecondComponent])).to.equal(false);
     });
 
+    it('hasSome', () => {
+      const cc = new ComponentCollection<CompTypes>();
+
+      cc.add(new FirstComponent('first'));
+
+      expect(cc.hasSome([FirstComponent, SecondComponent])).to.equal(true);
+      expect(cc.hasSome([SecondComponent])).to.equal(false);
+    });
+
     it('hasByName', () => {
       const cc = new ComponentCollection<CompTypes>();
 

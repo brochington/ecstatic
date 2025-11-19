@@ -1,7 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.4.4",
-  "type": "module",
+  "version": "0.4.10",
   "description": "a damn fine ECS library",
   "main": "dist/ecstatic.cjs.js",
   "module": "dist/ecstatic.esm.js",
@@ -9,7 +8,7 @@
     ".": {
       "types": "./ecstatic.d.ts",
       "browser": "./dist/ecstatic.umd.js",
-      "import": "./dist/ecstatic.esm.js",
+      "import": "./dist/ecstatic.cjs.js",
       "require": "./dist/ecstatic.cjs.js"
     }
   },
@@ -18,7 +17,7 @@
     "build": "npm run clean && NODE_ENV=production rspack --config rspack.config.mjs",
     "build:dev": "npm run clean && rspack --config rspack.config.mjs",
     "dev": "npm run clean && rspack --config rspack.config.mjs --watch",
-    "test": "vitest",
+    "test": "npm run build && vitest",
     "test:ui": "vitest --ui",
     "bench": "vitest bench",
     "bench:ui": "vitest bench --ui",
@@ -49,6 +48,10 @@
   "homepage": "https://brochington.github.io/ecstatic/",
   "types": "ecstatic.d.ts",
   "dependencies": {
+    "class-transformer": "^0.5.1",
+    "uuid": "13.0.0"
+  },
+  "peerDependencies": {
     "class-transformer": "^0.5.1",
     "uuid": "13.0.0"
   },
