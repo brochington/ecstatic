@@ -111,7 +111,45 @@ describe('System', () => {
         expect(args.index).to.equal(0);
         expect(args.isFirst).to.equal(true);
         expect(args.isLast).to.equal(true);
+        expect(args.dt).to.be.a('number');
+        expect(args.time).to.be.a('number');
 
+        resolve();
+      });
+
+      world.createEntity().add(new FirstComponent('a'));
+
+      world.systems.run();
+    });
+  });
+
+  it('passes custom time and dt to system function', async () => {
+    const world = new World<CompTypes>();
+    const testDt = 33.3;
+    const testTime = 123456;
+
+    await new Promise<void>(resolve => {
+      world.addSystem([FirstComponent], (args: SystemFuncArgs<CompTypes>) => {
+        expect(args.dt).to.equal(testDt);
+        expect(args.time).to.equal(testTime);
+        resolve();
+      });
+
+      world.createEntity().add(new FirstComponent('a'));
+
+      world.systems.run({ dt: testDt, time: testTime });
+    });
+  });
+
+  it('uses default time values if not provided', async () => {
+    const world = new World<CompTypes>();
+
+    await new Promise<void>(resolve => {
+      world.addSystem([FirstComponent], (args: SystemFuncArgs<CompTypes>) => {
+        // Default dt is 16.666... (60 FPS)
+        expect(args.dt).to.be.closeTo(16.666, 0.001);
+        // Default time is performance.now(), just check it's a number
+        expect(args.time).to.be.a('number');
         resolve();
       });
 

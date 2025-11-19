@@ -1,18 +1,18 @@
 import { EntityState } from 'ecstatic';
 
 import World from './World';
-import Entity from './Entity';
+import Entity, { EntityId } from './Entity';
 import { Tag } from './Tag';
 
 interface DevEntityTableRow {
-  id: string;
+  id: EntityId;
   components: string;
   tags: string;
   systems: string;
 }
 
 class DevEntity<CT> {
-  id: string;
+  id: EntityId;
 
   components: Record<string, CT>;
 

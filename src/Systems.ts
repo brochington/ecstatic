@@ -22,7 +22,13 @@ export interface SystemFuncArgs<CT> {
    * Use this to access other entities.
    */
   world: World<CT>;
+  /**
+   * The index of the entity in the current system execution.
+   */
   index: number;
+  /**
+   * The total number of entities being processed by this system.
+   */
   size: number;
   /**
    * Is the first entity to be iterated on this run of a system.
@@ -34,6 +40,14 @@ export interface SystemFuncArgs<CT> {
    * Can be helpful to tear down anything that should be dealt with after all the entites have ran.
    */
   isLast: boolean;
+  /**
+   * Delta time in milliseconds passed since the last frame.
+   */
+  dt: number;
+  /**
+   * Total time in milliseconds since the simulation started.
+   */
+  time: number;
 }
 
 /**
@@ -95,7 +109,17 @@ export default class Systems<CT> {
     return this;
   }
 
-  run(): void {
+  /**
+   * Runs all systems.
+   * @param args Optional time arguments.
+   * @param args.dt Delta time in milliseconds since last frame. Defaults to 16.66ms (60fps) if not provided.
+   * @param args.time Total time in milliseconds. Defaults to performance.now().
+   */
+  run(args?: { dt?: number; time?: number }): void {
+    const dt = args?.dt ?? 16.666;
+    // eslint-disable-next-line no-undef
+    const time = args?.time ?? performance.now();
+
     // Validation check: Ensure there's no ambiguity between phased and non-phased systems.
     const defaultPhaseSystems = this.phases.get(DEFAULT_PHASE) || [];
     const hasDefaultPhaseSystems = defaultPhaseSystems.length > 0;
@@ -152,7 +176,7 @@ export default class Systems<CT> {
             this.world.componentCollections.get(eid) ||
             new ComponentCollection<CT>();
 
-          const args: SystemFuncArgs<CT> = {
+          const systemArgs: SystemFuncArgs<CT> = {
             entity,
             components,
             world: this.world,
@@ -160,9 +184,11 @@ export default class Systems<CT> {
             size,
             isFirst: index === 0,
             isLast: index + 1 === size,
+            dt,
+            time,
           };
 
-          func(args);
+          func(systemArgs);
 
           index++;
         }

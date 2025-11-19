@@ -84,6 +84,8 @@ export default class World<CT> {
 
   events: EventManager<CT>;
 
+  #nextEntityId: EntityId = 0;
+
   private componentToSystemQueries: Map<string, string[]> = new Map();
   private resources: Map<ClassConstructor<unknown>, unknown> = new Map();
   private prefabs: Map<string, PrefabDefinition<CT>> = new Map();
@@ -392,7 +394,7 @@ export default class World<CT> {
     if (tagEntityIds) {
       const entityId = tagEntityIds.values().next().value;
 
-      if (entityId) {
+      if (entityId !== undefined) {
         const entity = this.entities.get(entityId);
 
         if (entity) {
@@ -409,7 +411,7 @@ export default class World<CT> {
    * @param tag A string or number.
    */
   getAllTagged = (tag: Tag): Entity<CT>[] => {
-    let entities: Entity<CT>[] = []; // eslint-disable-line
+    const entities: Entity<CT>[] = [];
 
     const tagEntityIds = this.entitiesByTags.get(tag);
 
@@ -588,11 +590,10 @@ export default class World<CT> {
    * Basically just new Entity(world), but saves an import of Entity.
    */
   createEntity(): Entity<CT> {
-    const entity = new Entity(this);
+    const entityId = ++this.#nextEntityId;
+    const entity = new Entity(this, entityId);
 
     return entity;
-
-    // Register entity here....
   }
 
   /**

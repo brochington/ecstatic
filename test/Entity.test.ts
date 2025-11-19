@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { describe, it } from 'vitest';
-import isUUID from 'validator/lib/isUUID';
 import noop from 'lodash/noop';
 
 import World from '../src/World';
@@ -28,22 +27,22 @@ type CompTypes = FirstComponent | SecondComponent;
 describe('Entity', () => {
   it('exists', () => {
     const testWorld = new World<CompTypes>();
-    const testEntity = new Entity<CompTypes>(testWorld);
+    const testEntity = new Entity<CompTypes>(testWorld, 1);
 
     expect(testEntity).to.be.instanceof(Entity);
   });
 
   it('entity has correct id', () => {
     const testWorld = new World<CompTypes>();
-    const testEntity = new Entity<CompTypes>(testWorld);
+    const testEntity = new Entity<CompTypes>(testWorld, 1);
 
-    expect(isUUID(testEntity.id, '4')).to.equal(true);
+    expect(testEntity.id).to.equal(1);
   });
 
   describe('instance methods', () => {
     it('add one entity', () => {
       const testWorld = new World<CompTypes>();
-      const testEntity = new Entity<CompTypes>(testWorld);
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
       const testCompId = 'test-comp-1';
 
       testEntity.add(new FirstComponent(testCompId));
@@ -58,7 +57,7 @@ describe('Entity', () => {
 
     it('remove', () => {
       const testWorld = new World<CompTypes>();
-      const testEntity = new Entity<CompTypes>(testWorld);
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
 
       testWorld.addSystem([FirstComponent, SecondComponent], noop);
 
@@ -118,7 +117,7 @@ describe('Entity', () => {
   describe('tags', () => {
     it('Add a tag to an entity', () => {
       const testWorld = new World<CompTypes>();
-      const testEntity = new Entity<CompTypes>(testWorld);
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
       const testTag = 'Tag1';
 
       expect(testEntity.tags.size).to.equal(0);
@@ -136,7 +135,7 @@ describe('Entity', () => {
 
     it('Remove tag from entity', () => {
       const testWorld = new World<CompTypes>();
-      const testEntity = new Entity<CompTypes>(testWorld);
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
       const testTag1 = 'Tag1';
       const testTag2 = 'Tag2';
 
@@ -169,7 +168,7 @@ describe('Entity', () => {
 
     it('Cleans up tags for entities that have been destroyed', () => {
       const testWorld = new World<CompTypes>();
-      const testEntity = new Entity<CompTypes>(testWorld);
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
       const testTag1 = 'Tag1';
 
       expect(testEntity.tags.size).to.equal(0);
@@ -233,7 +232,7 @@ describe('Entity', () => {
         }
       }
 
-      const _firstLCComp = new FirstLCComp(world); // eslint-disable-line
+      const _firstLCComp = new FirstLCComp(world, 1); // eslint-disable-line
 
       expect(onCreateFake.callCount).to.equal(1);
     });
@@ -254,7 +253,7 @@ describe('Entity', () => {
         }
       }
 
-      const entity = new LCEntity(world);
+      const entity = new LCEntity(world, 1);
 
       entity.add(new FirstComponent('testComp'));
 
@@ -279,7 +278,7 @@ describe('Entity', () => {
           }
         }
 
-        const lcEntity = new LCEntity(world);
+        const lcEntity = new LCEntity(world, 1);
 
         const comp = new TrackedComp('1'); // contsructor args is broken here...
 
@@ -305,7 +304,7 @@ describe('Entity', () => {
         }
       }
 
-      const entity = new LCEntity(world);
+      const entity = new LCEntity(world, 1);
 
       entity.add(new FirstComponent('testComp'));
 
@@ -326,7 +325,7 @@ describe('Entity', () => {
         }
       }
 
-      const firstLCComp = new FirstLCComp(world);
+      const firstLCComp = new FirstLCComp(world, 1);
 
       firstLCComp.destroy();
 

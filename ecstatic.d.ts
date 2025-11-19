@@ -1,5 +1,3 @@
- 
-
 export type Tag = string | number;
 
 export type State = string | number | symbol;
@@ -10,7 +8,7 @@ export type SerializableClassConstructor<T> = ClassConstructor<T> & {
   fromJSON?: (data: unknown) => T;
 };
 
-export type EntityId = string;
+export type EntityId = number;
 
 export type EntityState =
   | "creating"
@@ -76,7 +74,7 @@ export type Transitions<S extends State, D = undefined> = Record<
 >;
 
 export class Entity<CT> {
-  get id(): string;
+  get id(): EntityId;
   get world(): World<CT>;
 
   /**
@@ -84,7 +82,7 @@ export class Entity<CT> {
    */
   get state(): EntityState;
 
-  constructor(world: World<CT>);
+  constructor(world: World<CT>, id: EntityId);
 
   /* LifeCycle methods, meant to be overridden */
 
@@ -183,14 +181,14 @@ export class Entity<CT> {
 }
 
 export interface DevEntityTableRow {
-  id: string;
+  id: EntityId;
   components: string;
   tags: string;
   systems: string;
 }
 
 export class DevEntity<CT> {
-  id: string;
+  id: EntityId;
 
   components: Record<string, CT>;
 
@@ -309,6 +307,8 @@ export interface SystemFuncArgs<CT> {
   size: number;
   isFirst: boolean;
   isLast: boolean;
+  dt: number;
+  time: number;
 }
 
 export type SystemFunc<CT> = (
@@ -333,7 +333,7 @@ declare class Systems<CT> {
     options: { phase?: string; name?: string }
   ): this;
 
-  run(): void;
+  run(args?: { dt?: number; time?: number }): void;
 }
 
 declare class World<CT> {

@@ -1058,7 +1058,7 @@ describe('World', () => {
           resources: [],
           entities: [
             {
-              id: 'original-id-999',
+              id: 999,
               tags: ['custom-id'],
               components: [
                 {
@@ -1074,8 +1074,8 @@ describe('World', () => {
 
         expect(restoredWorld.entities.size).to.equal(1);
         const entity = Array.from(restoredWorld.entities.values())[0];
-        expect(entity.id).to.not.equal('original-id-999'); // ID should NOT be preserved (new UUID generated)
-        expect(typeof entity.id).to.equal('string'); // Should be a valid UUID string
+        expect(entity.id).to.not.equal(999); // ID should NOT be preserved (new UUID generated)
+        expect(typeof entity.id).to.equal('number');
         expect(entity.hasTag('custom-id')).to.equal(true);
 
         const component = entity.get(SimpleComponent);
