@@ -53,166 +53,119 @@ class Player {
 type BenchComponents = Position | Velocity | Health | Enemy | Player;
 
 describe('Query Operations', () => {
-  bench('locate single entity by component', () => {
-    const world = new World<BenchComponents>();
+  // --- SETUP (Hoisted) ---
+  const world = new World<BenchComponents>();
 
-    world.createEntity().add(new Position(10, 20));
-    world.createEntity().add(new Position(30, 40));
+  // 1. Simple Single Entity
+  const singleEntity = world.createEntity().add(new Position(10, 20, 'single'));
+  world.addSystem([Position], () => {}); // Register query
 
-    world.addSystem([Position], () => {});
+  // 2. 1000 Entities (Sparse)
+  const sparseWorld = new World<BenchComponents>();
+  for (let i = 0; i < 1000; i++) {
+    const entity = sparseWorld.createEntity();
+    if (i % 10 === 0) {
+      entity.add(new Position(i, i));
+    }
+  }
+  sparseWorld.addSystem([Position], () => {});
 
-    const entity = world.locate(Position);
-  });
+  // 3. Grab setup
+  const grabWorld = new World<BenchComponents>();
+  grabWorld.createEntity().add(new Position(10, 20, 'target'));
+  grabWorld.createEntity().add(new Position(30, 40, 'other'));
+  grabWorld.addSystem([Position], () => {});
 
-  bench('locate entity by component (1000 entities)', () => {
-    const world = new World<BenchComponents>();
+  // 4. GrabAll setup
+  const grabAllWorld = new World<BenchComponents>();
+  for (let i = 0; i < 100; i++) {
+    grabAllWorld.createEntity().add(new Position(i, i));
+  }
+  grabAllWorld.addSystem([Position], () => {});
 
-    // Create 1000 entities, only some with the target component
-    for (let i = 0; i < 1000; i++) {
-      const entity = world.createEntity();
-      if (i % 10 === 0) {
-        // Every 10th entity has Position
-        entity.add(new Position(i, i));
-      }
+  // 5. Find/FindAll Setup (Mixed entities)
+  const findWorld = new World<BenchComponents>();
+  for (let i = 0; i < 1000; i++) {
+    const entity = findWorld
+      .createEntity()
+      .add(new Position(i, i, `entity-${i}`));
+    if (i % 2 === 0) {
+      entity.add(new Health(100, 100));
+    }
+  }
+
+  // 6. Complex Game World Setup
+  const gameWorld = new World<BenchComponents>();
+  for (let i = 0; i < 500; i++) {
+    const entity = gameWorld.createEntity().add(new Position(i * 10, i * 10));
+
+    if (i % 3 === 0) {
+      entity.add(new Enemy('basic'));
+      entity.add(new Health(100, 100));
+    } else if (i % 5 === 0) {
+      entity.add(new Player(`Player${i}`));
+      entity.add(new Health(100, 100));
     }
 
-    world.addSystem([Position], () => {});
+    if (i % 2 === 0) {
+      entity.add(new Velocity(1, 1));
+    }
+  }
 
-    const entity = world.locate(Position);
+  // --- BENCHMARKS ---
 
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
+  bench('locate single entity by component', () => {
+    world.locate(Position);
+  });
+
+  bench('locate entity by component (1000 entities, sparse)', () => {
+    sparseWorld.locate(Position);
   });
 
   bench('grab entity and component', () => {
-    const world = new World<BenchComponents>();
-
-    world.createEntity().add(new Position(10, 20, 'target'));
-    world.createEntity().add(new Position(30, 40, 'other'));
-
-    world.addSystem([Position], () => {});
-
-    const result = world.grab(Position);
+    grabWorld.grab(Position);
   });
 
   bench('grab entity by predicate', () => {
-    const world = new World<BenchComponents>();
-
-    world.createEntity().add(new Position(10, 20, 'target'));
-    world.createEntity().add(new Position(30, 40, 'other'));
-    world.createEntity().add(new Position(50, 60, 'target2'));
-
-    world.addSystem([Position], () => {});
-
-    const result = world.grabBy(Position, pos => pos.id === 'target');
+    grabWorld.grabBy(Position, pos => pos.id === 'target');
   });
 
-  bench('grabAll entities with component', () => {
-    const world = new World<BenchComponents>();
-
-    for (let i = 0; i < 100; i++) {
-      world.createEntity().add(new Position(i, i));
-    }
-
-    world.addSystem([Position], () => {});
-
-    const results = world.grabAll(Position);
-
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
+  bench('grabAll entities with component (100 entities)', () => {
+    grabAllWorld.grabAll(Position);
   });
 
-  bench('find entity by predicate', () => {
-    const world = new World<BenchComponents>();
-
-    for (let i = 0; i < 1000; i++) {
-      world.createEntity().add(new Position(i, i, `entity-${i}`));
-    }
-
-    const entity = world.find(entity => {
+  bench('find entity by predicate (1000 entities)', () => {
+    findWorld.find(entity => {
       const pos = entity.get(Position);
       return pos?.id === 'entity-500';
     });
-
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
   });
 
-  bench('findAll entities by predicate', () => {
-    const world = new World<BenchComponents>();
-
-    for (let i = 0; i < 1000; i++) {
-      const entity = world
-        .createEntity()
-        .add(new Position(i, i, `entity-${i}`));
-      if (i % 2 === 0) {
-        entity.add(new Health(100, 100));
-      }
-    }
-
-    const entities = world.findAll(entity => {
+  bench('findAll entities by predicate (1000 entities)', () => {
+    findWorld.findAll(entity => {
       return entity.has(Position) && entity.has(Health);
     });
-
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
   });
 
   bench('get component by entity ID', () => {
-    const world = new World<BenchComponents>();
-
-    const entity = world.createEntity().add(new Position(10, 20, 'target'));
-
-    const component = world.get(entity.id, Position);
-
-    entity.destroy();
+    // We use the single world entity
+    world.get(singleEntity.id, Position);
   });
 
   bench('getComponent (world-level component access)', () => {
-    const world = new World<BenchComponents>();
-
-    world.createEntity().add(new Position(10, 20, 'target'));
-
-    const component = world.getComponent(Position);
-
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
+    world.getComponent(Position);
   });
 
   bench('complex query simulation (game-like scenario)', () => {
-    const world = new World<BenchComponents>();
-
-    // Create a mix of entities
-    for (let i = 0; i < 500; i++) {
-      const entity = world.createEntity().add(new Position(i * 10, i * 10));
-
-      if (i % 3 === 0) {
-        entity.add(new Enemy('basic'));
-        entity.add(new Health(100, 100));
-      } else if (i % 5 === 0) {
-        entity.add(new Player(`Player${i}`));
-        entity.add(new Health(100, 100));
-      }
-
-      if (i % 2 === 0) {
-        entity.add(new Velocity(1, 1));
-      }
-    }
-
     // Simulate AI system querying for enemies
-    const enemies = world.findAll(
+    gameWorld.findAll(
       entity => entity.has(Enemy) && entity.has(Position) && entity.has(Health)
     );
 
     // Simulate physics system
-    const movingEntities = world.findAll(
-      entity => entity.has(Position) && entity.has(Velocity)
-    );
+    gameWorld.findAll(entity => entity.has(Position) && entity.has(Velocity));
 
     // Simulate player targeting system
-    const players = world.grabAll(Player);
-
-    // Cleanup
-    world.entities.forEach(entity => entity.destroy());
+    gameWorld.grabAll(Player);
   });
 });
