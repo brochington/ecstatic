@@ -46,6 +46,7 @@ describe('System', () => {
       func: firstSystem,
       name: firstSystem.name,
       key: 'FirstComponent',
+      entities: new Set(),
     });
   });
 
@@ -193,6 +194,7 @@ describe('System', () => {
         func: inputSystem,
         name: 'inputSys',
         key: 'FirstComponent',
+        entities: new Set(),
       });
 
       expect(logicPhaseSystems).to.exist;
@@ -201,6 +203,7 @@ describe('System', () => {
         func: logicSystem,
         name: 'logicSys',
         key: 'FirstComponent',
+        entities: new Set(),
       });
 
       expect(renderPhaseSystems).to.exist;
@@ -209,6 +212,7 @@ describe('System', () => {
         func: renderSystem,
         name: 'renderSys',
         key: 'FirstComponent',
+        entities: new Set(),
       });
     });
 
@@ -269,9 +273,10 @@ describe('System', () => {
       const nonPhasedSystem = () => {};
 
       world.addSystem([FirstComponent], phasedSystem, { phase: 'Input' });
-      world.addSystem([SecondComponent], nonPhasedSystem);
 
-      expect(() => world.systems.run()).to.throw(
+      expect(() =>
+        world.addSystem([SecondComponent], nonPhasedSystem)
+      ).to.throw(
         'Ambiguous system execution order: Some systems are registered with a phase, while others are not. Please assign a phase to all systems if you intend to use execution phases.'
       );
     });

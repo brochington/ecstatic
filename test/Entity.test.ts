@@ -47,9 +47,7 @@ describe('Entity', () => {
 
       testEntity.add(new FirstComponent(testCompId));
 
-      const cc = testWorld.componentCollections.get(
-        testEntity.id
-      ) as ComponentCollection<CompTypes>;
+      const cc = testWorld.componentCollections[testEntity.id];
       expect(cc).to.be.instanceof(ComponentCollection);
       expect(cc.size).to.equal(1);
       expect(cc.has(FirstComponent)).to.equal(true);

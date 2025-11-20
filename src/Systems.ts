@@ -1,4 +1,4 @@
-import Entity from './Entity';
+import Entity, { EntityId } from './Entity';
 import World, { ClassConstructor } from './World';
 import ComponentCollection from './ComponentCollection';
 
@@ -52,14 +52,18 @@ export type SystemFunc<CT> = (sytemFuncArgs: SystemFuncArgs<CT>) => void;
 
 const DEFAULT_PHASE = '__DEFAULT__';
 
+interface SystemDef<CT> {
+  func: SystemFunc<CT>;
+  name: string;
+  key: string;
+  entities: Set<EntityId>; // Cached direct reference to the entity set
+}
+
 export default class Systems<CT> {
   world: World<CT>;
   compNamesBySystemName: Map<string, string[]>;
 
-  private phases: Map<
-    string,
-    { func: SystemFunc<CT>; name: string; key: string }[]
-  > = new Map();
+  private phases: Map<string, SystemDef<CT>[]> = new Map();
   private phaseOrder: string[] = [
     'Input',
     'Logic',
@@ -86,31 +90,35 @@ export default class Systems<CT> {
   ): this {
     const cNames = cTypes.map(ct => ct.name);
     const { phase = DEFAULT_PHASE, name: optionName } = options;
-
     const name = optionName || systemFunc.name || canonicalKey;
 
     if (!this.phases.has(phase)) {
       this.phases.set(phase, []);
     }
 
-    this.phases.get(phase)?.push({ func: systemFunc, name, key: canonicalKey });
+    // Cache the reference to the entities Set for this query.
+    // World.addSystem guarantees this query exists before calling Systems.add.
+    const query = this.world.systemQueries.get(canonicalKey);
+    if (!query) {
+      throw new Error(`System Query not found for key: ${canonicalKey}`);
+    }
+
+    this.phases.get(phase)?.push({
+      func: systemFunc,
+      name,
+      key: canonicalKey,
+      entities: query.entities, // Direct reference optimization
+    });
+
     this.compNamesBySystemName.set(name, cNames);
+
+    // Move validation here (Setup time) instead of run() (Hot path)
+    this.validatePhases();
 
     return this;
   }
 
-  /**
-   * Runs all systems.
-   * @param args Optional time arguments.
-   * @param args.dt Delta time in milliseconds since last frame. Defaults to 16.66ms (60fps) if not provided.
-   * @param args.time Total time in milliseconds. Defaults to performance.now().
-   */
-  run(args?: { dt?: number; time?: number }): void {
-    const dt = args?.dt ?? 16.666;
-    // eslint-disable-next-line no-undef
-    const time = args?.time ?? performance.now();
-
-    // Validation check: Ensure there's no ambiguity between phased and non-phased systems.
+  private validatePhases(): void {
     const defaultPhaseSystems = this.phases.get(DEFAULT_PHASE) || [];
     const hasDefaultPhaseSystems = defaultPhaseSystems.length > 0;
     const hasNamedPhaseSystems = Array.from(this.phases.keys()).some(
@@ -122,8 +130,18 @@ export default class Systems<CT> {
         'Ambiguous system execution order: Some systems are registered with a phase, while others are not. Please assign a phase to all systems if you intend to use execution phases.'
       );
     }
+  }
 
-    // Optimization: Reuse arg object to reduce GC pressure
+  /**
+   * Runs all systems.
+   * @param args Optional time arguments.
+   */
+  run(args?: { dt?: number; time?: number }): void {
+    const dt = args?.dt ?? 16.666;
+    // eslint-disable-next-line no-undef
+    const time = args?.time ?? performance.now();
+
+    // Reuse arg object to reduce GC pressure
     const systemArgs = {
       entity: null as unknown as Entity<CT>,
       components: null as unknown as ComponentCollection<CT>,
@@ -136,39 +154,51 @@ export default class Systems<CT> {
       time,
     };
 
-    const runOrder = hasNamedPhaseSystems ? this.phaseOrder : [DEFAULT_PHASE];
+    // Determine active phases
+    const runOrder: string[] = [];
 
-    // Add any custom phases defined by the user that are not in the default order.
-    for (const phaseName of this.phases.keys()) {
-      if (phaseName !== DEFAULT_PHASE && !runOrder.includes(phaseName)) {
-        runOrder.push(phaseName);
+    // Check if we are using default or named phases
+    const defaultPhase = this.phases.get(DEFAULT_PHASE);
+    if (defaultPhase && defaultPhase.length > 0) {
+      runOrder.push(DEFAULT_PHASE);
+    } else {
+      // Use configured order
+      for (const p of this.phaseOrder) {
+        runOrder.push(p);
+      }
+      // Add any custom phases not in order
+      for (const p of this.phases.keys()) {
+        if (p !== DEFAULT_PHASE && !this.phaseOrder.includes(p)) {
+          runOrder.push(p);
+        }
       }
     }
 
     for (const phase of runOrder) {
-      const systemsInPhase = this.phases.get(phase) || [];
+      const systemsInPhase = this.phases.get(phase);
+      if (!systemsInPhase || systemsInPhase.length === 0) continue;
 
-      for (const { func, key: canonicalKey } of systemsInPhase) {
-        const entityIdSet =
-          this.world.entitiesByQuery.get(canonicalKey) || new Set();
+      for (const system of systemsInPhase) {
+        const entityIdSet = system.entities;
         const size = entityIdSet.size;
 
-        if (size === 0) {
-          continue;
-        }
+        if (size === 0) continue;
 
         let index = 0;
         systemArgs.size = size;
 
         for (const eid of entityIdSet) {
-          const entity = this.world.entities.get(eid);
+          // Optimized: Direct Array Access
+          const entity = this.world.entities[eid];
 
-          // Do not run systems on entities that have been destroyed.
+          // Fast check for holes or destroyed entities
           if (!entity || entity.state === 'destroyed') continue;
 
-          const components =
-            this.world.componentCollections.get(eid) ||
-            new ComponentCollection<CT>();
+          // Optimized: Direct Array Access
+          const components = this.world.componentCollections[eid];
+
+          // Safety check (should theoretically never happen if logic is sound)
+          if (!components) continue;
 
           systemArgs.entity = entity;
           systemArgs.components = components;
@@ -176,18 +206,17 @@ export default class Systems<CT> {
           systemArgs.isFirst = index === 0;
           systemArgs.isLast = index + 1 === size;
 
-          func(systemArgs);
+          system.func(systemArgs);
 
           index++;
         }
       }
 
-      // After systems, process events for the current phase.
+      // Process events after each phase
       this.world.events.processQueueForPhase(phase);
     }
 
-    // Efficiently process Entity Lifecycle state changes
-    // This avoids iterating the entire entity list every frame.
+    // Entity Lifecycle
     if (this.world.entitiesToCreate.size > 0) {
       for (const entity of this.world.entitiesToCreate) {
         entity.finishCreation();

@@ -68,9 +68,6 @@ export default class Entity<CT> {
       error: () => 'error',
     });
 
-    /*
-    Registering with the World.
-    */
     this._world.registerEntity(this);
 
     if (this._world.systems.compNamesBySystemName.size === 0) {
@@ -78,8 +75,7 @@ export default class Entity<CT> {
     }
   }
 
-  /* LifeCycle methods, meant to be overridden */
-
+  // ... lifecycle methods ...
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   onCreate(world: World<CT>): void {
     // abstract
@@ -105,23 +101,14 @@ export default class Entity<CT> {
     // abstract
   }
 
-  /**
-   * Add a component to an Entity, doh.
-   */
   add<T extends CT>(component: T): this {
     if (!component) {
       throw new Error(`Entity.add: Component is null or undefined`);
     }
-
-    // Note: World.add handles updating the BitSet mask now.
     this._world.add(this._id, component);
-
     return this;
   }
 
-  /**
-   * Add a tag to a component
-   */
   addTag(tag: Tag): this {
     const entitySet = this._world.entitiesByTags.has(tag)
       ? this._world.entitiesByTags.get(tag)
@@ -135,31 +122,22 @@ export default class Entity<CT> {
     return this;
   }
 
-  /**
-   * Determines if an entity has a component related to it.
-   */
   has<T extends CT>(cType: ClassConstructor<T>): boolean {
     const cc =
-      this._world.componentCollections.get(this._id) ||
+      this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>();
 
     return cc.has(cType);
   }
 
-  /**
-   * Determines if an entiy has one or more components related to it.
-   */
   hasSome<T extends CT>(cTypes: ClassConstructor<T>[]): boolean {
     const cc =
-      this._world.componentCollections.get(this._id) ||
+      this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>();
 
     return cc.has(cTypes);
   }
 
-  /**
-   * Check to see if an entity tagged with a given tag.
-   */
   hasTag(tag: Tag): boolean {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
@@ -167,52 +145,34 @@ export default class Entity<CT> {
         return entitySet.has(this._id);
       }
     }
-
     return false;
   }
 
-  /**
-   * Get a component that belongs to an entity.
-   */
   get<T extends CT>(cl: ClassConstructor<T>): T {
     const cc =
-      this._world.componentCollections.get(this._id) ||
+      this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>();
 
     return cc.get<T>(cl);
   }
 
-  /**
-   * Get all components that have been added to an entity, via a ComponentCollection
-   */
   getAll(): ComponentCollection<CT> {
     return (
-      this._world.componentCollections.get(this._id) ||
+      this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>()
     );
   }
 
-  /**
-   * Remove a component from an entity.
-   * @param cType A component class, eg MyComponent
-   */
   remove(cType: ClassConstructor<CT>): this {
-    // Note: World.remove handles updating the BitSet mask now.
     this._world.remove(this._id, cType);
-
     return this;
   }
 
-  /**
-   * Remove a tag from an entity
-   */
   removeTag(tag: Tag): this {
     if (this._world.entitiesByTags.has(tag)) {
       const entitySet = this._world.entitiesByTags.get(tag);
-
       if (entitySet) {
         entitySet.delete(this._id);
-
         if (entitySet.size === 0) {
           this._world.entitiesByTags.delete(tag);
         }
@@ -221,78 +181,48 @@ export default class Entity<CT> {
     return this;
   }
 
-  /** Clears all components from an Entity */
   clear(): this {
     this._world.clearEntityComponents(this._id);
-    // Reset mask locally
     this._componentMask = new BitSet();
-
     return this;
   }
 
-  /**
-   * Remove all tags on an entity
-   */
   clearTags(): this {
     for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
       entitySet.delete(this._id);
-
       if (entitySet.size === 0) {
         this._world.entitiesByTags.delete(tag);
       }
     }
-
     return this;
   }
 
-  /**
-   * Sets the state of the entity to 'created'. that's it.
-   */
   finishCreation(): void {
     this._state.next('created');
   }
 
-  /**
-   * Destroy an entity. Actual destruction is deferred until after the next pass of systems.
-   * This gives the systems a chance to do any cleanup that might be needed.
-   */
   destroy(): void {
-    // If no systems are added, the destroy immediately.
     if (this._world.systems.compNamesBySystemName.size === 0) {
       this.destroyImmediately();
       return;
     }
-
-    // Mark as "destroying" so that systems can act on it before actually being destroyed.
     this._state.next('destroying');
-    this._world.entitiesToDestroy.add(this); // Notify World
+    this._world.entitiesToDestroy.add(this);
   }
 
   destroyImmediately(): void {
-    // Right now calling before the actual destorying of the entity.
-    // Might want to change this to post destruction in the future, who knows.
     this.onDestroy(this._world);
-
-    // Actually destroy entity.
-    this._world.destroyEntity(this._id); // should return an error??
-
+    this._world.destroyEntity(this._id);
     this._state.next('destroyed');
   }
 
-  /**
-   * Get all components that have been added to an entity, via a ComponentCollection.
-   * Does the same thing as entityInstance.getAll().
-   */
   get components(): ComponentCollection<CT> {
     return (
-      this._world.componentCollections.get(this._id) ||
+      this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>()
     );
   }
 
-  /**
-   * Retrieves all the tags that have been added to this entity.
-   */
   get tags(): Set<Tag> {
     const tags = new Set<Tag>();
     for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
@@ -300,13 +230,9 @@ export default class Entity<CT> {
         tags.add(tag);
       }
     }
-
     return tags;
   }
 
-  /**
-   * Convert Entity to a DevEntity. Very helpful in for debugging.
-   */
   toDevEntity(): DevEntity<CT> {
     return new DevEntity<CT>(this, this._world);
   }

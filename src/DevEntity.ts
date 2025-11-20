@@ -1,5 +1,4 @@
-import { EntityState } from 'ecstatic';
-
+import { EntityState } from './Entity';
 import World from './World';
 import Entity, { EntityId } from './Entity';
 import { Tag } from './Tag';

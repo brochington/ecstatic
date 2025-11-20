@@ -143,7 +143,7 @@ export function trackComponent<CT>(
 
         //@ts-ignore
         for (const eid of component[TrackedCompSymbolKeys.entityIDs]) {
-          const entity = world.entities.get(eid);
+          const entity = world.entities[eid]; // Array lookup
           if (entity) {
             entities.set(eid, entity);
           }

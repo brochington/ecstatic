@@ -55,14 +55,11 @@ describe('World', () => {
 
         entity.add(new FirstComponent('test-comp-1'));
 
-        const cc = testWorld.componentCollections.get(
-          entity.id
-        ) as ComponentCollection<CompTypes>;
+        const cc = testWorld.componentCollections[entity.id];
 
         expect(cc.size).to.equal(1);
 
-        expect(testWorld.entities.has(entity.id)).to.equal(true);
-        expect(testWorld.entities.get(entity.id)).to.be.instanceof(Entity);
+        expect(testWorld.entities[entity.id]).to.be.instanceof(Entity);
         expect(cc.has(FirstComponent)).to.equal(true);
         expect(cc.has([FirstComponent, SecondComponent])).to.equal(false);
         expect(cc.get(FirstComponent).id).to.equal('test-comp-1');
@@ -244,9 +241,7 @@ describe('World', () => {
 
         testWorld.add(entity.id, component);
 
-        const cc = testWorld.componentCollections.get(
-          entity.id
-        ) as ComponentCollection<CompTypes>;
+        const cc = testWorld.componentCollections[entity.id];
 
         expect(cc).to.be.instanceof(ComponentCollection);
         expect(cc.has(FirstComponent)).to.equal(true);
@@ -910,17 +905,22 @@ describe('World', () => {
         const restoredWorld = World.fromJSON(serialized, typeMapping);
 
         expect(restoredWorld).to.be.instanceof(World);
-        expect(restoredWorld.entities.size).to.equal(1);
+        expect(
+          restoredWorld.entities.filter(e => e !== undefined)
+        ).to.have.lengthOf(1);
 
         // Check entity restoration
-        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
-        expect(restoredEntity.hasTag('test')).to.equal(true);
-        expect(restoredEntity.hasTag('sample')).to.equal(true);
-        expect(restoredEntity.has(SimpleComponent)).to.equal(true);
+        const restoredEntity = restoredWorld.entities.find(
+          e => e !== undefined
+        );
+        expect(restoredEntity).to.exist;
+        expect(restoredEntity?.hasTag('test')).to.equal(true);
+        expect(restoredEntity?.hasTag('sample')).to.equal(true);
+        expect(restoredEntity?.has(SimpleComponent)).to.equal(true);
 
-        const restoredComponent = restoredEntity.get(SimpleComponent);
-        expect(restoredComponent.value).to.equal('original');
-        expect(restoredComponent.count).to.equal(100);
+        const restoredComponent = restoredEntity?.get(SimpleComponent);
+        expect(restoredComponent?.value).to.equal('original');
+        expect(restoredComponent?.count).to.equal(100);
 
         // Check resource restoration
         const restoredConfig = restoredWorld.getResource(GameConfig);
@@ -941,14 +941,16 @@ describe('World', () => {
         const serialized = originalWorld.toJSON();
         const restoredWorld = World.fromJSON(serialized, typeMapping);
 
-        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
-        const restoredComponent = restoredEntity.get(
+        const restoredEntity = restoredWorld.entities.find(
+          e => e !== undefined
+        );
+        const restoredComponent = restoredEntity?.get(
           CustomSerializationComponent
         );
 
         // Check that custom fromJSON was used
-        expect(restoredComponent.public).to.equal('original-public');
-        expect(restoredComponent.secret).to.equal('restored-original-public');
+        expect(restoredComponent?.public).to.equal('original-public');
+        expect(restoredComponent?.secret).to.equal('restored-original-public');
       });
 
       it('fromJSON throws error for missing component type mapping', () => {
@@ -1022,18 +1024,22 @@ describe('World', () => {
         const restoredWorld = World.fromJSON(serialized, typeMapping);
 
         // Verify everything is preserved
-        expect(restoredWorld.entities.size).to.equal(1);
+        expect(
+          restoredWorld.entities.filter(e => e !== undefined)
+        ).to.have.lengthOf(1);
         expect(restoredWorld.hasResource(AudioManager)).to.equal(true);
         expect(restoredWorld.hasResource(GameConfig)).to.equal(true);
 
-        const restoredEntity = Array.from(restoredWorld.entities.values())[0];
-        expect(restoredEntity.hasTag('complex')).to.equal(true);
-        expect(restoredEntity.hasTag('test-entity')).to.equal(true);
+        const restoredEntity = restoredWorld.entities.find(
+          e => e !== undefined
+        );
+        expect(restoredEntity?.hasTag('complex')).to.equal(true);
+        expect(restoredEntity?.hasTag('test-entity')).to.equal(true);
 
-        const restoredComplex = restoredEntity.get(ComplexComponent);
-        expect(restoredComplex.id).to.equal('test-complex');
-        expect(restoredComplex.position.x).to.equal(42);
-        expect(restoredComplex.position.y).to.equal(84);
+        const restoredComplex = restoredEntity?.get(ComplexComponent);
+        expect(restoredComplex?.id).to.equal('test-complex');
+        expect(restoredComplex?.position.x).to.equal(42);
+        expect(restoredComplex?.position.y).to.equal(84);
 
         const restoredAudio = restoredWorld.getResource(AudioManager);
         expect(restoredAudio?.volume).to.equal(50);
@@ -1054,7 +1060,9 @@ describe('World', () => {
         const restoredWorld = World.fromJSON(serialized, typeMapping);
 
         expect(restoredWorld).to.be.instanceof(World);
-        expect(restoredWorld.entities.size).to.equal(0);
+        expect(
+          restoredWorld.entities.filter(e => e !== undefined)
+        ).to.have.lengthOf(0);
       });
 
       it('fromJSON creates new entities with preserved IDs', () => {
@@ -1076,14 +1084,16 @@ describe('World', () => {
 
         const restoredWorld = World.fromJSON(serialized, typeMapping);
 
-        expect(restoredWorld.entities.size).to.equal(1);
-        const entity = Array.from(restoredWorld.entities.values())[0];
-        expect(entity.id).to.equal(999);
-        expect(entity.hasTag('custom-id')).to.equal(true);
+        expect(
+          restoredWorld.entities.filter(e => e !== undefined)
+        ).to.have.lengthOf(1);
+        const entity = restoredWorld.entities.find(e => e !== undefined);
+        expect(entity?.id).to.equal(999);
+        expect(entity?.hasTag('custom-id')).to.equal(true);
 
-        const component = entity.get(SimpleComponent);
-        expect(component.value).to.equal('test');
-        expect(component.count).to.equal(123);
+        const component = entity?.get(SimpleComponent);
+        expect(component?.value).to.equal('test');
+        expect(component?.count).to.equal(123);
       });
     });
   });
