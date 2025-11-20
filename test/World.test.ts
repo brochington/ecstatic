@@ -38,12 +38,13 @@ describe('World', () => {
 
         testWorld.addSystem(cTypes, noop);
 
-        const t = [...testWorld.entitiesByCTypes.entries()];
+        // Check entitiesByQuery instead of entitiesByCTypes
+        expect(testWorld.entitiesByQuery.size).to.equal(1);
 
-        expect(testWorld.entitiesByCTypes.size).to.equal(1);
-        // @ts-ignore
-        expect(t[0][0].includes(FirstComponent.name)).to.equal(true);
-        expect(t[0][1]).to.be.instanceof(Set);
+        const queries = Array.from(testWorld.entitiesByQuery.entries());
+        // The key logic has changed slightly but includes component names
+        expect(queries[0][0]).to.include(FirstComponent.name);
+        expect(queries[0][1]).to.be.instanceof(Set);
       });
     });
     describe('registerEntity', () => {
@@ -231,8 +232,11 @@ describe('World', () => {
     });
 
     describe('set', () => {
-      it('sets component in the correct entityId, and updates entitiesByCType', () => {
+      it('sets component in the correct entityId, and updates entitiesByQuery', () => {
         const testWorld = new World<CompTypes>();
+
+        // We need a system to verify entity matching, because entitiesByQuery is populated based on systems
+        testWorld.addSystem([FirstComponent], noop);
 
         const entity = testWorld.createEntity();
 
@@ -248,8 +252,8 @@ describe('World', () => {
         expect(cc.has(FirstComponent)).to.equal(true);
         expect(cc.size).to.equal(1);
 
-        for (const [key, val] of testWorld.entitiesByCTypes.entries()) {
-          expect(key[0]).to.equal('FirstComponent');
+        for (const [key, val] of testWorld.entitiesByQuery.entries()) {
+          expect(key).to.include('FirstComponent');
           expect(val.has(entity.id)).to.equal(true);
         }
       });
@@ -1053,7 +1057,7 @@ describe('World', () => {
         expect(restoredWorld.entities.size).to.equal(0);
       });
 
-      it('fromJSON creates new entities with new IDs (IDs are not preserved)', () => {
+      it('fromJSON creates new entities with preserved IDs', () => {
         const serialized = {
           resources: [],
           entities: [
@@ -1074,8 +1078,7 @@ describe('World', () => {
 
         expect(restoredWorld.entities.size).to.equal(1);
         const entity = Array.from(restoredWorld.entities.values())[0];
-        expect(entity.id).to.not.equal(999); // ID should NOT be preserved (new UUID generated)
-        expect(typeof entity.id).to.equal('number');
+        expect(entity.id).to.equal(999);
         expect(entity.hasTag('custom-id')).to.equal(true);
 
         const component = entity.get(SimpleComponent);

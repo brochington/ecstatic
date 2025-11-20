@@ -34,9 +34,9 @@ describe('Entity', () => {
 
   it('entity has correct id', () => {
     const testWorld = new World<CompTypes>();
-    const testEntity = new Entity<CompTypes>(testWorld, 1);
+    const testEntity = new Entity<CompTypes>(testWorld, 123);
 
-    expect(testEntity.id).to.equal(1);
+    expect(testEntity.id).to.equal(123);
   });
 
   describe('instance methods', () => {
@@ -66,12 +66,12 @@ describe('Entity', () => {
 
       expect(testEntity.has(FirstComponent)).to.equal(true);
       expect(testEntity.has(SecondComponent)).to.equal(true);
-      expect(testWorld.entitiesByCTypes.size).to.equal(1);
+      expect(testWorld.entitiesByQuery.size).to.equal(1);
 
-      // Testing to make sure World.entitiesByCType is dealt with correctly.
+      // Testing to make sure World.entitiesByQuery is dealt with correctly.
       let entitySet1 = new Set();
 
-      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+      for (const [ctArr, entitySet] of testWorld.entitiesByQuery) {
         //@ts-ignore
         if (
           ctArr.includes(FirstComponent.name) &&
@@ -90,27 +90,19 @@ describe('Entity', () => {
       expect(testEntity.has(SecondComponent)).to.equal(true);
 
       let entitySet2 = new Set();
-      let entitySet3 = new Set();
-      for (const [ctArr, entitySet] of testWorld.entitiesByCTypes) {
+      // The entity should no longer be in the query that requires both components
+      for (const [ctArr, entitySet] of testWorld.entitiesByQuery) {
         // @ts-ignore
         if (
           ctArr.includes(FirstComponent.name) &&
           ctArr.includes(SecondComponent.name)
         ) {
           entitySet2 = entitySet;
-          return;
-        }
-
-        // @ts-ignore
-        if (ctArr.includes(SecondComponent.name)) {
-          entitySet3 = entitySet;
         }
       }
 
       expect(entitySet2.size).to.equal(0);
       expect(entitySet2.has(testEntity.id)).to.equal(false);
-      expect(entitySet3.size).to.equal(1);
-      expect(entitySet3.has(testEntity.id)).to.equal(true);
     });
   });
 

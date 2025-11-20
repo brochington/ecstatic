@@ -1,5 +1,3 @@
-import { instanceToPlain, plainToInstance } from 'class-transformer';
-
 import Entity, { EntityId } from './Entity';
 import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
@@ -8,6 +6,8 @@ import DevTools from './DevTools';
 import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 import { EventListenerFunc, EventManager } from './EventManager';
+import { ComponentRegistry } from './ComponentRegistry';
+import { BitSet } from './BitSet';
 
 /**
  * A type representing a class constructor that may have a static `fromJSON` method.
@@ -69,14 +69,30 @@ interface SerializedWorld {
   }[];
 }
 
+/**
+ * Stores the requirements for a system query.
+ */
+interface SystemQuery {
+  mask: BitSet;
+  entities: Set<EntityId>;
+  key: string;
+}
+
 export default class World<CT> {
   componentCollections: Map<EntityId, ComponentCollection<CT>> = new Map();
 
   entities: Map<EntityId, Entity<CT>> = new Map();
 
-  entitiesByCTypes: Map<string, Set<EntityId>> = new Map();
+  // Maps a unique query Key (BitSet string) to the Set of Entities that match it.
+  entitiesByQuery: Map<string, Set<EntityId>> = new Map();
+
+  systemQueries: Map<string, SystemQuery> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
+
+  // Optimized state tracking
+  entitiesToCreate: Set<Entity<CT>> = new Set();
+  entitiesToDestroy: Set<Entity<CT>> = new Set();
 
   systems: Systems<CT>;
 
@@ -84,8 +100,11 @@ export default class World<CT> {
 
   events: EventManager<CT>;
 
-  #nextEntityId: EntityId = 0;
+  // Changed to private (soft private) to allow static method access
+  private nextEntityId = 0;
 
+  // Maps Component Name -> List of System Query Keys that use this component.
+  // Used to quickly identify which systems need to be checked when a component is added/removed.
   private componentToSystemQueries: Map<string, string[]> = new Map();
   private resources: Map<ClassConstructor<unknown>, unknown> = new Map();
   private prefabs: Map<string, PrefabDefinition<CT>> = new Map();
@@ -440,13 +459,28 @@ export default class World<CT> {
       throw new Error(`world.add: Unable to locate entity with id ${eid}`);
     }
 
+    // --- BITMASK OPTIMIZATION ---
+    // Update the Entity's mask directly. This is crucial if World.add is called directly.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const compId = ComponentRegistry.getId((component as any).constructor);
+    entity.componentMask.set(compId);
+
     cc.add(component);
 
     this.componentCollections.set(eid, cc);
 
-    for (const [ctArr, entitySet] of this.entitiesByCTypes) {
-      if (ctArr.split(',').every(name => cc.hasByName(name))) {
-        entitySet.add(eid);
+    // Update Queries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const componentName = (component as any).constructor.name;
+    const affectedQueries =
+      this.componentToSystemQueries.get(componentName) || [];
+
+    for (const queryKey of affectedQueries) {
+      const query = this.systemQueries.get(queryKey);
+      if (query) {
+        if (entity.componentMask.contains(query.mask)) {
+          query.entities.add(eid);
+        }
       }
     }
 
@@ -488,7 +522,6 @@ export default class World<CT> {
     const component = cc.get(cType);
     const entity = this.entities.get(eid);
     if (!entity) {
-      // This should ideally not happen if a component collection exists.
       return this;
     }
 
@@ -506,23 +539,23 @@ export default class World<CT> {
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
+    // --- BITMASK OPTIMIZATION ---
+    // Update mask
+    const compId = ComponentRegistry.getId(cType);
+    entity.componentMask.clear(compId);
+
+    // Remove entity from any system query that required this component
     const affectedQueryKeys =
       this.componentToSystemQueries.get(componentName) || [];
 
     for (const queryKey of affectedQueryKeys) {
-      const entitySet = this.entitiesByCTypes.get(queryKey);
-      if (entitySet) {
-        entitySet.delete(eid);
+      const query = this.systemQueries.get(queryKey);
+      if (query) {
+        query.entities.delete(eid);
       }
     }
 
     cc.remove(cType);
-
-    for (const [canonicalKey, entitySet] of this.entitiesByCTypes.entries()) {
-      if (canonicalKey.split(',').every(name => cc.hasByName(name))) {
-        entitySet.add(eid);
-      }
-    }
 
     entity.onComponentRemove({ world: this, component });
 
@@ -537,8 +570,26 @@ export default class World<CT> {
     systemFunc: SystemFunc<CT>,
     options: { phase?: string; name?: string } = {}
   ): this {
-    const cNames = cTypes.map(ct => ct.name).sort(); // Sort for consistency
-    const canonicalKey = cNames.join(','); // Create a stable string key
+    const cNames = cTypes.map(ct => ct.name).sort();
+    const canonicalKey = cNames.join(',');
+
+    // Create Mask for this System
+    const mask = new BitSet();
+    for (const cType of cTypes) {
+      const id = ComponentRegistry.getId(cType);
+      mask.set(id);
+    }
+
+    // Store Query Info
+    if (!this.systemQueries.has(canonicalKey)) {
+      const entities = new Set<EntityId>();
+      this.systemQueries.set(canonicalKey, {
+        mask,
+        entities,
+        key: canonicalKey,
+      });
+      this.entitiesByQuery.set(canonicalKey, entities);
+    }
 
     // Populate an inverted index for quick lookup of systems by component type.
     for (const componentName of cNames) {
@@ -553,6 +604,15 @@ export default class World<CT> {
     // Pass the canonical key to the Systems manager
     this.systems.add(cTypes, systemFunc, canonicalKey, options);
 
+    // RETROACTIVE MATCHING:
+    // Check existing entities to see if they match this new system.
+    const query = this.systemQueries.get(canonicalKey)!;
+    for (const entity of this.entities.values()) {
+      if (entity.componentMask.contains(mask)) {
+        query.entities.add(entity.id);
+      }
+    }
+
     return this;
   }
 
@@ -565,6 +625,8 @@ export default class World<CT> {
     this.componentCollections.set(entity.id, cc);
     this.entities.set(entity.id, entity);
 
+    this.entitiesToCreate.add(entity); // Add to creation queue
+
     entity.onCreate(this);
 
     return this;
@@ -576,9 +638,9 @@ export default class World<CT> {
   clearEntityComponents(entityId: EntityId): this {
     this.componentCollections.set(entityId, new ComponentCollection<CT>());
 
-    for (const entitySet of this.entitiesByCTypes.values()) {
-      if (entitySet.has(entityId)) {
-        entitySet.delete(entityId);
+    for (const query of this.systemQueries.values()) {
+      if (query.entities.has(entityId)) {
+        query.entities.delete(entityId);
       }
     }
 
@@ -587,10 +649,9 @@ export default class World<CT> {
 
   /**
    * Create an entity that is in the world.
-   * Basically just new Entity(world), but saves an import of Entity.
    */
   createEntity(): Entity<CT> {
-    const entityId = ++this.#nextEntityId;
+    const entityId = ++this.nextEntityId;
     const entity = new Entity(this, entityId);
 
     return entity;
@@ -610,10 +671,12 @@ export default class World<CT> {
     }
 
     this.entities.delete(entityId);
+    this.entitiesToCreate.delete(entity); // Ensure it doesn't try to create after destroy
+    this.entitiesToDestroy.delete(entity);
 
-    for (const entitySet of this.entitiesByCTypes.values()) {
-      if (entitySet.has(entityId)) {
-        entitySet.delete(entityId);
+    for (const query of this.systemQueries.values()) {
+      if (query.entities.has(entityId)) {
+        query.entities.delete(entityId);
       }
     }
 
@@ -638,7 +701,7 @@ export default class World<CT> {
   /**
    * Serializes the entire state of the world into a JSON-compatible object.
    * It will use a component/resource's `.toJSON()` method if it exists,
-   * otherwise it falls back to `class-transformer`'s `instanceToPlain`.
+   * otherwise it performs a shallow copy of the object's own properties.
    * @returns A plain object representing the world state.
    */
   toJSON(): SerializedWorld {
@@ -654,7 +717,7 @@ export default class World<CT> {
       };
       const data = serializableInstance.toJSON
         ? serializableInstance.toJSON()
-        : instanceToPlain(instance);
+        : { ...(instance as object) };
       serialized.resources.push({ name: constructor.name, data });
     }
 
@@ -668,7 +731,7 @@ export default class World<CT> {
           const componentWithToJSON = component as CT & ComponentLifecycle<CT>;
           const data = componentWithToJSON.toJSON
             ? componentWithToJSON.toJSON()
-            : instanceToPlain(component);
+            : { ...component };
           serializedComponents.push({
             name: (component as { constructor: { name: string } }).constructor
               .name,
@@ -707,17 +770,29 @@ export default class World<CT> {
           `Cannot hydrate resource: Class constructor for "${res.name}" not found in typeMapping.resources.`
         );
       }
-      const instance = ResourceClass.fromJSON
-        ? ResourceClass.fromJSON(res.data)
-        : plainToInstance(ResourceClass, res.data as object);
+      let instance;
+      if (ResourceClass.fromJSON) {
+        instance = ResourceClass.fromJSON(res.data);
+      } else {
+        instance = new ResourceClass();
+        Object.assign(instance as object, res.data);
+      }
       world.setResource(instance);
     }
 
     // Hydrate Entities and Components
+    // First pass: determine the highest entity ID to resume simple counter correctly.
+    let maxId = 0;
     for (const ent of serializedWorld.entities) {
-      const entity = world.createEntity();
-      // NOTE: We are not preserving entity IDs here to avoid potential collisions
-      // if merging worlds, but this could be changed if stable IDs are required.
+      if (typeof ent.id === 'number' && ent.id > maxId) {
+        maxId = ent.id;
+      }
+    }
+    world.nextEntityId = maxId;
+
+    for (const ent of serializedWorld.entities) {
+      // Use specific ID from serialization if possible
+      const entity = new Entity(world, ent.id);
 
       // Add tags
       for (const tag of ent.tags) {
@@ -732,9 +807,13 @@ export default class World<CT> {
             `Cannot hydrate component: Class constructor for "${comp.name}" not found in typeMapping.components.`
           );
         }
-        const instance = ComponentClass.fromJSON
-          ? ComponentClass.fromJSON(comp.data)
-          : plainToInstance(ComponentClass, comp.data as object);
+        let instance;
+        if (ComponentClass.fromJSON) {
+          instance = ComponentClass.fromJSON(comp.data);
+        } else {
+          instance = new ComponentClass();
+          Object.assign(instance as object, comp.data);
+        }
         entity.add(instance as CT);
       }
     }

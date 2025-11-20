@@ -1,12 +1,9 @@
-import Entity, { EntityId } from './Entity';
+import Entity from './Entity';
 import World, { ClassConstructor } from './World';
 import ComponentCollection from './ComponentCollection';
 
 /**
  * Arguments that are passed into a System function on each iteration.
- * This is how you acces things like the entity that particular entity to act on,
- * as well as some other helpful params like if the entity is the first or last entity
- * in the group of entities that being iterated over.
  */
 export interface SystemFuncArgs<CT> {
   /**
@@ -19,7 +16,6 @@ export interface SystemFuncArgs<CT> {
   components: ComponentCollection<CT>;
   /**
    * The World instance.
-   * Use this to access other entities.
    */
   world: World<CT>;
   /**
@@ -32,12 +28,10 @@ export interface SystemFuncArgs<CT> {
   size: number;
   /**
    * Is the first entity to be iterated on this run of a system.
-   * Helpful for setting up state that is the same for all entities only once.
    */
   isFirst: boolean;
   /**
    * Is the last entity to be iterated on this run of a system.
-   * Can be helpful to tear down anything that should be dealt with after all the entites have ran.
    */
   isLast: boolean;
   /**
@@ -77,7 +71,7 @@ export default class Systems<CT> {
   constructor(world: World<CT>) {
     this.world = world;
     this.compNamesBySystemName = new Map();
-    this.phases.set(DEFAULT_PHASE, []); // Initialize default phase for systems without a phase
+    this.phases.set(DEFAULT_PHASE, []);
   }
 
   setPhaseOrder(order: string[]): void {
@@ -101,10 +95,6 @@ export default class Systems<CT> {
 
     this.phases.get(phase)?.push({ func: systemFunc, name, key: canonicalKey });
     this.compNamesBySystemName.set(name, cNames);
-
-    if (!this.world.entitiesByCTypes.has(canonicalKey)) {
-      this.world.entitiesByCTypes.set(canonicalKey, new Set<EntityId>());
-    }
 
     return this;
   }
@@ -133,20 +123,22 @@ export default class Systems<CT> {
       );
     }
 
-    const entitiesToCreate: Entity<CT>[] = [];
-    const entitiesToDestroy: Entity<CT>[] = [];
-
-    for (const entity of this.world.entities.values()) {
-      if (entity.state === 'creating') {
-        entitiesToCreate.push(entity);
-      } else if (entity.state === 'destroying') {
-        entitiesToDestroy.push(entity);
-      }
-    }
+    // Optimization: Reuse arg object to reduce GC pressure
+    const systemArgs = {
+      entity: null as unknown as Entity<CT>,
+      components: null as unknown as ComponentCollection<CT>,
+      world: this.world,
+      index: 0,
+      size: 0,
+      isFirst: false,
+      isLast: false,
+      dt,
+      time,
+    };
 
     const runOrder = hasNamedPhaseSystems ? this.phaseOrder : [DEFAULT_PHASE];
 
-    // Add any custom phases defined by the user that are not in the default order to the end.
+    // Add any custom phases defined by the user that are not in the default order.
     for (const phaseName of this.phases.keys()) {
       if (phaseName !== DEFAULT_PHASE && !runOrder.includes(phaseName)) {
         runOrder.push(phaseName);
@@ -158,7 +150,7 @@ export default class Systems<CT> {
 
       for (const { func, key: canonicalKey } of systemsInPhase) {
         const entityIdSet =
-          this.world.entitiesByCTypes.get(canonicalKey) || new Set();
+          this.world.entitiesByQuery.get(canonicalKey) || new Set();
         const size = entityIdSet.size;
 
         if (size === 0) {
@@ -166,6 +158,8 @@ export default class Systems<CT> {
         }
 
         let index = 0;
+        systemArgs.size = size;
+
         for (const eid of entityIdSet) {
           const entity = this.world.entities.get(eid);
 
@@ -176,17 +170,11 @@ export default class Systems<CT> {
             this.world.componentCollections.get(eid) ||
             new ComponentCollection<CT>();
 
-          const systemArgs: SystemFuncArgs<CT> = {
-            entity,
-            components,
-            world: this.world,
-            index,
-            size,
-            isFirst: index === 0,
-            isLast: index + 1 === size,
-            dt,
-            time,
-          };
+          systemArgs.entity = entity;
+          systemArgs.components = components;
+          systemArgs.index = index;
+          systemArgs.isFirst = index === 0;
+          systemArgs.isLast = index + 1 === size;
 
           func(systemArgs);
 
@@ -198,12 +186,20 @@ export default class Systems<CT> {
       this.world.events.processQueueForPhase(phase);
     }
 
-    for (const entity of entitiesToCreate) {
-      entity.finishCreation();
+    // Efficiently process Entity Lifecycle state changes
+    // This avoids iterating the entire entity list every frame.
+    if (this.world.entitiesToCreate.size > 0) {
+      for (const entity of this.world.entitiesToCreate) {
+        entity.finishCreation();
+      }
+      this.world.entitiesToCreate.clear();
     }
 
-    for (const entity of entitiesToDestroy) {
-      entity.destroyImmediately();
+    if (this.world.entitiesToDestroy.size > 0) {
+      for (const entity of this.world.entitiesToDestroy) {
+        entity.destroyImmediately();
+      }
+      this.world.entitiesToDestroy.clear();
     }
   }
 }

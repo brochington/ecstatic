@@ -3,6 +3,7 @@ import ComponentCollection from './ComponentCollection';
 import { Tag } from './Tag';
 import DevEntity from './DevEntity';
 import SimpleFSM from './SimpleFSM';
+import { BitSet } from './BitSet';
 
 export type EntityId = number;
 
@@ -25,35 +26,41 @@ export interface ComponentLifecycleEventArgs<CT> {
 }
 
 export default class Entity<CT> {
-  #id: EntityId;
-  #world: World<CT>;
-  #error: Error | null;
-  #state: SimpleFSM<EntityState, EntityState>;
+  private _id: EntityId;
+  private _world: World<CT>;
+  private _componentMask: BitSet;
+  private _error: Error | null;
+  private _state: SimpleFSM<EntityState, EntityState>;
 
   get id(): EntityId {
-    return this.#id;
+    return this._id;
   }
 
   get world(): World<CT> {
-    return this.#world;
+    return this._world;
+  }
+
+  get componentMask(): BitSet {
+    return this._componentMask;
   }
 
   get state(): EntityState {
-    return this.#state.current;
+    return this._state.current;
   }
 
   constructor(world: World<CT>, id: EntityId) {
-    this.#id = id;
-    this.#world = world;
+    this._id = id;
+    this._world = world;
+    this._componentMask = new BitSet();
 
-    this.#error = null;
+    this._error = null;
 
     const fsmTransition = (ns: EntityState): EntityState => {
-      if (ns === 'error' || this.#error) return 'error';
+      if (ns === 'error' || this._error) return 'error';
       return ns;
     };
 
-    this.#state = new SimpleFSM<EntityState, EntityState>('creating', {
+    this._state = new SimpleFSM<EntityState, EntityState>('creating', {
       creating: fsmTransition,
       created: fsmTransition,
       destroying: fsmTransition,
@@ -64,10 +71,10 @@ export default class Entity<CT> {
     /*
     Registering with the World.
     */
-    this.#world.registerEntity(this);
+    this._world.registerEntity(this);
 
-    if (this.#world.systems.compNamesBySystemName.size === 0) {
-      this.#state.next('created');
+    if (this._world.systems.compNamesBySystemName.size === 0) {
+      this._state.next('created');
     }
   }
 
@@ -105,7 +112,9 @@ export default class Entity<CT> {
     if (!component) {
       throw new Error(`Entity.add: Component is null or undefined`);
     }
-    this.#world.add(this.#id, component);
+
+    // Note: World.add handles updating the BitSet mask now.
+    this._world.add(this._id, component);
 
     return this;
   }
@@ -114,13 +123,13 @@ export default class Entity<CT> {
    * Add a tag to a component
    */
   addTag(tag: Tag): this {
-    const entitySet = this.#world.entitiesByTags.has(tag)
-      ? this.#world.entitiesByTags.get(tag)
+    const entitySet = this._world.entitiesByTags.has(tag)
+      ? this._world.entitiesByTags.get(tag)
       : new Set<EntityId>();
 
     if (entitySet) {
-      entitySet.add(this.#id);
-      this.#world.entitiesByTags.set(tag, entitySet);
+      entitySet.add(this._id);
+      this._world.entitiesByTags.set(tag, entitySet);
     }
 
     return this;
@@ -131,7 +140,7 @@ export default class Entity<CT> {
    */
   has<T extends CT>(cType: ClassConstructor<T>): boolean {
     const cc =
-      this.#world.componentCollections.get(this.#id) ||
+      this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
 
     return cc.has(cType);
@@ -142,7 +151,7 @@ export default class Entity<CT> {
    */
   hasSome<T extends CT>(cTypes: ClassConstructor<T>[]): boolean {
     const cc =
-      this.#world.componentCollections.get(this.#id) ||
+      this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
 
     return cc.has(cTypes);
@@ -152,10 +161,10 @@ export default class Entity<CT> {
    * Check to see if an entity tagged with a given tag.
    */
   hasTag(tag: Tag): boolean {
-    if (this.#world.entitiesByTags.has(tag)) {
-      const entitySet = this.#world.entitiesByTags.get(tag);
+    if (this._world.entitiesByTags.has(tag)) {
+      const entitySet = this._world.entitiesByTags.get(tag);
       if (entitySet) {
-        return entitySet.has(this.#id);
+        return entitySet.has(this._id);
       }
     }
 
@@ -167,12 +176,10 @@ export default class Entity<CT> {
    */
   get<T extends CT>(cl: ClassConstructor<T>): T {
     const cc =
-      this.#world.componentCollections.get(this.#id) ||
+      this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>();
 
-    const component = cc.get<T>(cl);
-
-    return component;
+    return cc.get<T>(cl);
   }
 
   /**
@@ -180,7 +187,7 @@ export default class Entity<CT> {
    */
   getAll(): ComponentCollection<CT> {
     return (
-      this.#world.componentCollections.get(this.#id) ||
+      this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>()
     );
   }
@@ -190,7 +197,8 @@ export default class Entity<CT> {
    * @param cType A component class, eg MyComponent
    */
   remove(cType: ClassConstructor<CT>): this {
-    this.#world.remove(this.#id, cType);
+    // Note: World.remove handles updating the BitSet mask now.
+    this._world.remove(this._id, cType);
 
     return this;
   }
@@ -199,14 +207,14 @@ export default class Entity<CT> {
    * Remove a tag from an entity
    */
   removeTag(tag: Tag): this {
-    if (this.#world.entitiesByTags.has(tag)) {
-      const entitySet = this.#world.entitiesByTags.get(tag);
+    if (this._world.entitiesByTags.has(tag)) {
+      const entitySet = this._world.entitiesByTags.get(tag);
 
       if (entitySet) {
-        entitySet.delete(this.#id);
+        entitySet.delete(this._id);
 
         if (entitySet.size === 0) {
-          this.#world.entitiesByTags.delete(tag);
+          this._world.entitiesByTags.delete(tag);
         }
       }
     }
@@ -215,7 +223,9 @@ export default class Entity<CT> {
 
   /** Clears all components from an Entity */
   clear(): this {
-    this.#world.clearEntityComponents(this.#id);
+    this._world.clearEntityComponents(this._id);
+    // Reset mask locally
+    this._componentMask = new BitSet();
 
     return this;
   }
@@ -224,11 +234,11 @@ export default class Entity<CT> {
    * Remove all tags on an entity
    */
   clearTags(): this {
-    for (const [tag, entitySet] of this.#world.entitiesByTags.entries()) {
-      entitySet.delete(this.#id);
+    for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
+      entitySet.delete(this._id);
 
       if (entitySet.size === 0) {
-        this.#world.entitiesByTags.delete(tag);
+        this._world.entitiesByTags.delete(tag);
       }
     }
 
@@ -239,7 +249,7 @@ export default class Entity<CT> {
    * Sets the state of the entity to 'created'. that's it.
    */
   finishCreation(): void {
-    this.#state.next('created');
+    this._state.next('created');
   }
 
   /**
@@ -248,24 +258,25 @@ export default class Entity<CT> {
    */
   destroy(): void {
     // If no systems are added, the destroy immediately.
-    if (this.#world.systems.compNamesBySystemName.size === 0) {
+    if (this._world.systems.compNamesBySystemName.size === 0) {
       this.destroyImmediately();
       return;
     }
 
     // Mark as "destroying" so that systems can act on it before actually being destroyed.
-    this.#state.next('destroying');
+    this._state.next('destroying');
+    this._world.entitiesToDestroy.add(this); // Notify World
   }
 
   destroyImmediately(): void {
     // Right now calling before the actual destorying of the entity.
     // Might want to change this to post destruction in the future, who knows.
-    this.onDestroy(this.#world);
+    this.onDestroy(this._world);
 
     // Actually destroy entity.
-    this.#world.destroyEntity(this.#id); // should return an error??
+    this._world.destroyEntity(this._id); // should return an error??
 
-    this.#state.next('destroyed');
+    this._state.next('destroyed');
   }
 
   /**
@@ -274,7 +285,7 @@ export default class Entity<CT> {
    */
   get components(): ComponentCollection<CT> {
     return (
-      this.#world.componentCollections.get(this.#id) ||
+      this._world.componentCollections.get(this._id) ||
       new ComponentCollection<CT>()
     );
   }
@@ -284,8 +295,8 @@ export default class Entity<CT> {
    */
   get tags(): Set<Tag> {
     const tags = new Set<Tag>();
-    for (const [tag, entitySet] of this.#world.entitiesByTags.entries()) {
-      if (entitySet.has(this.#id)) {
+    for (const [tag, entitySet] of this._world.entitiesByTags.entries()) {
+      if (entitySet.has(this._id)) {
         tags.add(tag);
       }
     }
@@ -297,6 +308,6 @@ export default class Entity<CT> {
    * Convert Entity to a DevEntity. Very helpful in for debugging.
    */
   toDevEntity(): DevEntity<CT> {
-    return new DevEntity<CT>(this, this.#world);
+    return new DevEntity<CT>(this, this._world);
   }
 }
