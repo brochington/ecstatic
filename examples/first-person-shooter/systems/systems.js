@@ -90,12 +90,12 @@ export function playerMovementSystem({ world, dt }) {
   velocity.x *= Math.pow(0.95, dtScale);
   velocity.z *= Math.pow(0.95, dtScale);
 
-  const speed = 0.02 * dtScale;
+  const speed = 0.04 * dtScale;
   const direction = new THREE.Vector3();
 
   // Handle desktop controls
   if (!mobileControls || !mobileControls.isMobile) {
-    // FIX: Get direction relative to the Camera (which rotates via PointerLock),
+    // Get direction relative to the Camera (which rotates via PointerLock),
     // not the player mesh (which stays static on Y axis in desktop mode).
     const camera = controls.pointerLock.getObject();
 
@@ -141,7 +141,7 @@ export function playerMovementSystem({ world, dt }) {
     }
   }
 
-  const maxSpeed = 0.2; // Max speed is absolute, doesn't need scaling if applied to current velocity
+  const maxSpeed = 0.4; // Max speed is absolute, doesn't need scaling if applied to current velocity
   if (new THREE.Vector2(velocity.x, velocity.z).length() > maxSpeed) {
     const yVel = velocity.y;
     velocity.y = 0;
@@ -1400,6 +1400,117 @@ export function uiRenderSystem({ world }) {
 
   // Update minimap
   updateMinimap(world);
+
+  // Update compass
+  updateCompass(world);
+}
+
+function updateCompass(world) {
+  const controls = world.getResource(Controls);
+  const compassStrip = document.getElementById('compass-strip');
+
+  if (!controls || !compassStrip) return;
+
+  // Initialize if empty
+  if (compassStrip.children.length === 0) {
+    const pixelsPerDegree = 4;
+    const step = 15;
+
+    // Create ticks for range -180 to 540 (covers 0-360 with padding on both sides)
+    for (let deg = -180; deg < 540; deg += step) {
+      const tick = document.createElement('div');
+      tick.className = 'compass-tick';
+
+      // Shift by 180 degrees so 0 starts at 180*4 = 720px
+      tick.style.left = `${(deg + 180) * pixelsPerDegree}px`;
+
+      // Determine label
+      let labelText = '';
+      let isMajor = false;
+      let isCardinal = false;
+
+      // Normalize degree for label (0-360)
+      let normalizedDeg = deg % 360;
+      if (normalizedDeg < 0) normalizedDeg += 360;
+
+      if (normalizedDeg === 0) {
+        labelText = 'N';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 45) {
+        labelText = 'NE';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 90) {
+        labelText = 'E';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 135) {
+        labelText = 'SE';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 180) {
+        labelText = 'S';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 225) {
+        labelText = 'SW';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 270) {
+        labelText = 'W';
+        isMajor = true;
+        isCardinal = true;
+      } else if (normalizedDeg === 315) {
+        labelText = 'NW';
+        isMajor = true;
+        isCardinal = true;
+      } else {
+        labelText = normalizedDeg.toString();
+      }
+
+      if (isMajor) {
+        tick.classList.add('major');
+      }
+
+      const label = document.createElement('div');
+      label.className = 'compass-label';
+      if (isCardinal) label.classList.add('cardinal');
+      label.textContent = labelText;
+      tick.appendChild(label);
+
+      compassStrip.appendChild(tick);
+    }
+  }
+
+  // Update rotation
+  const camera = controls.pointerLock.getObject();
+  const vector = new THREE.Vector3();
+  camera.getWorldDirection(vector);
+  // atan2(x, z) gives angle relative to North (-Z) in typical Three.js FPS
+  // 0,-1 -> PI (180)
+  // 1,0 -> PI/2 (90)
+  // 0,1 -> 0
+  // -1,0 -> -PI/2 (-90)
+  // We want N=0, E=90, S=180, W=270.
+  // Formula: 180 - radToDeg(theta) maps correctly.
+  // (0,-1) -> 180 - 180 = 0
+  // (1,0) -> 180 - 90 = 90
+  // (0,1) -> 180 - 0 = 180
+  // (-1,0) -> 180 - (-90) = 270
+  let deg = 180 - THREE.MathUtils.radToDeg(Math.atan2(vector.x, vector.z));
+
+  // Normalize to 0-360
+  deg = (deg + 360) % 360;
+
+  // Calculate offset
+  const pixelsPerDegree = 4;
+  const containerCenter = compassStrip.parentElement.clientWidth / 2;
+  // Our tick for 'deg' is at (deg + 180) * pixelsPerDegree
+  const targetPos = (deg + 180) * pixelsPerDegree;
+  const offset = containerCenter - targetPos;
+
+  compassStrip.style.transform = `translateX(${offset}px)`;
 }
 
 function updateMinimap(world) {
@@ -1452,7 +1563,7 @@ function updateMinimap(world) {
     }
   }
 
-  const mapSize = 60; // Minimap size in pixels (matches CSS scaling)
+  const mapSize = minimap.clientWidth; // Minimap size in pixels (matches CSS scaling)
 
   // Update player position on minimap
   if (player.has(ThreeObject)) {

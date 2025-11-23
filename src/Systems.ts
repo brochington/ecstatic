@@ -239,6 +239,8 @@ export default class Systems<CT> {
       }
       this.world.entitiesToDestroy.clear();
     }
+
+    this.world.events.clearQueue();
   }
 }
 

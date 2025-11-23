@@ -550,7 +550,7 @@ export function spawnScout(world) {
   }
 
   const enemyGeo = assets.geometries.scout;
-  const enemyMat = assets.materials.scout;
+  const enemyMat = assets.materials.scout.clone();
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -617,7 +617,7 @@ export function spawnTank(world) {
   }
 
   const enemyGeo = assets.geometries.tank;
-  const enemyMat = assets.materials.tank;
+  const enemyMat = assets.materials.tank.clone();
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -684,7 +684,7 @@ export function spawnSniper(world) {
   }
 
   const enemyGeo = assets.geometries.sniper;
-  const enemyMat = assets.materials.sniper;
+  const enemyMat = assets.materials.sniper.clone();
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -751,7 +751,7 @@ export function spawnEnemy(world) {
   }
 
   const enemyGeo = assets.geometries.enemy;
-  const enemyMat = assets.materials.enemy;
+  const enemyMat = assets.materials.enemy.clone();
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);

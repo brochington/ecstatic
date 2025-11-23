@@ -166,12 +166,96 @@
       #minimap-container {
         position: absolute;
         top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 20px;
+        /* transform: translateX(-50%); Removed for Top-Left positioning */
         background: rgba(0, 0, 0, 0.7);
         padding: 10px;
         border-radius: 5px;
         border: 2px solid #333;
+      }
+
+      /* Compass */
+      #compass-container {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 400px;
+        height: 60px;
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0.6) 20%,
+          rgba(0, 0, 0, 0.6) 80%,
+          rgba(0, 0, 0, 0) 100%
+        );
+        overflow: hidden;
+        pointer-events: none;
+        mask-image: linear-gradient(
+          to right,
+          transparent,
+          black 20%,
+          black 80%,
+          transparent
+        );
+        -webkit-mask-image: linear-gradient(
+          to right,
+          transparent,
+          black 20%,
+          black 80%,
+          transparent
+        );
+      }
+
+      #compass-arrow {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #ff4444;
+        font-size: 20px;
+        z-index: 10;
+        text-shadow: 0 0 5px black;
+      }
+
+      #compass-strip {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        will-change: transform;
+      }
+
+      .compass-tick {
+        position: absolute;
+        top: 15px;
+        width: 2px;
+        height: 10px;
+        background-color: rgba(255, 255, 255, 0.5);
+        transform: translateX(-50%);
+      }
+
+      .compass-tick.major {
+        top: 10px;
+        height: 15px;
+        width: 2px;
+        background-color: white;
+      }
+
+      .compass-label {
+        position: absolute;
+        top: 28px;
+        transform: translateX(-50%);
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px black;
+      }
+
+      .compass-label.cardinal {
+        font-size: 16px;
+        color: #ffff44;
+        top: 25px;
       }
 
       #minimap {
@@ -589,11 +673,17 @@
         <div>Collectables: <span id="collectables">0/20</span></div>
       </div>
 
-      <!-- Minimap (Top Center) -->
+      <!-- Minimap (Top Left) -->
       <div id="minimap-container">
         <div id="minimap">
           <div class="minimap-player"></div>
         </div>
+      </div>
+
+      <!-- Compass (Top Center) -->
+      <div id="compass-container">
+        <div id="compass-arrow">▼</div>
+        <div id="compass-strip"></div>
       </div>
 
       <!-- Damage Indicators Container -->
@@ -637,10 +727,11 @@
       </div>
     </div>
 
+    <!-- "ecstatic": "../../dist/ecstatic.esm.js", -->
     <script type="importmap">
       {
         "imports": {
-          "ecstatic": "../../dist/ecstatic.esm.js",
+          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.13/dist/ecstatic.esm.js",
           "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
         }

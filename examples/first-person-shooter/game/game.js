@@ -265,10 +265,10 @@ function initializeGame(world) {
   const positions = groundGeo.attributes.position;
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
-    const z = positions.getZ(i);
+    const y = positions.getY(i);
     // Create subtle rolling hills
-    const height = Math.sin(x * 0.01) * Math.cos(z * 0.01) * 0.2;
-    positions.setY(i, height);
+    const height = Math.sin(x * 0.01) * Math.cos(y * 0.01) * 0.2;
+    positions.setZ(i, height);
   }
   groundGeo.computeVertexNormals();
 
@@ -636,14 +636,14 @@ function setupInput(world) {
     threeScene.renderer.setSize(renderWidth, renderHeight);
   });
 
-  gameOverScreen.addEventListener('click', () => {
+  gameOverScreen.onclick = () => {
     const gameStateEntity = world.locate(GameState);
     if (!gameStateEntity) return;
     const gameState = gameStateEntity.get(GameState);
     if (gameState.isGameOver) {
       resetGame(world);
     }
-  });
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -683,8 +683,14 @@ function resetGame(world) {
   }
 }
 
-function gameLoop(world) {
+let lastTime = 0;
+window.gameSpeed = 1.0;
+
+function gameLoop(world, currentTime = 0) {
   try {
+    const dt = currentTime - lastTime;
+    lastTime = currentTime;
+
     const gameStateEntity = world.locate(GameState);
     if (gameStateEntity) {
       const gameState = gameStateEntity.get(GameState);
@@ -696,7 +702,9 @@ function gameLoop(world) {
           world,
         });
       } else {
-        world.systems.run();
+        // Cap dt to avoid spiral of death on lag spikes
+        const cappedDt = Math.min(dt, 100) * window.gameSpeed;
+        world.systems.run({ dt: cappedDt });
       }
     }
   } catch (error) {
@@ -705,7 +713,7 @@ function gameLoop(world) {
     // Continue the loop even if there's an error so we can debug
   }
 
-  requestAnimationFrame(() => gameLoop(world));
+  requestAnimationFrame((time) => gameLoop(world, time));
 }
 
 function setupEventListeners(world) {
