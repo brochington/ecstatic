@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.4.11",
+  "version": "0.4.13",
   "description": "a damn fine ECS library",
   "main": "dist/ecstatic.cjs.js",
   "module": "dist/ecstatic.esm.js",
@@ -8,13 +8,15 @@
     ".": {
       "types": "./ecstatic.d.ts",
       "browser": "./dist/ecstatic.umd.js",
-      "import": "./dist/ecstatic.cjs.js",
+      "import": "./dist/ecstatic.esm.js",
       "require": "./dist/ecstatic.cjs.js"
     }
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && NODE_ENV=production rspack --config rspack.config.mjs",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs-umd",
+    "build:esm": "esbuild src/index.ts --bundle --format=esm --outfile=dist/ecstatic.esm.js --minify --sourcemap",
+    "build:cjs-umd": "NODE_ENV=production rspack --config rspack.config.mjs",
     "build:dev": "npm run clean && rspack --config rspack.config.mjs",
     "dev": "npm run clean && rspack --config rspack.config.mjs --watch",
     "test": "npm run build && vitest",
@@ -66,6 +68,7 @@
     "@typescript-eslint/eslint-plugin": "^8.44.1",
     "@typescript-eslint/parser": "^8.44.1",
     "@vitest/ui": "^3.2.4",
+    "esbuild": "^0.27.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",

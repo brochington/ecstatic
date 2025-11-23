@@ -77,40 +77,27 @@ const umdConfig = {
 };
 
 // ESM build (for modern bundlers)
-// const esmConfig = {
-//   ...baseConfig,
-//   experiments: {
-//     outputModule: true,
-//   },
-//   output: {
-//     filename: 'ecstatic.esm.js',
-//     module: true,
-//     chunkFormat: 'module',
-//     chunkLoading: 'import',
-//     path: path.resolve(process.cwd(), 'dist'),
-//     library: {
-//       type: 'modern-module',
-//     },
-//     clean: false,
-//     globalObject: 'globalThis',
-//   },
-//   externalsType: 'module-import',
-//   externals: isProduction ? {
-//     // Externalize dependencies for cleaner ESM output
-//     'class-transformer': 'class-transformer',
-//     'uuid': 'uuid',
-//   } : {},
-//   optimization: {
-//     concatenateModules: true,
-//     sideEffects: 'flag',
-//     avoidEntryIife: true,
-//     runtimeChunk: false,
-//     splitChunks: {
-//       chunks: 'async',
-//     },
-//     minimize: false,
-//   },
-// };
+const esmConfig = {
+  ...baseConfig,
+  experiments: {
+    outputModule: true,
+  },
+  output: {
+    filename: 'ecstatic.esm.js',
+    path: path.resolve(process.cwd(), 'dist'),
+    library: {
+      type: 'module',
+    },
+    module: true,
+    clean: false,
+  },
+  externalsType: isProduction ? 'module-import' : undefined,
+  externals: isProduction ? {
+    // Externalize dependencies for cleaner ESM output
+    'class-transformer': 'class-transformer',
+    'uuid': 'uuid',
+  } : {},
+};
 
 // CommonJS build (for Node.js)
 const cjsConfig = {

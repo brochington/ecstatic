@@ -11,11 +11,15 @@ describe('Package Exports', () => {
   beforeAll(async () => {
     // Ensure dist files exist before running tests
     const distPath = path.join(process.cwd(), 'dist');
-    // const esmPath = path.join(distPath, 'ecstatic.esm.js');
+    const esmPath = path.join(distPath, 'ecstatic.esm.js');
     const cjsPath = path.join(distPath, 'ecstatic.cjs.js');
     const umdPath = path.join(distPath, 'ecstatic.umd.js');
 
-    if (!fs.existsSync(cjsPath) || !fs.existsSync(umdPath)) {
+    if (
+      !fs.existsSync(esmPath) ||
+      !fs.existsSync(cjsPath) ||
+      !fs.existsSync(umdPath)
+    ) {
       throw new Error(
         'Build files not found. Please run "npm run build" before running these tests.'
       );
@@ -56,6 +60,30 @@ describe('Package Exports', () => {
       expect(umdContent).to.include('World');
       expect(umdContent).to.include('Entity');
       expect(umdContent).to.include('trackComponent');
+    });
+  });
+
+  describe('ESM Build', () => {
+    it('should export World, Entity, and trackComponent from ESM build', async () => {
+      // Import from the built ESM file
+      const esmPath = path.join(process.cwd(), 'dist', 'ecstatic.esm.js');
+      const esmUrl = `file://${esmPath}`;
+      const ecstatic = await import(esmUrl);
+
+      expect(ecstatic).to.have.property('World');
+      expect(ecstatic).to.have.property('Entity');
+      expect(ecstatic).to.have.property('trackComponent');
+
+      expect(ecstatic.World).to.be.a('function');
+      expect(ecstatic.Entity).to.be.a('function');
+      expect(ecstatic.trackComponent).to.be.a('function');
+
+      // Test basic functionality
+      const world = new ecstatic.World();
+      const entity = world.createEntity();
+
+      expect(world).to.be.instanceof(ecstatic.World);
+      expect(entity).to.be.instanceof(ecstatic.Entity);
     });
   });
 
