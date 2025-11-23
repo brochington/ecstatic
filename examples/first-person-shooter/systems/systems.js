@@ -1146,65 +1146,70 @@ export function deathSystem({ world, entity, components }) {
 export function damageSystem({ event: collision, world }) {
   const { entityA: bullet, entityB: target } = collision;
 
-  if (bullet.state !== 'created' || target.state !== 'created') return;
+  // Verify entities and components still exist
+  if (!bullet || !target) return;
+  if (!bullet.has(Projectile)) return;
+  if (!target.has(Health)) return;
 
-  if (target.has(Health)) {
-    const targetHealth = target.get(Health);
-    const projectile = bullet.get(Projectile);
-    let damage = projectile.damage;
+  const targetHealth = target.get(Health);
+  const projectile = bullet.get(Projectile);
+  let damage = projectile.damage;
 
-    // Apply damage to armor first if player has armor
-    if (target.hasTag(Player) && target.has(Armor)) {
-      const armor = target.get(Armor);
-      if (armor.value > 0) {
-        const armorDamage = Math.min(damage, armor.value);
-        armor.value -= armorDamage;
-        damage -= armorDamage;
-      }
-
-      // Reset armor regeneration timer when player takes damage
-      if (target.has(ArmorRegeneration)) {
-        const regen = target.get(ArmorRegeneration);
-        regen.damageTimer = 0;
-        regen.isRegenerating = false;
-      }
+  // Apply damage to armor first if player has armor
+  if (target.hasTag(Player) && target.has(Armor)) {
+    const armor = target.get(Armor);
+    if (armor.value > 0) {
+      const armorDamage = Math.min(damage, armor.value);
+      armor.value -= armorDamage;
+      damage -= armorDamage;
     }
 
-    targetHealth.value -= damage;
-
-    // Add hit flash effect for enemies
-    if (
-      target.hasTag(Enemy) ||
-      target.hasTag(Scout) ||
-      target.hasTag(Tank) ||
-      target.hasTag(Sniper)
-    ) {
-      // Remove any existing hit flash
-      if (target.has(HitFlash)) {
-        target.remove(HitFlash);
-      }
-      target.add(new HitFlash());
-    }
-
-    if (target.hasTag(Player)) {
-      world.events.emit(new PlayerDamagedEvent());
-
-      // Create damage indicator
-      if (damage > 0) {
-        // Calculate direction from player to bullet
-        const playerPos = target.get(ThreeObject).mesh.position;
-        const bulletPos = bullet.get(ThreeObject).mesh.position;
-        const direction = Math.atan2(
-          bulletPos.x - playerPos.x,
-          bulletPos.z - playerPos.z
-        );
-        world.createEntity().add(new DamageIndicator(direction, damage));
-      }
+    // Reset armor regeneration timer when player takes damage
+    if (target.has(ArmorRegeneration)) {
+      const regen = target.get(ArmorRegeneration);
+      regen.damageTimer = 0;
+      regen.isRegenerating = false;
     }
   }
 
-  const position = bullet.get(ThreeObject).mesh.position;
-  createExplosion(world, position, 0xffffff, 5);
+  targetHealth.value -= damage;
+
+  // Add hit flash effect for enemies
+  if (
+    target.hasTag(Enemy) ||
+    target.hasTag(Scout) ||
+    target.hasTag(Tank) ||
+    target.hasTag(Sniper)
+  ) {
+    // Remove any existing hit flash
+    if (target.has(HitFlash)) {
+      target.remove(HitFlash);
+    }
+    target.add(new HitFlash());
+  }
+
+  if (target.hasTag(Player)) {
+    world.events.emit(new PlayerDamagedEvent());
+
+    // Create damage indicator
+    if (damage > 0) {
+      // Calculate direction from player to bullet
+      const playerPos = target.get(ThreeObject).mesh.position;
+      const bulletPos = bullet.get(ThreeObject).mesh.position;
+      const direction = Math.atan2(
+        bulletPos.x - playerPos.x,
+        bulletPos.z - playerPos.z
+      );
+      world.createEntity().add(new DamageIndicator(direction, damage));
+    }
+  }
+
+  // Create explosion effect if bullet still has ThreeObject
+  if (bullet.has(ThreeObject)) {
+    const position = bullet.get(ThreeObject).mesh.position;
+    createExplosion(world, position, 0xffffff, 5);
+  }
+
   bullet.destroy();
 }
 
@@ -1358,7 +1363,10 @@ function updateMinimap(world) {
   existingDots.forEach(dot => dot.remove());
 
   const entityDetails = [];
-  for (const entity of world.entities.values()) {
+  for (const entity of world.entities) {
+    // Skip undefined entities (holes in the array from deleted entities)
+    if (!entity) continue;
+
     const details = [];
     if (entity.has(Obstacle)) {
       details.push('Obstacle');
@@ -1412,7 +1420,10 @@ function updateMinimap(world) {
   // Add enemy positions - collect all enemy types
   const enemyTags = [Enemy, Scout, Tank, Sniper];
   const enemies = [];
-  for (const entity of world.entities.values()) {
+  for (const entity of world.entities) {
+    // Skip undefined entities (holes in the array from deleted entities)
+    if (!entity) continue;
+
     for (const tag of enemyTags) {
       if (entity.has(tag)) {
         enemies.push(entity);
@@ -1448,7 +1459,10 @@ function updateMinimap(world) {
 
   // Add obstacle positions (terrain)
   const obstacles = [];
-  for (const entity of world.entities.values()) {
+  for (const entity of world.entities) {
+    // Skip undefined entities (holes in the array from deleted entities)
+    if (!entity) continue;
+
     if (entity.has(Obstacle)) {
       obstacles.push(entity);
     }
@@ -1478,9 +1492,12 @@ function updateMinimap(world) {
   });
 
   // Add pickup positions
-  const pickups = world.entities.values();
+  const pickups = world.entities;
 
   for (const entity of pickups) {
+    // Skip undefined entities (holes in the array from deleted entities)
+    if (!entity) continue;
+
     if (entity.has(ThreeObject)) {
       let dotClass = '';
       let shouldShow = false;
@@ -1654,7 +1671,10 @@ export function cleanupSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
 
-  for (const entity of world.entities.values()) {
+  for (const entity of world.entities) {
+    // Skip undefined entities (holes in the array from deleted entities)
+    if (!entity) continue;
+
     if (entity.state === 'destroying') {
       if (entity.has(ThreeObject)) {
         const threeObject = entity.get(ThreeObject);

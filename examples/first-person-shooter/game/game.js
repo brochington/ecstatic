@@ -31,6 +31,7 @@ import {
   HitFlash,
   Collectable,
   Boulder,
+  Expires,
 } from '../components/components.js';
 import {
   PlayerHealedEvent,
@@ -128,7 +129,7 @@ function registerSystems(world) {
   world.addSystem([GameState], collectableSpawnerSystem, {
     phase: 'Logic',
   });
-  world.addSystem([lifecycleSystem], lifecycleSystem, {
+  world.addSystem([Expires], lifecycleSystem, {
     phase: 'Logic',
   });
   world.addSystem([Collider, ThreeObject], updateCollidersSystem, {
@@ -679,20 +680,27 @@ function resetGame(world) {
 }
 
 function gameLoop(world) {
-  const gameStateEntity = world.locate(GameState);
-  if (gameStateEntity) {
-    const gameState = gameStateEntity.get(GameState);
-    if (gameState.isGameOver) {
-      rendererSystem({
-        world,
-      });
-      uiRenderSystem({
-        world,
-      });
-    } else {
-      world.systems.run();
+  try {
+    const gameStateEntity = world.locate(GameState);
+    if (gameStateEntity) {
+      const gameState = gameStateEntity.get(GameState);
+      if (gameState.isGameOver) {
+        rendererSystem({
+          world,
+        });
+        uiRenderSystem({
+          world,
+        });
+      } else {
+        world.systems.run();
+      }
     }
+  } catch (error) {
+    console.error('ERROR in gameLoop:', error);
+    console.error('Stack trace:', error.stack);
+    // Continue the loop even if there's an error so we can debug
   }
+
   requestAnimationFrame(() => gameLoop(world));
 }
 
