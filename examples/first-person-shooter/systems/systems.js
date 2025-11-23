@@ -57,6 +57,7 @@ import {
   createExplosion,
   createRocketExplosion,
   createFlameThrowerBlast,
+  applySplashDamage,
   spawnEnemy,
   spawnScout,
   spawnTank,
@@ -73,85 +74,86 @@ import { sceneSize } from '../game/game.js';
 /*                                   SYSTEMS                                  */
 /* -------------------------------------------------------------------------- */
 
-export function playerMovementSystem({ world }) {
+export function playerMovementSystem({ world, dt }) {
   const input = world.getResource(InputState);
   const playerEntity = world.getTagged(Player);
   const controls = world.getResource(Controls);
   const mobileControls = world.getResource(MobileControls);
   if (!input || !playerEntity || !controls) return;
 
+  const dtScale = dt / 16.66667;
+
   const velocity = playerEntity.get(Velocity);
   const threeObject = playerEntity.get(ThreeObject);
 
-  velocity.y -= 0.01;
-  velocity.x *= 0.95;
-  velocity.z *= 0.95;
+  velocity.y -= 0.01 * dtScale;
+  velocity.x *= Math.pow(0.95, dtScale);
+  velocity.z *= Math.pow(0.95, dtScale);
 
-  const speed = 0.02;
+  const speed = 0.02 * dtScale;
   const direction = new THREE.Vector3();
 
   // Handle desktop controls
   if (!mobileControls || !mobileControls.isMobile) {
-    // Create a temporary matrix with only the player's horizontal rotation
-    // (excluding camera's vertical rotation for proper movement)
-    const playerRotationMatrix = new THREE.Matrix4();
-    playerRotationMatrix.makeRotationY(threeObject.mesh.rotation.y);
+    // FIX: Get direction relative to the Camera (which rotates via PointerLock),
+    // not the player mesh (which stays static on Y axis in desktop mode).
+    const camera = controls.pointerLock.getObject();
+
+    // Get forward vector from camera, flatten to ground (y=0), and normalize
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    forward.normalize();
+
+    // Calculate right vector
+    const right = new THREE.Vector3();
+    right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
     if (input.forward) {
-      direction.set(0, 0, -1); // Forward in local space
-      direction.applyMatrix4(playerRotationMatrix);
-      velocity.add(direction.multiplyScalar(speed));
+      velocity.add(forward.multiplyScalar(speed));
     }
     if (input.backward) {
-      direction.set(0, 0, -1); // Forward in local space
-      direction.applyMatrix4(playerRotationMatrix);
-      velocity.sub(direction.multiplyScalar(speed));
+      velocity.sub(forward.multiplyScalar(speed));
     }
     if (input.right) {
-      direction.set(1, 0, 0); // Right in local space
-      direction.applyMatrix4(playerRotationMatrix);
-      velocity.add(direction.multiplyScalar(speed));
+      velocity.add(right.multiplyScalar(speed));
     }
     if (input.left) {
-      direction.set(1, 0, 0); // Right in local space
-      direction.applyMatrix4(playerRotationMatrix);
-      velocity.sub(direction.multiplyScalar(speed));
+      velocity.sub(right.multiplyScalar(speed));
     }
   } else {
     // Handle mobile virtual joystick
     const movementVector = mobileControls.getMovementVector();
 
     if (movementVector.x !== 0 || movementVector.y !== 0) {
-      // Create a temporary matrix with only the player's horizontal rotation
-      // (excluding camera's vertical rotation for proper movement)
       const playerRotationMatrix = new THREE.Matrix4();
       playerRotationMatrix.makeRotationY(threeObject.mesh.rotation.y);
 
-      // Forward/backward movement relative to player's facing direction
-      direction.set(0, 0, -1); // Forward in local space
+      // Forward/backward
+      direction.set(0, 0, -1);
       direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed * -movementVector.y));
 
-      // Left/right movement (strafing) relative to player's facing direction
-      direction.set(1, 0, 0); // Right in local space
+      // Left/right
+      direction.set(1, 0, 0);
       direction.applyMatrix4(playerRotationMatrix);
       velocity.add(direction.multiplyScalar(speed * movementVector.x));
     }
   }
 
-  const maxSpeed = 0.2;
+  const maxSpeed = 0.2; // Max speed is absolute, doesn't need scaling if applied to current velocity
   if (new THREE.Vector2(velocity.x, velocity.z).length() > maxSpeed) {
     const yVel = velocity.y;
     velocity.y = 0;
     velocity.normalize().multiplyScalar(maxSpeed);
     velocity.y = yVel;
   }
-
-  threeObject.mesh.position.add(velocity);
-
-  // --- NEW: Boundary Clamping ---
+  
+  // Note: position update is handled in movementSystem, which also uses dtScale
+  
+  // Boundary Clamping
   const halfSize = sceneSize / 2;
-  const playerRadius = 0.5; // A small buffer for player size
+  const playerRadius = 0.5;
   threeObject.mesh.position.x = THREE.MathUtils.clamp(
     threeObject.mesh.position.x,
     -halfSize + playerRadius,
@@ -263,20 +265,22 @@ export function playerShootingSystem({ world }) {
   }
 }
 
-export function enemyAISystem({ world, components }) {
+export function enemyAISystem({ world, components, dt }) {
   const ai = components.get(EnemyAI);
   const enemyObj = components.get(ThreeObject);
   const velocity = components.get(Velocity);
   const player = world.getTagged(Player);
   if (!player) return;
 
+  const dtScale = dt / 16.66667;
+
   const playerObj = player.get(ThreeObject);
   enemyObj.mesh.lookAt(playerObj.mesh.position);
 
   // Apply gravity to prevent floating
-  velocity.y -= 0.01;
+  velocity.y -= 0.01 * dtScale;
 
-  ai.timer--;
+  ai.timer -= dtScale;
   if (ai.timer <= 0) {
     const startPosition = enemyObj.mesh.position.clone();
     const direction = playerObj.mesh.position
@@ -287,7 +291,7 @@ export function enemyAISystem({ world, components }) {
     ai.timer = ai.shootCooldown + getRandomNumber(-30, 30);
   }
 
-  ai.moveTimer--;
+  ai.moveTimer -= dtScale;
   if (ai.moveTimer <= 0) {
     const distanceFromPlayer = getRandomNumber(5, 15);
     const angle = Math.random() * Math.PI * 2;
@@ -332,21 +336,23 @@ export function enemyAISystem({ world, components }) {
   velocity.add(ai.avoidanceForce);
 }
 
-export function scoutAISystem({ world, components }) {
+export function scoutAISystem({ world, components, dt }) {
   const ai = components.get(ScoutAI);
   const enemyObj = components.get(ThreeObject);
   const velocity = components.get(Velocity);
   const player = world.getTagged(Player);
   if (!player) return;
 
+  const dtScale = dt / 16.66667;
+
   const playerObj = player.get(ThreeObject);
   enemyObj.mesh.lookAt(playerObj.mesh.position);
 
   // Apply gravity to prevent floating
-  velocity.y -= 0.01;
+  velocity.y -= 0.01 * dtScale;
 
   // Fast shooting
-  ai.timer--;
+  ai.timer -= dtScale;
   if (ai.timer <= 0) {
     const startPosition = enemyObj.mesh.position.clone();
     const direction = playerObj.mesh.position
@@ -362,7 +368,7 @@ export function scoutAISystem({ world, components }) {
   }
 
   // Fast movement with dodging
-  ai.moveTimer--;
+  ai.moveTimer -= dtScale;
   if (ai.moveTimer <= 0) {
     const distanceFromPlayer = getRandomNumber(3, 8);
     const angle = Math.random() * Math.PI * 2;
@@ -374,7 +380,7 @@ export function scoutAISystem({ world, components }) {
   }
 
   // Dodging behavior
-  ai.dodgeTimer--;
+  ai.dodgeTimer -= dtScale;
   if (ai.dodgeTimer <= 0) {
     // Random dodge direction
     const dodgeAngle = Math.random() * Math.PI * 2;
@@ -419,21 +425,23 @@ export function scoutAISystem({ world, components }) {
   velocity.add(ai.avoidanceForce);
 }
 
-export function tankAISystem({ world, components }) {
+export function tankAISystem({ world, components, dt }) {
   const ai = components.get(TankAI);
   const enemyObj = components.get(ThreeObject);
   const velocity = components.get(Velocity);
   const player = world.getTagged(Player);
   if (!player) return;
 
+  const dtScale = dt / 16.66667;
+
   const playerObj = player.get(ThreeObject);
   enemyObj.mesh.lookAt(playerObj.mesh.position);
 
   // Apply gravity to prevent floating
-  velocity.y -= 0.01;
+  velocity.y -= 0.01 * dtScale;
 
   // Slow but powerful shooting
-  ai.timer--;
+  ai.timer -= dtScale;
   if (ai.timer <= 0) {
     const startPosition = enemyObj.mesh.position.clone();
     const direction = playerObj.mesh.position
@@ -445,7 +453,7 @@ export function tankAISystem({ world, components }) {
   }
 
   // Slow movement
-  ai.moveTimer--;
+  ai.moveTimer -= dtScale;
   if (ai.moveTimer <= 0) {
     const distanceFromPlayer = getRandomNumber(8, 15);
     const angle = Math.random() * Math.PI * 2;
@@ -474,21 +482,23 @@ export function tankAISystem({ world, components }) {
   ai.lastDirection.copy(velocity);
 }
 
-export function sniperAISystem({ world, components }) {
+export function sniperAISystem({ world, components, dt }) {
   const ai = components.get(SniperAI);
   const enemyObj = components.get(ThreeObject);
   const velocity = components.get(Velocity);
   const player = world.getTagged(Player);
   if (!player) return;
 
+  const dtScale = dt / 16.66667;
+
   const playerObj = player.get(ThreeObject);
   enemyObj.mesh.lookAt(playerObj.mesh.position);
 
   // Apply gravity to prevent floating
-  velocity.y -= 0.01;
+  velocity.y -= 0.01 * dtScale;
 
   // Accurate shooting from distance
-  ai.timer--;
+  ai.timer -= dtScale;
   if (ai.timer <= 0) {
     const startPosition = enemyObj.mesh.position.clone();
     const direction = playerObj.mesh.position
@@ -509,7 +519,7 @@ export function sniperAISystem({ world, components }) {
   }
 
   // Movement to maintain preferred distance
-  ai.moveTimer--;
+  ai.moveTimer -= dtScale;
   if (ai.moveTimer <= 0) {
     const currentDistance = enemyObj.mesh.position.distanceTo(
       playerObj.mesh.position
@@ -567,10 +577,13 @@ export function sniperAISystem({ world, components }) {
   velocity.add(ai.avoidanceForce);
 }
 
-export function movementSystem({ entity, components }) {
+export function movementSystem({ entity, components, dt }) {
   const velocity = components.get(Velocity);
   const threeObject = components.get(ThreeObject);
-  threeObject.mesh.position.add(velocity);
+  
+  const dtScale = dt / 16.66667;
+  
+  threeObject.mesh.position.add(velocity.clone().multiplyScalar(dtScale));
 
   // Boundary check for projectiles - destroy if too far outside scene
   if (
@@ -598,70 +611,74 @@ export function particleMovementSystem({ components }) {
   velocity.multiplyScalar(0.98);
 }
 
-export function healthPackAnimationSystem({ components }) {
+export function healthPackAnimationSystem({ components, dt }) {
   const healthPack = components.get(HealthPack);
 
   // Skip animation for picked up health packs
   if (healthPack.pickedUp) return;
 
   const threeObject = components.get(ThreeObject);
+  const dtScale = dt / 16.66667;
 
-  healthPack.bobTimer += 0.05;
+  healthPack.bobTimer += 0.05 * dtScale;
   healthPack.bobOffset = Math.sin(healthPack.bobTimer) * 0.2;
   threeObject.mesh.position.y = 1 + healthPack.bobOffset;
 
-  threeObject.mesh.rotation.y += 0.02;
+  threeObject.mesh.rotation.y += 0.02 * dtScale;
 }
 
-export function weaponPickupAnimationSystem({ components }) {
+export function weaponPickupAnimationSystem({ components, dt }) {
   const weaponPickup = components.get(WeaponPickup);
 
   // Skip animation for picked up weapon pickups
   if (weaponPickup.pickedUp) return;
 
   const threeObject = components.get(ThreeObject);
+  const dtScale = dt / 16.66667;
 
-  weaponPickup.bobTimer += 0.05;
+  weaponPickup.bobTimer += 0.05 * dtScale;
   weaponPickup.bobOffset = Math.sin(weaponPickup.bobTimer) * 0.15;
   threeObject.mesh.position.y = 1 + weaponPickup.bobOffset;
 
   // Rotate weapons to make them more visible
-  threeObject.mesh.rotation.y += 0.03;
+  threeObject.mesh.rotation.y += 0.03 * dtScale;
   threeObject.mesh.rotation.x = Math.sin(weaponPickup.bobTimer * 0.5) * 0.1;
 }
 
-export function armorPickupAnimationSystem({ components }) {
+export function armorPickupAnimationSystem({ components, dt }) {
   const armorPickup = components.get(ArmorPickup);
 
   // Skip animation for picked up armor pickups
   if (armorPickup.pickedUp) return;
 
   const threeObject = components.get(ThreeObject);
+  const dtScale = dt / 16.66667;
 
-  armorPickup.bobTimer += 0.05;
+  armorPickup.bobTimer += 0.05 * dtScale;
   armorPickup.bobOffset = Math.sin(armorPickup.bobTimer) * 0.15;
   threeObject.mesh.position.y = 1 + armorPickup.bobOffset;
 
   // Rotate armor to make it more visible with shield-like motion
-  threeObject.mesh.rotation.y += 0.02;
+  threeObject.mesh.rotation.y += 0.02 * dtScale;
   threeObject.mesh.rotation.x = Math.sin(armorPickup.bobTimer * 0.3) * 0.2;
   threeObject.mesh.rotation.z = Math.cos(armorPickup.bobTimer * 0.4) * 0.1;
 }
 
-export function collectableAnimationSystem({ components }) {
+export function collectableAnimationSystem({ components, dt }) {
   const collectable = components.get(Collectable);
 
   // Skip animation for collected items
   if (collectable.collected) return;
 
   const threeObject = components.get(ThreeObject);
+  const dtScale = dt / 16.66667;
 
   // Bobbing animation
-  collectable.bobTimer += 0.03;
+  collectable.bobTimer += 0.03 * dtScale;
   collectable.bobOffset = Math.sin(collectable.bobTimer) * 0.4;
 
   // Rotation animation
-  collectable.rotationTimer += 0.02;
+  collectable.rotationTimer += 0.02 * dtScale;
   threeObject.mesh.rotation.x = collectable.rotationTimer * 0.5;
   threeObject.mesh.rotation.y = collectable.rotationTimer;
   threeObject.mesh.rotation.z = collectable.rotationTimer * 0.3;
@@ -674,16 +691,17 @@ export function collectableAnimationSystem({ components }) {
   threeObject.mesh.material.emissiveIntensity = emissivePulse * 0.4;
 }
 
-export function weaponPickupArrowAnimationSystem({ components }) {
+export function weaponPickupArrowAnimationSystem({ components, dt }) {
   const arrow = components.get(WeaponPickupArrow);
   const threeObject = components.get(ThreeObject);
+  const dtScale = dt / 16.66667;
 
   // Update arrow position to follow the weapon
   if (arrow.weaponEntity && arrow.weaponEntity.state === 'created') {
     const weaponObject = arrow.weaponEntity.get(ThreeObject);
     if (weaponObject) {
       // Keep arrow above weapon with some floating motion
-      arrow.bobTimer += 0.08;
+      arrow.bobTimer += 0.08 * dtScale;
       arrow.bobOffset = Math.sin(arrow.bobTimer) * 0.3;
       threeObject.mesh.position
         .copy(weaponObject.mesh.position)
@@ -692,13 +710,14 @@ export function weaponPickupArrowAnimationSystem({ components }) {
   }
 
   // Rotate arrow for visibility
-  threeObject.mesh.rotation.y += 0.05;
+  threeObject.mesh.rotation.y += 0.05 * dtScale;
   threeObject.mesh.rotation.z = Math.sin(arrow.bobTimer * 0.7) * 0.2;
 }
 
-export function lifecycleSystem({ entity, components, world }) {
+export function lifecycleSystem({ entity, components, world, dt }) {
   const expires = components.get(Expires);
-  expires.life--;
+  const dtScale = dt / 16.66667;
+  expires.life -= dtScale;
   if (expires.life <= 0) {
     // Rockets explode when they expire (run out of fuel)
     if (entity.hasTag && entity.hasTag('rocket')) {
@@ -1261,6 +1280,18 @@ export function crosshairSystem({ world }) {
   }
 }
 
+// Store previous state to check against to avoid DOM thrashing
+const uiState = {
+  lastScore: -1,
+  lastKills: -1,
+  lastCollectables: -1,
+  lastHealthPercent: -1,
+  lastArmorPercent: -1,
+  lastWeaponName: '',
+  lastAmmo: -1,
+  lastWeaponIcon: '',
+};
+
 export function uiRenderSystem({ world }) {
   const gameStateEntity = world.locate(GameState);
   if (!gameStateEntity) return;
@@ -1269,28 +1300,41 @@ export function uiRenderSystem({ world }) {
   const weaponSystem = world.getResource(WeaponSystem);
 
   // Update basic stats
-  document.getElementById('score').innerText = gameState.score;
-  document.getElementById('kills').innerText = gameState.kills;
-  document.getElementById('collectables').innerText =
-    `${gameState.collectablesCollected}/10`;
+  if (gameState.score !== uiState.lastScore) {
+    document.getElementById('score').innerText = gameState.score;
+    uiState.lastScore = gameState.score;
+  }
+  if (gameState.kills !== uiState.lastKills) {
+    document.getElementById('kills').innerText = gameState.kills;
+    uiState.lastKills = gameState.kills;
+  }
+  if (gameState.collectablesCollected !== uiState.lastCollectables) {
+    document.getElementById('collectables').innerText =
+      `${gameState.collectablesCollected}/10`;
+    uiState.lastCollectables = gameState.collectablesCollected;
+  }
 
   // Update health bar
   if (player && player.has(Health)) {
     const health = player.get(Health);
     const healthPercent = (health.value / health.maxValue) * 100;
-    document.getElementById('health-bar').style.width = `${healthPercent}%`;
+    
+    if (Math.abs(healthPercent - uiState.lastHealthPercent) > 0.1) {
+      document.getElementById('health-bar').style.width = `${healthPercent}%`;
 
-    // Low health warning effect
-    const screenBlood = document.getElementById('screen-blood');
-    if (healthPercent < 25) {
-      screenBlood.classList.add('low-health-flash');
-      screenBlood.style.opacity = '0.3';
-    } else if (healthPercent < 50) {
-      screenBlood.classList.remove('low-health-flash');
-      screenBlood.style.opacity = '0.1';
-    } else {
-      screenBlood.classList.remove('low-health-flash');
-      screenBlood.style.opacity = '0';
+      // Low health warning effect
+      const screenBlood = document.getElementById('screen-blood');
+      if (healthPercent < 25) {
+        screenBlood.classList.add('low-health-flash');
+        screenBlood.style.opacity = '0.3';
+      } else if (healthPercent < 50) {
+        screenBlood.classList.remove('low-health-flash');
+        screenBlood.style.opacity = '0.1';
+      } else {
+        screenBlood.classList.remove('low-health-flash');
+        screenBlood.style.opacity = '0';
+      }
+      uiState.lastHealthPercent = healthPercent;
     }
   }
 
@@ -1298,7 +1342,11 @@ export function uiRenderSystem({ world }) {
   if (player && player.has(Armor)) {
     const armor = player.get(Armor);
     const armorPercent = (armor.value / armor.maxValue) * 100;
-    document.getElementById('armor-bar').style.width = `${armorPercent}%`;
+    
+    if (Math.abs(armorPercent - uiState.lastArmorPercent) > 0.1) {
+      document.getElementById('armor-bar').style.width = `${armorPercent}%`;
+      uiState.lastArmorPercent = armorPercent;
+    }
   }
 
   // Update weapon UI
@@ -1306,30 +1354,41 @@ export function uiRenderSystem({ world }) {
     const currentWeapon = weaponSystem.getCurrentWeapon();
     const currentWeaponIndex = weaponSystem.currentWeaponIndex;
 
-    document.getElementById('current-weapon').innerText = currentWeapon.name;
-    document.getElementById('current-ammo').innerText =
-      currentWeapon.ammo === Infinity ? '∞' : currentWeapon.ammo;
+    if (currentWeapon.name !== uiState.lastWeaponName) {
+      document.getElementById('current-weapon').innerText = currentWeapon.name;
+      uiState.lastWeaponName = currentWeapon.name;
+    }
+    
+    if (currentWeapon.ammo !== uiState.lastAmmo) {
+      document.getElementById('current-ammo').innerText =
+        currentWeapon.ammo === Infinity ? '∞' : currentWeapon.ammo;
+      uiState.lastAmmo = currentWeapon.ammo;
+    }
 
     // Update weapon icon
     const weaponIcon = document.getElementById('weapon-icon');
+    let iconText = '🔫';
     switch (currentWeapon.name.toLowerCase()) {
       case 'pistol':
-        weaponIcon.innerText = '🔫';
+        iconText = '🔫';
         break;
       case 'shotgun':
-        weaponIcon.innerText = '💥';
+        iconText = '💥';
         break;
       case 'machine gun':
-        weaponIcon.innerText = '🔥';
+        iconText = '🔥';
         break;
       case 'rocket launcher':
-        weaponIcon.innerText = '🚀';
+        iconText = '🚀';
         break;
       case 'flamethrower':
-        weaponIcon.innerText = '🔥';
+        iconText = '🔥';
         break;
-      default:
-        weaponIcon.innerText = '🔫';
+    }
+    
+    if (iconText !== uiState.lastWeaponIcon) {
+      weaponIcon.innerText = iconText;
+      uiState.lastWeaponIcon = iconText;
     }
 
     // Update mobile weapon buttons
@@ -1545,18 +1604,20 @@ function updateMinimap(world) {
   }
 }
 
-export function damageIndicatorSystem({ world }) {
+export function damageIndicatorSystem({ world, dt }) {
   const indicatorsContainer = document.getElementById('damage-indicators');
   if (!indicatorsContainer) return;
 
   // Clear existing indicators
   indicatorsContainer.innerHTML = '';
 
+  const dtScale = dt / 16.66667;
+
   // Process all damage indicators
   const indicators = world.locateAll([DamageIndicator]);
   indicators.forEach(entity => {
     const indicator = entity.get(DamageIndicator);
-    indicator.timer++;
+    indicator.timer += dtScale;
 
     if (indicator.timer >= indicator.duration) {
       entity.destroy();
@@ -1620,52 +1681,6 @@ export function rendererSystem({ world }) {
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
 }
 
-export function applySplashDamage(world, position, damage, firedBy, radius) {
-  const regularEnemies = world.locateAll([EnemyAI, Collider]);
-  const scouts = world.locateAll([ScoutAI, Collider]);
-  const tanks = world.locateAll([TankAI, Collider]);
-  const snipers = world.locateAll([SniperAI, Collider]);
-  const enemies = [...regularEnemies, ...scouts, ...tanks, ...snipers];
-  const player = world.getTagged(Player);
-
-  // Damage enemies in splash radius (unless fired by enemy)
-  if (
-    firedBy !== Enemy &&
-    firedBy !== Scout &&
-    firedBy !== Tank &&
-    firedBy !== Sniper
-  ) {
-    for (const enemy of enemies) {
-      if (enemy.state !== 'created') continue;
-      const enemyPos = enemy.get(ThreeObject).mesh.position;
-      const distance = position.distanceTo(enemyPos);
-
-      if (distance <= radius) {
-        // Damage decreases with distance from center
-        const splashDamage = Math.max(1, damage * (1 - distance / radius));
-        if (enemy.has(Health)) {
-          const health = enemy.get(Health);
-          health.value -= splashDamage;
-        }
-      }
-    }
-  }
-
-  // Damage player if in splash radius (for enemy-fired weapons or neutral explosions)
-  if (player && player.state === 'created' && firedBy !== Player) {
-    const playerPos = player.get(ThreeObject).mesh.position;
-    const distance = position.distanceTo(playerPos);
-
-    if (distance <= radius) {
-      const splashDamage = Math.max(1, damage * (1 - distance / radius));
-      if (player.has(Health)) {
-        const health = player.get(Health);
-        health.value -= splashDamage;
-        world.events.emit(new PlayerDamagedEvent());
-      }
-    }
-  }
-}
 
 export function cleanupSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
@@ -1777,10 +1792,12 @@ export function collectableSpawnerSystem({ world, components }) {
 
   // Only spawn collectables at the start of the game (not continuously)
   const currentCollectables = world.locateAll([Collectable]).length;
+  const totalSpawned = currentCollectables + gameState.collectablesCollected;
 
-  // Spawn 10 collectables if none exist yet
-  if (currentCollectables === 0 && gameState.collectablesCollected === 0) {
-    for (let i = 0; i < 10; i++) {
+  // Spawn collectables until we have 10 total (spawned + collected)
+  if (totalSpawned < 10) {
+    const toSpawn = 10 - totalSpawned;
+    for (let i = 0; i < toSpawn; i++) {
       spawnCollectable(world);
     }
 

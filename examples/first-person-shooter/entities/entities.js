@@ -1,7 +1,7 @@
 import { getRandomNumber } from '../utils/utils.js';
 import * as THREE from 'three';
-import { applySplashDamage } from '../systems/systems.js';
-import { ThreeScene } from '../resources/resources.js';
+import { PlayerDamagedEvent } from '../events/events.js';
+import { ThreeScene, AssetLibrary } from '../resources/resources.js';
 import {
   ThreeObject,
   Velocity,
@@ -30,19 +30,68 @@ import {
 import { sceneSize } from '../game/game.js';
 
 /* -------------------------------------------------------------------------- */
+/*                           UTILITY FUNCTIONS                               */
+/* -------------------------------------------------------------------------- */
+
+export function applySplashDamage(world, position, damage, firedBy, radius) {
+  const regularEnemies = world.locateAll([EnemyAI, Collider]);
+  const scouts = world.locateAll([ScoutAI, Collider]);
+  const tanks = world.locateAll([TankAI, Collider]);
+  const snipers = world.locateAll([SniperAI, Collider]);
+  const enemies = [...regularEnemies, ...scouts, ...tanks, ...snipers];
+  const player = world.getTagged(Player);
+
+  // Damage enemies in splash radius (unless fired by enemy)
+  if (
+    firedBy !== Enemy &&
+    firedBy !== Scout &&
+    firedBy !== Tank &&
+    firedBy !== Sniper
+  ) {
+    for (const enemy of enemies) {
+      if (enemy.state !== 'created') continue;
+      const enemyPos = enemy.get(ThreeObject).mesh.position;
+      const distance = position.distanceTo(enemyPos);
+
+      if (distance <= radius) {
+        // Damage decreases with distance from center
+        const splashDamage = Math.max(1, damage * (1 - distance / radius));
+        if (enemy.has(Health)) {
+          const health = enemy.get(Health);
+          health.value -= splashDamage;
+        }
+      }
+    }
+  }
+
+  // Damage player if in splash radius (for enemy-fired weapons or neutral explosions)
+  if (player && player.state === 'created' && firedBy !== Player) {
+    const playerPos = player.get(ThreeObject).mesh.position;
+    const distance = position.distanceTo(playerPos);
+
+    if (distance <= radius) {
+      const splashDamage = Math.max(1, damage * (1 - distance / radius));
+      if (player.has(Health)) {
+        const health = player.get(Health);
+        health.value -= splashDamage;
+        world.events.emit(new PlayerDamagedEvent());
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*                           ENTITY CREATION FUNCTIONS                       */
 /* -------------------------------------------------------------------------- */
 
 export function createExplosion(world, position, color, count = 20) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   for (let i = 0; i < count; i++) {
-    const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const mat = new THREE.MeshBasicMaterial({
-      color,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    const geo = assets.geometries.explosionParticle;
+    const mat = assets.getExplosionMaterial(color);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
     threeScene.scene.add(mesh);
@@ -70,7 +119,8 @@ export function createBullet(
 ) {
   const threeScene = world.getResource(ThreeScene);
   const mobileControls = world.getResource('MobileControls');
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const isPlayerBullet = firedByTag === Player;
   const color = isPlayerBullet ? 0x00ffff : 0xff00ff;
@@ -81,24 +131,20 @@ export function createBullet(
 
   if (isLowPerformanceMode) {
     // Mobile-optimized: simpler geometry, no lighting, basic material
-    geo = new THREE.SphereGeometry(0.15, 4, 4); // Reduced from 8x8 to 4x4 (16 triangles vs 64)
-    mat = new THREE.MeshBasicMaterial({
-      color,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    geo = assets.geometries.bulletMobile;
+    mat = isPlayerBullet
+      ? assets.materials.bulletBasicPlayer
+      : assets.materials.bulletBasicEnemy;
     mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
 
     // No point light on mobile for performance
   } else {
     // Desktop version: full effects
-    geo = new THREE.SphereGeometry(0.2, 8, 8);
-    mat = new THREE.MeshPhongMaterial({
-      color,
-      emissive: color,
-      emissiveIntensity: 2,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    geo = assets.geometries.bulletDesktop;
+    mat = isPlayerBullet
+      ? assets.materials.bulletPlayer
+      : assets.materials.bulletEnemy;
     mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
 
@@ -131,7 +177,8 @@ export function createShotgunBlast(
 ) {
   const threeScene = world.getResource(ThreeScene);
   const mobileControls = world.getResource('MobileControls');
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const isLowPerformanceMode =
     mobileControls && mobileControls.isLowPerformanceMode;
@@ -150,20 +197,12 @@ export function createShotgunBlast(
 
     if (isLowPerformanceMode) {
       // Mobile-optimized: simpler geometry and material
-      geo = new THREE.SphereGeometry(0.08, 3, 3); // Much simpler geometry
-      mat = new THREE.MeshBasicMaterial({
-        color: 0xffaa00,
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-      });
+      geo = assets.geometries.shotgunPelletMobile;
+      mat = assets.materials.shotgunPelletBasic;
     } else {
       // Desktop version
-      geo = new THREE.SphereGeometry(0.12, 6, 6);
-      mat = new THREE.MeshPhongMaterial({
-        color: 0xffaa00,
-        emissive: 0x442200,
-        emissiveIntensity: 1.5,
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-      });
+      geo = assets.geometries.shotgunPelletDesktop;
+      mat = assets.materials.shotgunPellet;
     }
 
     const mesh = new THREE.Mesh(geo, mat);
@@ -194,7 +233,8 @@ export function createFlameThrowerBlast(
   damage = 3
 ) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create fewer, simpler flame particles for better performance
   for (let i = 0; i < 3; i++) {
@@ -206,13 +246,8 @@ export function createFlameThrowerBlast(
     flameDirection.normalize();
 
     // Simpler geometry - smaller sphere with fewer segments
-    const geo = new THREE.SphereGeometry(0.12, 4, 4);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xff6600, // Bright orange flame color
-      transparent: true,
-      opacity: 0.8,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    const geo = assets.geometries.flame;
+    const mat = assets.materials.flame;
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
 
@@ -245,7 +280,8 @@ export function createRocket(
 ) {
   const threeScene = world.getResource(ThreeScene);
   const mobileControls = world.getResource('MobileControls');
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const isLowPerformanceMode =
     mobileControls && mobileControls.isLowPerformanceMode;
@@ -254,11 +290,8 @@ export function createRocket(
 
   if (isLowPerformanceMode) {
     // Mobile-optimized: simpler geometry, no lighting
-    geo = new THREE.CylinderGeometry(0.12, 0.2, 0.8, 6); // Simpler geometry
-    mat = new THREE.MeshBasicMaterial({
-      color: 0x444444,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    geo = assets.geometries.rocketMobile;
+    mat = assets.materials.rocketBasic;
     mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
     mesh.lookAt(position.clone().add(direction));
@@ -266,13 +299,8 @@ export function createRocket(
     // No trail light on mobile for performance
   } else {
     // Desktop version
-    geo = new THREE.CylinderGeometry(0.15, 0.25, 1.0, 8);
-    mat = new THREE.MeshPhongMaterial({
-      color: 0x444444,
-      emissive: 0x220000,
-      emissiveIntensity: 0.8,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    geo = assets.geometries.rocketDesktop;
+    mat = assets.materials.rocket;
     mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
     mesh.lookAt(position.clone().add(direction));
@@ -305,15 +333,11 @@ export function createTankBullet(
   damage = 12
 ) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
-  const geo = new THREE.SphereGeometry(0.25, 8, 8);
-  const mat = new THREE.MeshPhongMaterial({
-    color: 0xff6600,
-    emissive: 0x441100,
-    emissiveIntensity: 2.5,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const geo = assets.geometries.tankBullet;
+  const mat = assets.materials.tankBullet;
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.copy(position);
 
@@ -343,15 +367,11 @@ export function createSniperBullet(
   damage = 25
 ) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
-  const geo = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6);
-  const mat = new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    emissive: 0x004400,
-    emissiveIntensity: 1.5,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const geo = assets.geometries.sniperBullet;
+  const mat = assets.materials.sniperBullet;
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.copy(position);
   mesh.lookAt(position.clone().add(direction));
@@ -379,41 +399,36 @@ export function createMuzzleFlash(
 ) {
   const threeScene = world.getResource(ThreeScene);
   const mobileControls = world.getResource('MobileControls');
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const isLowPerformanceMode =
     mobileControls && mobileControls.isLowPerformanceMode;
 
   // Different colors and effects based on weapon type (reduced for mobile)
-  let flashColor, particleCount, flashSize;
+  let particleCount, flashSize;
   switch (weaponType) {
     case 'pistol':
-      flashColor = 0xffff00; // Yellow
       particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.05;
       break;
     case 'shotgun':
-      flashColor = 0xffaa00; // Orange
       particleCount = isLowPerformanceMode ? 2 : 6;
       flashSize = 0.08;
       break;
     case 'machinegun':
-      flashColor = 0x00ffff; // Cyan
       particleCount = isLowPerformanceMode ? 2 : 4;
       flashSize = 0.06;
       break;
     case 'rocket':
-      flashColor = 0xff4444; // Red
       particleCount = isLowPerformanceMode ? 3 : 8;
       flashSize = 0.1;
       break;
     case 'flamethrower':
-      flashColor = 0xff6600; // Orange
       particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.06;
       break;
     default:
-      flashColor = 0xffff00;
       particleCount = isLowPerformanceMode ? 1 : 3;
       flashSize = 0.05;
   }
@@ -423,33 +438,33 @@ export function createMuzzleFlash(
 
     if (isLowPerformanceMode) {
       // Mobile-optimized: simpler geometry
-      geo = new THREE.SphereGeometry(
-        flashSize + Math.random() * flashSize,
-        3,
-        3
-      );
-      mat = new THREE.MeshBasicMaterial({
-        color: flashColor,
-        transparent: true,
-        opacity: 0.6, // Slightly more transparent for performance
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-      });
+      geo = assets.geometries.muzzleFlashMobile;
+      switch (weaponType) {
+        case 'pistol': mat = assets.materials.flashYellowMobile; break;
+        case 'shotgun': mat = assets.materials.flashOrangeMobile; break;
+        case 'machinegun': mat = assets.materials.flashCyanMobile; break;
+        case 'rocket': mat = assets.materials.flashRedMobile; break;
+        case 'flamethrower': mat = assets.materials.flashOrangeMobile; break;
+        default: mat = assets.materials.flashYellowMobile;
+      }
     } else {
       // Desktop version
-      geo = new THREE.SphereGeometry(
-        flashSize + Math.random() * flashSize,
-        6,
-        6
-      );
-      mat = new THREE.MeshBasicMaterial({
-        color: flashColor,
-        transparent: true,
-        opacity: 0.8,
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-      });
+      geo = assets.geometries.muzzleFlashDesktop;
+      switch (weaponType) {
+        case 'pistol': mat = assets.materials.flashYellow; break;
+        case 'shotgun': mat = assets.materials.flashOrange; break;
+        case 'machinegun': mat = assets.materials.flashCyan; break;
+        case 'rocket': mat = assets.materials.flashRed; break;
+        case 'flamethrower': mat = assets.materials.flashOrange; break;
+        default: mat = assets.materials.flashYellow;
+      }
     }
 
     const mesh = new THREE.Mesh(geo, mat);
+
+    // Scale the mesh for random size
+    const scale = flashSize + Math.random() * flashSize;
+    mesh.scale.set(scale, scale, scale);
 
     const flashPos = position
       .clone()
@@ -485,7 +500,8 @@ export function createMuzzleFlash(
 
 export function spawnScout(world) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const obstacles = world.getAllTagged(Obstacle);
   const player = world.getTagged(Player);
@@ -533,13 +549,8 @@ export function spawnScout(world) {
     );
   }
 
-  const enemyGeo = new THREE.OctahedronGeometry(0.4, 0);
-  const enemyMat = new THREE.MeshPhongMaterial({
-    color: 0x00aaff, // Light blue for scouts
-    emissive: 0x002244,
-    emissiveIntensity: 0.3,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const enemyGeo = assets.geometries.scout;
+  const enemyMat = assets.materials.scout;
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -556,7 +567,8 @@ export function spawnScout(world) {
 
 export function spawnTank(world) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const obstacles = world.getAllTagged(Obstacle);
   const player = world.getTagged(Player);
@@ -604,13 +616,8 @@ export function spawnTank(world) {
     );
   }
 
-  const enemyGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-  const enemyMat = new THREE.MeshPhongMaterial({
-    color: 0x666666, // Gray for tanks
-    emissive: 0x222222,
-    emissiveIntensity: 0.2,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const enemyGeo = assets.geometries.tank;
+  const enemyMat = assets.materials.tank;
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -627,7 +634,8 @@ export function spawnTank(world) {
 
 export function spawnSniper(world) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const obstacles = world.getAllTagged(Obstacle);
   const player = world.getTagged(Player);
@@ -675,13 +683,8 @@ export function spawnSniper(world) {
     );
   }
 
-  const enemyGeo = new THREE.CylinderGeometry(0.4, 0.6, 2, 8);
-  const enemyMat = new THREE.MeshPhongMaterial({
-    color: 0x008800, // Dark green for snipers
-    emissive: 0x002200,
-    emissiveIntensity: 0.4,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const enemyGeo = assets.geometries.sniper;
+  const enemyMat = assets.materials.sniper;
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -698,7 +701,8 @@ export function spawnSniper(world) {
 
 export function spawnEnemy(world) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   const obstacles = world.getAllTagged(Obstacle);
   const player = world.getTagged(Player);
@@ -746,13 +750,8 @@ export function spawnEnemy(world) {
     );
   }
 
-  const enemyGeo = new THREE.IcosahedronGeometry(0.8, 0);
-  const enemyMat = new THREE.MeshPhongMaterial({
-    color: 0x8b0000, // Dark red for a more natural enemy color
-    emissive: 0x330000,
-    emissiveIntensity: 0.2,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const enemyGeo = assets.geometries.enemy;
+  const enemyMat = assets.materials.enemy;
   const enemyMesh = new THREE.Mesh(enemyGeo, enemyMat);
   enemyMesh.position.copy(position);
   threeScene.scene.add(enemyMesh);
@@ -769,18 +768,12 @@ export function spawnEnemy(world) {
 
 export function spawnHealthPack(world) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create a glowing orb for health packs instead of a cube
-  const packGeo = new THREE.SphereGeometry(0.4, 16, 12);
-  const packMat = new THREE.MeshPhongMaterial({
-    color: 0x00ff88, // Bright green-blue
-    emissive: 0x004422,
-    emissiveIntensity: 0.3,
-    transparent: true,
-    opacity: 0.8,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const packGeo = assets.geometries.healthPack;
+  const packMat = assets.materials.healthPack;
   const packMesh = new THREE.Mesh(packGeo, packMat);
 
   // Add a subtle pulsing light
@@ -822,18 +815,12 @@ export function spawnHealthPack(world) {
 
 export function dropHealthPack(world, position) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create a glowing orb for health packs instead of a cube
-  const packGeo = new THREE.SphereGeometry(0.4, 16, 12);
-  const packMat = new THREE.MeshPhongMaterial({
-    color: 0x00ff88, // Bright green-blue
-    emissive: 0x004422,
-    emissiveIntensity: 0.3,
-    transparent: true,
-    opacity: 0.8,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const packGeo = assets.geometries.healthPack;
+  const packMat = assets.materials.healthPack;
   const packMesh = new THREE.Mesh(packGeo, packMat);
 
   // Add a subtle pulsing light
@@ -852,7 +839,8 @@ export function dropHealthPack(world, position) {
 
 export function spawnWeaponPickup(world, weaponType = null, position = null) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // If no weapon type specified, randomly choose one (excluding pistol since player starts with it)
   if (!weaponType) {
@@ -866,63 +854,42 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
   switch (weaponType) {
     case 'shotgun':
       // SHOTGUN: Wide brown shotgun shape with shells visible
-      geometry = new THREE.BoxGeometry(1.2, 0.4, 0.3);
-      material = new THREE.MeshPhongMaterial({
-        color: 0x8b4513, // Rich brown wood
-        emissive: 0x331100,
-        emissiveIntensity: 0.4,
-      });
+      geometry = assets.geometries.pickupShotgun;
+      material = assets.materials.pickupShotgun;
       // Add visible shotgun shells
       for (let i = 0; i < 3; i++) {
-        const shellGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 6);
-        const shellMat = new THREE.MeshPhongMaterial({
-          color: 0xffd700, // Gold shells
-          emissive: 0x442200,
-          emissiveIntensity: 0.6,
-        });
-        const shell = new THREE.Mesh(shellGeo, shellMat);
+        const shell = new THREE.Mesh(
+          assets.geometries.pickupShotgunShell,
+          assets.materials.pickupShotgunShell
+        );
         shell.position.set(-0.3 + i * 0.2, 0.3, 0);
         extraElements.push(shell);
       }
       break;
     case 'machinegun':
       // MACHINE GUN: Long metallic cylinder with belt of bullets
-      geometry = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 8);
-      material = new THREE.MeshPhongMaterial({
-        color: 0xc0c0c0, // Bright silver
-        emissive: 0x404040,
-        emissiveIntensity: 0.5,
-      });
+      geometry = assets.geometries.pickupMachineGun;
+      material = assets.materials.pickupMachineGun;
       // Add bullet belt
       for (let i = 0; i < 5; i++) {
-        const bulletGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.25, 6);
-        const bulletMat = new THREE.MeshPhongMaterial({
-          color: 0xffff00, // Bright yellow bullets
-          emissive: 0x444400,
-          emissiveIntensity: 0.8,
-        });
-        const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+        const bullet = new THREE.Mesh(
+          assets.geometries.pickupMachineGunBullet,
+          assets.materials.pickupMachineGunBullet
+        );
         bullet.position.set(0.4, -0.3 + i * 0.15, 0);
         extraElements.push(bullet);
       }
       break;
     case 'rocket':
       // ROCKET: Large red rocket shape
-      geometry = new THREE.ConeGeometry(0.4, 1.5, 8);
-      material = new THREE.MeshPhongMaterial({
-        color: 0xff0000, // Bright red
-        emissive: 0x880000,
-        emissiveIntensity: 0.6,
-      });
+      geometry = assets.geometries.pickupRocket;
+      material = assets.materials.pickupRocket;
       // Add rocket fins
       for (let i = 0; i < 4; i++) {
-        const finGeo = new THREE.BoxGeometry(0.1, 0.3, 0.05);
-        const finMat = new THREE.MeshPhongMaterial({
-          color: 0x444444,
-          emissive: 0x222222,
-          emissiveIntensity: 0.3,
-        });
-        const fin = new THREE.Mesh(finGeo, finMat);
+        const fin = new THREE.Mesh(
+          assets.geometries.pickupRocketFin,
+          assets.materials.pickupRocketFin
+        );
         const angle = (i / 4) * Math.PI * 2;
         fin.position.set(Math.cos(angle) * 0.3, -0.4, Math.sin(angle) * 0.3);
         fin.rotation.y = angle;
@@ -931,21 +898,14 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       break;
     case 'flamethrower':
       // FLAMETHROWER: Blue flame-shaped object
-      geometry = new THREE.CylinderGeometry(0.25, 0.35, 1.0, 8);
-      material = new THREE.MeshPhongMaterial({
-        color: 0x0088ff, // Bright blue
-        emissive: 0x004488,
-        emissiveIntensity: 0.7,
-      });
+      geometry = assets.geometries.pickupFlamethrower;
+      material = assets.materials.pickupFlamethrower;
       // Add flame effects
       for (let i = 0; i < 4; i++) {
-        const flameGeo = new THREE.ConeGeometry(0.1, 0.4, 6);
-        const flameMat = new THREE.MeshBasicMaterial({
-          color: 0xff6600, // Orange flame
-          transparent: true,
-          opacity: 0.8,
-        });
-        const flame = new THREE.Mesh(flameGeo, flameMat);
+        const flame = new THREE.Mesh(
+          assets.geometries.pickupFlamethrowerFlame,
+          assets.materials.pickupFlamethrowerFlame
+        );
         flame.position.set(
           (Math.random() - 0.5) * 0.3,
           0.6 + Math.random() * 0.2,
@@ -958,14 +918,10 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
       return; // Invalid weapon type
   }
 
-  material.clippingPlanes = [world.getResource(ThreeScene).groundClippingPlane];
   const weaponMesh = new THREE.Mesh(geometry, material);
 
   // Add extra visual elements to make ammo type obvious
   extraElements.forEach(element => {
-    element.material.clippingPlanes = [
-      world.getResource(ThreeScene).groundClippingPlane,
-    ];
     weaponMesh.add(element);
   });
 
@@ -1008,15 +964,8 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
   threeScene.scene.add(weaponMesh);
 
   // Create floating arrow indicator above the weapon
-  const arrowGeometry = new THREE.ConeGeometry(0.1, 0.5, 6);
-  const arrowMaterial = new THREE.MeshPhongMaterial({
-    color: 0xffff00, // Bright yellow
-    emissive: 0x444400,
-    emissiveIntensity: 0.8,
-    transparent: true,
-    opacity: 0.9,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const arrowGeometry = assets.geometries.arrow;
+  const arrowMaterial = assets.materials.arrow;
   const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
 
   // Position arrow above weapon
@@ -1045,19 +994,12 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
 
 export function spawnArmorPickup(world, armorAmount = 50) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create a shield-like armor pickup
-  const armorGeometry = new THREE.OctahedronGeometry(0.5, 0);
-  const armorMaterial = new THREE.MeshPhongMaterial({
-    color: 0x4444ff, // Blue shield color
-    emissive: 0x111122,
-    emissiveIntensity: 0.3,
-    transparent: true,
-    opacity: 0.8,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
-
+  const armorGeometry = assets.geometries.armorPickup;
+  const armorMaterial = assets.materials.armorPickup;
   const armorMesh = new THREE.Mesh(armorGeometry, armorMaterial);
 
   // Add a subtle blue pulsing light
@@ -1091,15 +1033,8 @@ export function spawnArmorPickup(world, armorAmount = 50) {
   threeScene.scene.add(armorMesh);
 
   // Create floating arrow indicator above the armor
-  const arrowGeometry = new THREE.ConeGeometry(0.1, 0.5, 6);
-  const arrowMaterial = new THREE.MeshPhongMaterial({
-    color: 0x4444ff, // Blue for armor
-    emissive: 0x111122,
-    emissiveIntensity: 0.8,
-    transparent: true,
-    opacity: 0.9,
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-  });
+  const arrowGeometry = assets.geometries.arrow;
+  const arrowMaterial = assets.materials.arrowArmor;
   const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
 
   // Position arrow above armor
@@ -1164,6 +1099,22 @@ function isPositionBlocked(world, position) {
     new THREE.Vector3(position.x - 1.5, position.y - 0.5, position.z - 1.5),
     new THREE.Vector3(position.x + 1.5, position.y + 2.5, position.z + 1.5)
   );
+
+  // Check distance from player - collectables must be at least 25 units away horizontally
+  const player = world.getTagged(Player);
+  if (player) {
+    const playerObj = player.get(ThreeObject);
+    if (playerObj) {
+      const playerPos = playerObj.mesh.position;
+      const horizontalDistance = Math.sqrt(
+        Math.pow(position.x - playerPos.x, 2) +
+        Math.pow(position.z - playerPos.z, 2)
+      );
+      if (horizontalDistance < 25) {
+        return true; // Too close to player
+      }
+    }
+  }
 
   for (const obstacle of obstacles) {
     const obstacleCollider = obstacle.get(Collider);
@@ -1284,7 +1235,7 @@ export function createBoulder(world, position, size) {
 
     const rockMat = new THREE.MeshPhongMaterial({
       color: baseColor.clone().multiplyScalar(0.7 + Math.random() * 0.5),
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
 
     const rock = new THREE.Mesh(geometry, rockMat);
@@ -1518,7 +1469,7 @@ export function createTree(world, position) {
     const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 6, 8);
     const trunkMat = new THREE.MeshPhongMaterial({
       color: 0x654321, // Darker brown for desert tree
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
 
@@ -1534,7 +1485,7 @@ export function createTree(world, position) {
       const leafGeo = new THREE.ConeGeometry(0.1, 1.5 + Math.random() * 1, 6);
       const leafMat = new THREE.MeshPhongMaterial({
         color: leafColors[Math.floor(Math.random() * leafColors.length)],
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  
       });
       const leaf = new THREE.Mesh(leafGeo, leafMat);
 
@@ -1563,7 +1514,7 @@ export function createTree(world, position) {
     const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
     const trunkMat = new THREE.MeshPhongMaterial({
       color: 0x8b4513, // Brown
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
     trunk.position.y = 2;
@@ -1575,7 +1526,7 @@ export function createTree(world, position) {
       const foliageGeo = new THREE.ConeGeometry(2 - i * 0.3, 2, 8);
       const foliageMat = new THREE.MeshPhongMaterial({
         color: foliageColors[i % foliageColors.length],
-        clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+  
       });
       const foliage = new THREE.Mesh(foliageGeo, foliageMat);
       foliage.position.y = 3 + i * 0.8;
@@ -1594,7 +1545,7 @@ export function createBushes(world, position, count = 3) {
     const bushGeo = new THREE.SphereGeometry(0.8 + Math.random() * 0.4, 6, 4);
     const bushMat = new THREE.MeshPhongMaterial({
       color: new THREE.Color().setHSL(0.25 + Math.random() * 0.1, 0.6, 0.4),
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const bush = new THREE.Mesh(bushGeo, bushMat);
     bush.position.set(
@@ -1616,7 +1567,6 @@ export function createCrate(world, position) {
   const crateGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
   const crateMat = new THREE.MeshPhongMaterial({
     color: 0x8b4513, // Brown wood
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const crate = new THREE.Mesh(crateGeo, crateMat);
   crateGroup.add(crate);
@@ -1632,7 +1582,6 @@ export function createBarrel(world, position) {
   const barrelGeo = new THREE.CylinderGeometry(0.8, 0.8, 2, 12);
   const barrelMat = new THREE.MeshPhongMaterial({
     color: 0x666666, // Gray metal
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const barrel = new THREE.Mesh(barrelGeo, barrelMat);
   barrelGroup.add(barrel);
@@ -1642,7 +1591,7 @@ export function createBarrel(world, position) {
     const ringGeo = new THREE.TorusGeometry(0.85, 0.05, 8, 16);
     const ringMat = new THREE.MeshPhongMaterial({
       color: 0x444444,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.position.y = -0.8 + i * 0.8;
@@ -1660,7 +1609,6 @@ export function createFallenLog(world, position) {
   const logGeo = new THREE.CylinderGeometry(0.4, 0.6, 3, 8);
   const logMat = new THREE.MeshPhongMaterial({
     color: 0x654321, // Dark brown wood
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const log = new THREE.Mesh(logGeo, logMat);
   log.rotation.z = Math.PI / 2; // Lay it flat
@@ -1678,7 +1626,6 @@ export function createStonePillar(world, position) {
   const pillarGeo = new THREE.CylinderGeometry(0.6, 0.8, 3, 8);
   const pillarMat = new THREE.MeshPhongMaterial({
     color: 0x888888, // Light gray stone
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const pillar = new THREE.Mesh(pillarGeo, pillarMat);
   pillar.position.y = 1.5;
@@ -1688,7 +1635,6 @@ export function createStonePillar(world, position) {
   const mossGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.1, 8);
   const mossMat = new THREE.MeshPhongMaterial({
     color: 0x228b22, // Forest green
-    clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
   });
   const moss = new THREE.Mesh(mossGeo, mossMat);
   moss.position.y = 3.05;
@@ -1709,7 +1655,7 @@ export function createGrassPatch(world, position) {
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.8,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const blade = new THREE.Mesh(bladeGeo, bladeMat);
 
@@ -1742,7 +1688,7 @@ export function createRuin(world, position) {
     );
     const stoneMat = new THREE.MeshPhongMaterial({
       color: stoneColors[Math.floor(Math.random() * stoneColors.length)],
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
+
     });
     const stone = new THREE.Mesh(stoneGeo, stoneMat);
 
@@ -1809,15 +1755,13 @@ export function createBoundaryWalls(world, threeScene) {
 
 export function createRocketExplosion(world, position) {
   const threeScene = world.getResource(ThreeScene);
-  if (!threeScene) return;
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create explosion particles
   for (let i = 0; i < 25; i++) {
-    const geo = new THREE.SphereGeometry(0.1, 6, 6);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xff6600,
-      clippingPlanes: [world.getResource(ThreeScene).groundClippingPlane],
-    });
+    const geo = assets.geometries.rocketExplosionParticle;
+    const mat = assets.materials.explosionOrange;
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(position);
     threeScene.scene.add(mesh);
@@ -1843,36 +1787,30 @@ export function createRocketExplosion(world, position) {
 
 export function createCollectable(world, position) {
   const threeScene = world.getResource(ThreeScene);
+  const assets = world.getResource(AssetLibrary);
+  if (!threeScene || !assets) return;
 
   // Create a glowing crystal-like collectable
-  const geometry = new THREE.OctahedronGeometry(1, 0);
+  const geometry = assets.geometries.collectable;
 
   // Create glowing material with emissive properties
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xffd700, // Gold color
-    emissive: 0x444400, // Subtle emissive glow
-    emissiveIntensity: 0.3,
-    shininess: 100,
-    transparent: true,
-    opacity: 0.9,
-    clippingPlanes: [threeScene.groundClippingPlane],
-  });
+  const material = assets.materials.collectable;
 
   const collectable = new THREE.Mesh(geometry, material);
+
+  // Position the collectable slightly above ground
+  collectable.position.copy(position);
+  collectable.position.y += 1.5;
+
+  // Create bounding box for collision detection BEFORE adding light
+  const collectableBox = new THREE.Box3().setFromObject(collectable);
 
   // Add a point light to make it glow
   const light = new THREE.PointLight(0xffd700, 1, 10);
   light.position.copy(position);
   collectable.add(light);
 
-  // Position the collectable slightly above ground
-  collectable.position.copy(position);
-  collectable.position.y += 1.5;
-
   threeScene.scene.add(collectable);
-
-  // Create bounding box for collision detection
-  const collectableBox = new THREE.Box3().setFromObject(collectable);
 
   world
     .createEntity()

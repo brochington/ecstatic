@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as ecstatic from 'ecstatic';
+import { World } from 'ecstatic';
 import { getRandomNumber } from '../utils/utils.js';
 import { MobileControls } from '../mobile-controls.js';
 import {
@@ -8,6 +8,7 @@ import {
   InputState,
   GameConfig,
   WeaponSystem,
+  AssetLibrary,
 } from '../resources/resources.js';
 import {
   GameState,
@@ -94,8 +95,6 @@ import {
 } from '../entities/entities.js';
 
 export const sceneSize = 400;
-
-const { World } = ecstatic;
 
 /* -------------------------------------------------------------------------- */
 /*                           SYSTEM REGISTRATION                            */
@@ -241,6 +240,10 @@ function initializeGame(world) {
   // Initialize mobile controls first to determine if we're on mobile
   const mobileControls = new MobileControls();
   world.setResource(mobileControls);
+
+  const assetLibrary = new AssetLibrary();
+  assetLibrary.init(threeScene.groundClippingPlane);
+  world.setResource(assetLibrary);
 
   // Pass mobile flag to weapon system for performance optimization
   world.setResource(new WeaponSystem(mobileControls.isMobile));
@@ -658,6 +661,7 @@ function resetGame(world) {
   world.removeResource(GameConfig);
   world.removeResource(WeaponSystem);
   world.removeResource(MobileControls);
+  world.removeResource(AssetLibrary);
 
   document.getElementById('game-over-screen').style.display = 'none';
   document.getElementById('health-bar').style.width = '100%';
