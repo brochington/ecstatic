@@ -112,6 +112,11 @@ export class Entity<CT> {
   has<T extends CT>(cType: ClassConstructor<T>): boolean;
 
   /**
+   * Check to see if the entity has at least one of the given components.
+   */
+  hasSome<T extends CT>(cTypes: ClassConstructor<T>[]): boolean;
+
+  /**
    * Check to see if an entity tagged with a given tag.
    */
   hasTag(tag: Tag): boolean;
@@ -269,6 +274,12 @@ export class ComponentCollection<CT> {
    * @param cType component Class, or array of component Classes.
    */
   has(cType: ClassConstructor<CT> | ClassConstructor<CT>[]): boolean;
+
+  /**
+   * Test to see if the collection contains at least one of the given Classes.
+   * @param cTypes array of component Classes.
+   */
+  hasSome(cTypes: ClassConstructor<CT>[]): boolean;
 
   /**
    * Test to see if the collection has a component instance based on a

@@ -708,12 +708,13 @@ function gameLoop(world, currentTime = 0) {
       }
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('ERROR in gameLoop:', error);
+    // eslint-disable-next-line no-console
     console.error('Stack trace:', error.stack);
-    // Continue the loop even if there's an error so we can debug
   }
 
-  requestAnimationFrame((time) => gameLoop(world, time));
+  requestAnimationFrame(time => gameLoop(world, time));
 }
 
 function setupEventListeners(world) {

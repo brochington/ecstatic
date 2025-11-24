@@ -135,7 +135,7 @@ export default class Entity<CT> {
       this._world.componentCollections[this._id] ||
       new ComponentCollection<CT>();
 
-    return cc.has(cTypes);
+    return cc.hasSome(cTypes);
   }
 
   hasTag(tag: Tag): boolean {

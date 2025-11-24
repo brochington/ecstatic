@@ -104,6 +104,21 @@ describe('Entity', () => {
     });
   });
 
+  describe('hasSome', () => {
+    it('hasSome', () => {
+      const testWorld = new World<CompTypes>();
+      const testEntity = new Entity<CompTypes>(testWorld, 1);
+
+      testEntity.add(new FirstComponent('test-comp-1'));
+
+      expect(testEntity.hasSome([FirstComponent, SecondComponent])).to.equal(
+        true
+      );
+      expect(testEntity.hasSome([FirstComponent])).to.equal(true);
+      expect(testEntity.hasSome([SecondComponent])).to.equal(false);
+    });
+  });
+
   describe('tags', () => {
     it('Add a tag to an entity', () => {
       const testWorld = new World<CompTypes>();

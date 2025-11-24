@@ -85,6 +85,7 @@ describe('Component Collection (internal)', () => {
       cc.add(new FirstComponent('first'));
 
       expect(cc.hasSome([FirstComponent, SecondComponent])).to.equal(true);
+      expect(cc.hasSome([FirstComponent])).to.equal(true);
       expect(cc.hasSome([SecondComponent])).to.equal(false);
     });
 

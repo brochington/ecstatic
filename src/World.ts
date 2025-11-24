@@ -404,7 +404,6 @@ export default class World<CT> {
       component[TrackedCompSymbolKeys.onRemove](this, entity);
     }
 
-    // --- BITMASK OPTIMIZATION ---
     const compId = ComponentRegistry.getId(cType);
     entity.componentMask.clear(compId);
 
@@ -462,7 +461,6 @@ export default class World<CT> {
 
     this.systems.add(cTypes, systemFunc, canonicalKey, options);
 
-    // RETROACTIVE MATCHING
     const query = this.systemQueries.get(canonicalKey);
     if (!query) {
       return this;
@@ -479,7 +477,6 @@ export default class World<CT> {
   registerEntity(entity: Entity<CT>): World<CT> {
     const cc = new ComponentCollection<CT>();
 
-    // Store in Array
     this.componentCollections[entity.id] = cc;
     this.entities[entity.id] = entity;
 
