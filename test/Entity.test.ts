@@ -64,43 +64,28 @@ describe('Entity', () => {
 
       expect(testEntity.has(FirstComponent)).to.equal(true);
       expect(testEntity.has(SecondComponent)).to.equal(true);
-      expect(testWorld.entitiesByQuery.size).to.equal(1);
+      expect(testWorld.queries.size).to.equal(1);
 
-      // Testing to make sure World.entitiesByQuery is dealt with correctly.
-      let entitySet1 = new Set();
+      // Testing to make sure World.queries is dealt with correctly.
+      // The query key should be 'all:FirstComponent,SecondComponent'
+      const queryKey = 'all:FirstComponent,SecondComponent';
+      const query = testWorld.queries.get(queryKey);
 
-      for (const [ctArr, entitySet] of testWorld.entitiesByQuery) {
-        //@ts-ignore
-        if (
-          ctArr.includes(FirstComponent.name) &&
-          ctArr.includes(SecondComponent.name)
-        ) {
-          entitySet1 = entitySet;
-        }
-      }
-
-      expect(entitySet1.size).to.equal(1);
-      expect(entitySet1.has(testEntity.id)).to.equal(true);
+      expect(query).to.exist;
+      expect(query?.entities.size).to.equal(1);
+      expect(query?.entities.has(testEntity.id)).to.equal(true);
 
       testEntity.remove(FirstComponent);
 
       expect(testEntity.has(FirstComponent)).to.equal(false);
       expect(testEntity.has(SecondComponent)).to.equal(true);
 
-      let entitySet2 = new Set();
       // The entity should no longer be in the query that requires both components
-      for (const [ctArr, entitySet] of testWorld.entitiesByQuery) {
-        // @ts-ignore
-        if (
-          ctArr.includes(FirstComponent.name) &&
-          ctArr.includes(SecondComponent.name)
-        ) {
-          entitySet2 = entitySet;
-        }
-      }
+      const query2 = testWorld.queries.get(queryKey);
 
-      expect(entitySet2.size).to.equal(0);
-      expect(entitySet2.has(testEntity.id)).to.equal(false);
+      expect(query2).to.exist;
+      expect(query2?.entities.size).to.equal(0);
+      expect(query2?.entities.has(testEntity.id)).to.equal(false);
     });
   });
 

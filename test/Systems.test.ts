@@ -24,7 +24,23 @@ class SecondComponent {
 
 class ThirdComponent {}
 
-type CompTypes = FirstComponent | SecondComponent | ThirdComponent;
+class CompA {
+  val = 0;
+}
+class CompB {
+  val = 0;
+}
+class CompC {
+  val = 0;
+}
+
+type CompTypes =
+  | FirstComponent
+  | SecondComponent
+  | ThirdComponent
+  | CompA
+  | CompB
+  | CompC;
 
 function firstSystem() {
   /* */
@@ -42,12 +58,12 @@ describe('System', () => {
     expect(defaultPhaseSystems).to.exist;
     expect(defaultPhaseSystems).to.have.lengthOf(1);
 
-    expect(defaultPhaseSystems?.[0]).to.deep.equal({
-      func: firstSystem,
-      name: firstSystem.name,
-      key: 'FirstComponent',
-      entities: new Set(),
-    });
+    // System structure now includes a query object instead of key
+    const system = defaultPhaseSystems?.[0];
+    expect(system?.func).to.equal(firstSystem);
+    expect(system?.name).to.equal(firstSystem.name);
+    expect(system?.query).to.exist;
+    expect(system?.query.key).to.equal('all:FirstComponent');
   });
 
   it('Run System with Anonymous function', async () => {
@@ -190,30 +206,24 @@ describe('System', () => {
 
       expect(inputPhaseSystems).to.exist;
       expect(inputPhaseSystems).to.have.lengthOf(1);
-      expect(inputPhaseSystems?.[0]).to.deep.equal({
-        func: inputSystem,
-        name: 'inputSys',
-        key: 'FirstComponent',
-        entities: new Set(),
-      });
+      expect(inputPhaseSystems?.[0].func).to.equal(inputSystem);
+      expect(inputPhaseSystems?.[0].name).to.equal('inputSys');
+      expect(inputPhaseSystems?.[0].query).to.exist;
+      expect(inputPhaseSystems?.[0].query.key).to.equal('all:FirstComponent');
 
       expect(logicPhaseSystems).to.exist;
       expect(logicPhaseSystems).to.have.lengthOf(1);
-      expect(logicPhaseSystems?.[0]).to.deep.equal({
-        func: logicSystem,
-        name: 'logicSys',
-        key: 'FirstComponent',
-        entities: new Set(),
-      });
+      expect(logicPhaseSystems?.[0].func).to.equal(logicSystem);
+      expect(logicPhaseSystems?.[0].name).to.equal('logicSys');
+      expect(logicPhaseSystems?.[0].query).to.exist;
+      expect(logicPhaseSystems?.[0].query.key).to.equal('all:FirstComponent');
 
       expect(renderPhaseSystems).to.exist;
       expect(renderPhaseSystems).to.have.lengthOf(1);
-      expect(renderPhaseSystems?.[0]).to.deep.equal({
-        func: renderSystem,
-        name: 'renderSys',
-        key: 'FirstComponent',
-        entities: new Set(),
-      });
+      expect(renderPhaseSystems?.[0].func).to.equal(renderSystem);
+      expect(renderPhaseSystems?.[0].name).to.equal('renderSys');
+      expect(renderPhaseSystems?.[0].query).to.exist;
+      expect(renderPhaseSystems?.[0].query.key).to.equal('all:FirstComponent');
     });
 
     it('executes systems in default phase order', () => {
@@ -378,5 +388,81 @@ describe('System', () => {
 
       expect(executionOrder).to.deep.equal(['Input', 'Render']);
     });
+  });
+
+  it('supports Array definition (backward compatibility)', () => {
+    const world = new World<CompTypes>();
+    const fake = sinon.fake();
+
+    world.addSystem([CompA], fake);
+    world.createEntity().add(new CompA());
+    world.systems.run();
+
+    expect(fake.callCount).to.equal(1);
+  });
+
+  it('supports Query Definition object', () => {
+    const world = new World<CompTypes>();
+    const fake = sinon.fake();
+
+    // Pass { all: ... } object directly
+    world.addSystem({ all: [CompA], none: [CompB] }, fake);
+
+    world.createEntity().add(new CompA()); // Should match
+    world.createEntity().add(new CompA()).add(new CompB()); // Should NOT match
+
+    world.systems.run();
+
+    expect(fake.callCount).to.equal(1);
+  });
+
+  it('supports Query Instance', () => {
+    const world = new World<CompTypes>();
+    const fake = sinon.fake();
+
+    const query = world.query({ any: [CompA, CompB] });
+    world.addSystem(query, fake);
+
+    world.createEntity().add(new CompA());
+    world.createEntity().add(new CompB());
+
+    world.systems.run();
+
+    expect(fake.callCount).to.equal(2);
+  });
+
+  it('passes correct arguments to system function', () => {
+    const world = new World<CompTypes>();
+    let capturedArgs: SystemFuncArgs<CompTypes> | null = null;
+
+    world.addSystem([CompA], (args: SystemFuncArgs<CompTypes>) => {
+      capturedArgs = args;
+    });
+
+    const e = world.createEntity().add(new CompA());
+    world.systems.run({ dt: 10, time: 100 });
+
+    const ca = capturedArgs as unknown as SystemFuncArgs<CompTypes>;
+
+    expect(ca).to.not.be.null;
+    expect(ca.entity).to.equal(e);
+    expect(ca.dt).to.equal(10);
+    expect(ca.time).to.equal(100);
+    expect(ca.index).to.equal(0);
+    expect(ca.size).to.equal(1);
+  });
+
+  it('handles phases correctly', () => {
+    const world = new World<CompTypes>();
+    const calls: string[] = [];
+
+    world.addSystem([CompA], () => calls.push('logic'), { phase: 'Logic' });
+    world.addSystem([CompA], () => calls.push('render'), { phase: 'Render' });
+
+    world.createEntity().add(new CompA());
+    world.systems.run();
+
+    // Logic comes before Render in default phase order
+    expect(calls).to.deep.equal(['logic', 'render']);
   });
 });

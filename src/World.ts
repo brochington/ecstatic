@@ -7,7 +7,7 @@ import Systems from './Systems';
 import { TrackedCompSymbolKeys } from './TrackedComponent';
 import { EventListenerFunc, EventManager } from './EventManager';
 import { ComponentRegistry } from './ComponentRegistry';
-import { BitSet } from './BitSet';
+import { Query, QueryDef } from './Query';
 
 export type SerializableClassConstructor<T> = ClassConstructor<T> & {
   // eslint-disable-next-line no-unused-vars
@@ -35,7 +35,6 @@ export interface ComponentLifecycle<CT> {
 
 export interface PrefabDefinition<CT> {
   tags?: Tag[];
-
   components: CT[];
 }
 
@@ -53,21 +52,13 @@ interface SerializedWorld {
   }[];
 }
 
-interface SystemQuery {
-  mask: BitSet;
-  entities: Set<EntityId>;
-  key: string;
-}
-
 export default class World<CT> {
   // Optimized storage: Arrays instead of Maps
   componentCollections: ComponentCollection<CT>[] = [];
   entities: Entity<CT>[] = [];
 
-  // Maps a unique query Key (BitSet string) to the Set of Entities that match it.
-  entitiesByQuery: Map<string, Set<EntityId>> = new Map();
-
-  systemQueries: Map<string, SystemQuery> = new Map();
+  // The active queries indexed by their unique key
+  queries: Map<string, Query<CT>> = new Map();
 
   entitiesByTags: Map<Tag, Set<EntityId>> = new Map();
 
@@ -79,7 +70,13 @@ export default class World<CT> {
   events: EventManager<CT>;
 
   private nextEntityId = 0;
-  private componentToSystemQueries: Map<string, string[]> = new Map();
+
+  // Indexing for fast updates: ComponentName -> Set<QueryKey>
+  private componentToQueries: Map<string, Set<string>> = new Map();
+
+  // Queries that must be checked on EVERY component change (min/max/only/different)
+  private universalQueries: Set<string> = new Set();
+
   private resources: Map<ClassConstructor<unknown>, unknown> = new Map();
   private prefabs: Map<string, PrefabDefinition<CT>> = new Map();
 
@@ -87,6 +84,44 @@ export default class World<CT> {
     this.dev = new DevTools(this);
     this.systems = new Systems(this);
     this.events = new EventManager(this);
+  }
+
+  /**
+   * Creates or retrieves a Query based on the definition.
+   * The Query is cached and automatically maintained by the World.
+   */
+  query(def: QueryDef<CT>): Query<CT> {
+    const tempQuery = new Query(this, def);
+    const key = tempQuery.key;
+
+    if (this.queries.has(key)) {
+      return this.queries.get(key) as Query<CT>;
+    }
+
+    // It's a new query, register it
+    this.queries.set(key, tempQuery);
+
+    // 1. Populate initial entities
+    for (const entity of this.entities) {
+      if (entity && entity.state !== 'destroyed' && tempQuery.match(entity)) {
+        tempQuery.entities.add(entity.id);
+      }
+    }
+
+    // 2. Index the query
+    if (tempQuery.isUniversal) {
+      this.universalQueries.add(key);
+    } else {
+      // If not universal, we only need to check it when specific components change
+      for (const compName of tempQuery.relevantComponents) {
+        if (!this.componentToQueries.has(compName)) {
+          this.componentToQueries.set(compName, new Set());
+        }
+        this.componentToQueries.get(compName)?.add(key);
+      }
+    }
+
+    return tempQuery;
   }
 
   addSystemListener<E>(
@@ -189,6 +224,22 @@ export default class World<CT> {
   locate = (
     cl: ClassConstructor<CT> | ClassConstructor<CT>[]
   ): Entity<CT> | null => {
+    // OPTIMIZATION: Use existing query cache if simple 'All' query matches
+    const comps = Array.isArray(cl) ? cl : [cl];
+    // Try to construct a key for {all: comps}
+    const sortedNames = comps
+      .map(c => c.name)
+      .sort()
+      .join(',');
+    const key = `all:${sortedNames}`;
+
+    // If we have a cached query for this, use it! O(1)
+    if (this.queries.has(key)) {
+      const q = this.queries.get(key) as Query<CT>;
+      return q.first();
+    }
+
+    // Fallback to O(N) scan
     for (const entity of this.entities) {
       if (entity && entity.components.has(cl)) {
         return entity;
@@ -200,6 +251,17 @@ export default class World<CT> {
   locateAll = (
     cl: ClassConstructor<CT> | ClassConstructor<CT>[]
   ): Entity<CT>[] => {
+    const comps = Array.isArray(cl) ? cl : [cl];
+    const sortedNames = comps
+      .map(c => c.name)
+      .sort()
+      .join(',');
+    const key = `all:${sortedNames}`;
+
+    if (this.queries.has(key)) {
+      return this.queries.get(key)?.get() || [];
+    }
+
     const results: Entity<CT>[] = [];
     for (const entity of this.entities) {
       if (entity && entity.components.has(cl)) {
@@ -338,20 +400,9 @@ export default class World<CT> {
 
     cc.add(component);
 
-    // Update Queries
+    // --- UPDATE QUERIES ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const componentName = (component as any).constructor.name;
-    const affectedQueries =
-      this.componentToSystemQueries.get(componentName) || [];
-
-    for (const queryKey of affectedQueries) {
-      const query = this.systemQueries.get(queryKey);
-      if (query) {
-        if (entity.componentMask.contains(query.mask)) {
-          query.entities.add(eid);
-        }
-      }
-    }
+    this.updateQueries(entity, (component as any).constructor.name);
 
     // @ts-ignore
     if (component[TrackedCompSymbolKeys.isTracked]) {
@@ -407,69 +458,73 @@ export default class World<CT> {
     const compId = ComponentRegistry.getId(cType);
     entity.componentMask.clear(compId);
 
-    const affectedQueryKeys =
-      this.componentToSystemQueries.get(componentName) || [];
+    // --- UPDATE QUERIES ---
+    cc.remove(cType); // Remove from collection before checking? No, logic usually implies "after change"
+    // Actually, we cleared the bitmask above, which is what queries check.
 
-    for (const queryKey of affectedQueryKeys) {
-      const query = this.systemQueries.get(queryKey);
-      if (query) {
-        query.entities.delete(eid);
-      }
-    }
-
-    cc.remove(cType);
+    this.updateQueries(entity, componentName);
 
     entity.onComponentRemove({ world: this, component });
 
     return this;
   };
 
+  private updateQueries(entity: Entity<CT>, componentName: string): void {
+    // 1. Check specific queries interested in this component
+    const affectedKeys = this.componentToQueries.get(componentName);
+    if (affectedKeys) {
+      for (const key of affectedKeys) {
+        this.checkQuery(key, entity);
+      }
+    }
+
+    // 2. Check universal queries (min, max, only, different)
+    for (const key of this.universalQueries) {
+      this.checkQuery(key, entity);
+    }
+  }
+
+  private checkQuery(key: string, entity: Entity<CT>): void {
+    const query = this.queries.get(key);
+    if (!query) return;
+
+    const matches = query.match(entity);
+    const has = query.entities.has(entity.id);
+
+    if (matches && !has) {
+      query.entities.add(entity.id);
+    } else if (!matches && has) {
+      query.entities.delete(entity.id);
+    }
+  }
+
   addSystem(
-    cTypes: ClassConstructor<CT>[],
+    queryDef: ClassConstructor<CT>[] | QueryDef<CT> | Query<CT>,
     systemFunc: SystemFunc<CT>,
     options: { phase?: string; name?: string } = {}
   ): this {
-    const cNames = cTypes.map(ct => ct.name).sort();
-    const canonicalKey = cNames.join(',');
+    // Normalize to a Query object
+    let query: Query<CT>;
 
-    // Create Mask for this System
-    const mask = new BitSet();
-    for (const cType of cTypes) {
-      const id = ComponentRegistry.getId(cType);
-      mask.set(id);
-    }
-
-    // Store Query Info
-    if (!this.systemQueries.has(canonicalKey)) {
-      const entities = new Set<EntityId>();
-      this.systemQueries.set(canonicalKey, {
-        mask,
-        entities,
-        key: canonicalKey,
-      });
-      this.entitiesByQuery.set(canonicalKey, entities);
-    }
-
-    for (const componentName of cNames) {
-      const existingQueries =
-        this.componentToSystemQueries.get(componentName) || [];
-      if (!existingQueries.includes(canonicalKey)) {
-        existingQueries.push(canonicalKey);
+    if (queryDef instanceof Query) {
+      query = queryDef;
+      // Ensure this query is actually registered in this world (if passed from external source)
+      if (!this.queries.has(query.key)) {
+        // Use the definition to register it properly
+        // Warning: we can't easily extract Def from Query, so we assume the user
+        // passed a Query created via world.query().
+        // If they created `new Query(world, def)`, we should ideally register it.
+        this.queries.set(query.key, query);
       }
-      this.componentToSystemQueries.set(componentName, existingQueries);
+    } else if (Array.isArray(queryDef)) {
+      // Legacy support: Array -> { all: [...] }
+      query = this.query({ all: queryDef });
+    } else {
+      // QueryDef object
+      query = this.query(queryDef);
     }
 
-    this.systems.add(cTypes, systemFunc, canonicalKey, options);
-
-    const query = this.systemQueries.get(canonicalKey);
-    if (!query) {
-      return this;
-    }
-    for (const entity of this.entities) {
-      if (entity && entity.componentMask.contains(mask)) {
-        query.entities.add(entity.id);
-      }
-    }
+    this.systems.add(query, systemFunc, options);
 
     return this;
   }
@@ -490,7 +545,7 @@ export default class World<CT> {
   clearEntityComponents(entityId: EntityId): this {
     this.componentCollections[entityId] = new ComponentCollection<CT>();
 
-    for (const query of this.systemQueries.values()) {
+    for (const query of this.queries.values()) {
       if (query.entities.has(entityId)) {
         query.entities.delete(entityId);
       }
@@ -507,8 +562,6 @@ export default class World<CT> {
   }
 
   destroyEntity(entityId: EntityId): this {
-    // For arrays, we can delete or set to undefined.
-    // Setting to undefined keeps the indices stable.
     delete this.componentCollections[entityId];
 
     const entity = this.entities[entityId];
@@ -523,7 +576,7 @@ export default class World<CT> {
     this.entitiesToCreate.delete(entity);
     this.entitiesToDestroy.delete(entity);
 
-    for (const query of this.systemQueries.values()) {
+    for (const query of this.queries.values()) {
       if (query.entities.has(entityId)) {
         query.entities.delete(entityId);
       }

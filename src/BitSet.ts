@@ -46,21 +46,61 @@ export class BitSet {
 
   /**
    * Checks if this BitSet contains all bits set in the other BitSet.
-   * Ideally used to check if an Entity (this) has all components required by a System (other).
+   * Used for 'All' checks.
    */
   contains(other: BitSet): boolean {
     const len = other.mask.length;
-    // If the system mask is larger than the entity mask, and the extra bits are set, it can't match.
-    // However, we handle resizing on set, so usually entity mask grows larger than system masks.
-
     for (let i = 0; i < len; i++) {
       const otherChunk = other.mask[i];
-      // If other has bits set that this doesn't have:
       if ((this.mask[i] & otherChunk) !== otherChunk) {
         return false;
       }
     }
     return true;
+  }
+
+  /**
+   * Checks if this BitSet shares ANY bits with the other BitSet.
+   * Used for 'Any'/'Some' checks.
+   */
+  intersects(other: BitSet): boolean {
+    const len = Math.min(this.mask.length, other.mask.length);
+    for (let i = 0; i < len; i++) {
+      if ((this.mask[i] & other.mask[i]) !== 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Checks if this BitSet is exactly equal to the other BitSet.
+   * Used for 'Only'/'Same' checks.
+   */
+  equals(other: BitSet): boolean {
+    const len = Math.max(this.mask.length, other.mask.length);
+    for (let i = 0; i < len; i++) {
+      const a = this.mask[i] || 0;
+      const b = other.mask[i] || 0;
+      if (a !== b) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Returns the total number of bits set to 1.
+   * Uses SWAR algorithm for 32-bit integers.
+   */
+  count(): number {
+    let count = 0;
+    const len = this.mask.length;
+    for (let i = 0; i < len; i++) {
+      let n = this.mask[i];
+      n = n - ((n >>> 1) & 0x55555555);
+      n = (n & 0x33333333) + ((n >>> 2) & 0x33333333);
+      count += (((n + (n >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+    }
+    return count;
   }
 
   /**

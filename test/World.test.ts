@@ -5,6 +5,7 @@ import { describe, it } from 'vitest';
 import World, { TypeMapping } from '../src/World';
 import Entity from '../src/Entity';
 import ComponentCollection from '../src/ComponentCollection';
+import { Query } from '../src/Query';
 
 class FirstComponent {
   id: string;
@@ -30,23 +31,118 @@ describe('World', () => {
     expect(testWorld).to.be.instanceof(World);
   });
 
-  describe('instance methods', () => {
-    describe('registerSystems', () => {
-      it('set correct content in the world instance.', () => {
-        const testWorld = new World<CompTypes>();
-        const cTypes = [FirstComponent];
+  it('exists', () => {
+    const testWorld = new World<CompTypes>();
+    expect(testWorld).to.be.instanceof(World);
+  });
 
-        testWorld.addSystem(cTypes, noop);
+  describe('Query Management', () => {
+    it('caches queries with identical definitions', () => {
+      const world = new World<CompTypes>();
 
-        // Check entitiesByQuery instead of entitiesByCTypes
-        expect(testWorld.entitiesByQuery.size).to.equal(1);
+      const q1 = world.query({ all: [FirstComponent, SecondComponent] });
+      const q2 = world.query({ all: [SecondComponent, FirstComponent] }); // Order shouldn't matter
 
-        const queries = Array.from(testWorld.entitiesByQuery.entries());
-        // The key logic has changed slightly but includes component names
-        expect(queries[0][0]).to.include(FirstComponent.name);
-        expect(queries[0][1]).to.be.instanceof(Set);
-      });
+      expect(q1).to.equal(q2);
+      expect(q1).to.be.instanceof(Query);
     });
+
+    it('creates different queries for different definitions', () => {
+      const world = new World<CompTypes>();
+
+      const q1 = world.query({ all: [FirstComponent] });
+      const q2 = world.query({ all: [SecondComponent] });
+
+      expect(q1).to.not.equal(q2);
+    });
+
+    it('automatically updates queries when entities change', () => {
+      const world = new World<CompTypes>();
+      const q = world.query({ all: [FirstComponent] });
+
+      expect(q.size).to.equal(0);
+
+      const entity = world.createEntity();
+      entity.add(new FirstComponent('1'));
+
+      expect(q.size).to.equal(1);
+    });
+  });
+
+  describe('registerEntity', () => {
+    it('creates ComponentCollection', () => {
+      const testWorld = new World<CompTypes>();
+      const entity = testWorld.createEntity();
+      entity.add(new FirstComponent('test-comp-1'));
+
+      const cc = testWorld.componentCollections[entity.id];
+      expect(cc).to.be.instanceof(ComponentCollection);
+      expect(cc.size).to.equal(1);
+    });
+  });
+
+  describe('locate & grab', () => {
+    it('locate uses internal query cache for speed', () => {
+      const world = new World<CompTypes>();
+      // Ensure the query exists internally
+      world.query({ all: [FirstComponent] });
+
+      const e1 = world.createEntity().add(new FirstComponent('a'));
+      const found = world.locate(FirstComponent);
+
+      expect(found).to.equal(e1);
+    });
+
+    it('locateAll returns all matching entities', () => {
+      const world = new World<CompTypes>();
+      world.createEntity().add(new FirstComponent('a'));
+      world.createEntity().add(new FirstComponent('b'));
+
+      const results = world.locateAll(FirstComponent);
+      expect(results.length).to.equal(2);
+    });
+  });
+
+  describe('add/remove components', () => {
+    it('updates queries when components are added', () => {
+      const world = new World<CompTypes>();
+      const q = world.query({ all: [FirstComponent] });
+
+      const e = world.createEntity();
+      world.add(e.id, new FirstComponent('a'));
+
+      expect(q.entities.has(e.id)).to.be.true;
+    });
+
+    it('updates queries when components are removed', () => {
+      const world = new World<CompTypes>();
+      const q = world.query({ all: [FirstComponent] });
+
+      const e = world.createEntity().add(new FirstComponent('a'));
+      expect(q.entities.has(e.id)).to.be.true;
+
+      world.remove(e.id, FirstComponent);
+      expect(q.entities.has(e.id)).to.be.false;
+    });
+  });
+
+  describe('instance methods', () => {
+    // describe('registerSystems', () => {
+    //   it('set correct content in the world instance.', () => {
+    //     const testWorld = new World<CompTypes>();
+    //     const cTypes = [FirstComponent];
+
+    //     testWorld.addSystem(cTypes, noop);
+
+    //     // Check entitiesByQuery instead of entitiesByCTypes
+    //     expect(testWorld.entitiesByQuery.size).to.equal(1);
+
+    //     const queries = Array.from(testWorld.entitiesByQuery.entries());
+    //     // The key logic has changed slightly but includes component names
+    //     expect(queries[0][0]).to.include(FirstComponent.name);
+    //     expect(queries[0][1]).to.be.instanceof(Set);
+    //   });
+    // });
     describe('registerEntity', () => {
       it('creates ComponentCollection at correct entityId location in entities map', () => {
         const testWorld = new World<CompTypes>();
@@ -228,31 +324,31 @@ describe('World', () => {
       });
     });
 
-    describe('set', () => {
-      it('sets component in the correct entityId, and updates entitiesByQuery', () => {
-        const testWorld = new World<CompTypes>();
+    // describe('set', () => {
+    //   it('sets component in the correct entityId, and updates entitiesByQuery', () => {
+    //     const testWorld = new World<CompTypes>();
 
-        // We need a system to verify entity matching, because entitiesByQuery is populated based on systems
-        testWorld.addSystem([FirstComponent], noop);
+    //     // We need a system to verify entity matching, because entitiesByQuery is populated based on systems
+    //     testWorld.addSystem([FirstComponent], noop);
 
-        const entity = testWorld.createEntity();
+    //     const entity = testWorld.createEntity();
 
-        const component = new FirstComponent('test-comp-1');
+    //     const component = new FirstComponent('test-comp-1');
 
-        testWorld.add(entity.id, component);
+    //     testWorld.add(entity.id, component);
 
-        const cc = testWorld.componentCollections[entity.id];
+    //     const cc = testWorld.componentCollections[entity.id];
 
-        expect(cc).to.be.instanceof(ComponentCollection);
-        expect(cc.has(FirstComponent)).to.equal(true);
-        expect(cc.size).to.equal(1);
+    //     expect(cc).to.be.instanceof(ComponentCollection);
+    //     expect(cc.has(FirstComponent)).to.equal(true);
+    //     expect(cc.size).to.equal(1);
 
-        for (const [key, val] of testWorld.entitiesByQuery.entries()) {
-          expect(key).to.include('FirstComponent');
-          expect(val.has(entity.id)).to.equal(true);
-        }
-      });
-    });
+    //     for (const [key, val] of testWorld.entitiesByQuery.entries()) {
+    //       expect(key).to.include('FirstComponent');
+    //       expect(val.has(entity.id)).to.equal(true);
+    //     }
+    //   });
+    // });
 
     describe('Resources', () => {
       class GameConfig {
