@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { World } from 'ecstatic';
-import { getRandomNumber } from '../utils/utils.js';
+import { getRandomNumber, noise } from '../utils/utils.js';
 import { MobileControls } from '../mobile-controls.js';
 import {
   ThreeScene,
@@ -230,6 +230,65 @@ function registerSystems(world) {
 /*                               INITIALIZATION                               */
 /* -------------------------------------------------------------------------- */
 
+function createGrassTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const context = canvas.getContext('2d');
+
+  // Base green color with some noise
+  context.fillStyle = '#228b22';
+  context.fillRect(0, 0, 512, 512);
+
+  // Add grass blades/texture noise
+  for (let i = 0; i < 20000; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const width = Math.random() * 2 + 1;
+    const height = Math.random() * 8 + 4;
+    const angle = (Math.random() - 0.5) * 0.5;
+
+    context.save();
+    context.translate(x, y);
+    context.rotate(angle);
+    
+    // Varying green shades
+    const hue = 90 + Math.random() * 50; // Greenish hues (90-140)
+    const lightness = 20 + Math.random() * 30; // Darker to medium
+    context.fillStyle = `hsl(${hue}, 60%, ${lightness}%)`;
+    
+    context.beginPath();
+    context.moveTo(-width / 2, 0);
+    context.lineTo(width / 2, 0);
+    context.lineTo(0, -height);
+    context.fill();
+    context.restore();
+  }
+  
+  // Add some dirt/bare patches noise
+  for (let i = 0; i < 40; i++) {
+     const x = Math.random() * 512;
+     const y = Math.random() * 512;
+     const radius = Math.random() * 30 + 10;
+     
+     const grad = context.createRadialGradient(x, y, 0, x, y, radius);
+     grad.addColorStop(0, 'rgba(90, 60, 30, 0.5)'); // Brown
+     grad.addColorStop(1, 'rgba(90, 60, 30, 0)');
+     
+     context.fillStyle = grad;
+     context.beginPath();
+     context.arc(x, y, radius, 0, Math.PI * 2);
+     context.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(sceneSize / 15, sceneSize / 15); // Repeat texture across the terrain
+  
+  return texture;
+}
+
 function initializeGame(world) {
   const threeScene = new ThreeScene();
   world.setResource(threeScene);
@@ -283,10 +342,12 @@ function initializeGame(world) {
 
   // Create more natural ground with grass-like appearance
   const groundGeo = new THREE.PlaneGeometry(sceneSize, sceneSize, 128, 128); // Increased segments for better noise detail
+  
+  // Use procedural grass texture
+  const groundTexture = createGrassTexture();
   const groundMat = new THREE.MeshPhongMaterial({
-    color: 0x228b22, // Bright green grass color
-    transparent: false,
-    shininess: 0,
+    map: groundTexture,
+    shininess: 5,
   });
 
   // Add some height variation to make ground less flat
@@ -322,11 +383,11 @@ function initializeGame(world) {
     .addTag(Obstacle);
 
   // Create massive rock formations like Joshua Tree Desert
-  const numFormations = 80 + Math.floor(Math.random() * 40); // 80-120 formations
+  const numFormations = 120 + Math.floor(Math.random() * 40); // 80-120 formations
 
   for (let i = 0; i < numFormations; i++) {
     // Vary sizes dramatically - from small rocks to massive formations
-    const boulderSize = getRandomNumber(1.5, 18); // Much larger range
+    const boulderSize = getRandomNumber(1.5, 30); // Much larger range
 
     // Position formations with spacing to accommodate massive ones
     const minDistance = 8 + boulderSize; // Larger formations need much more space
@@ -374,25 +435,49 @@ function initializeGame(world) {
       .addTag(Obstacle);
   }
 
-  // Add many bushes
-  for (let i = 0; i < 35; i++) {
+  // Add many bushes - concentrated in grassy areas
+  for (let i = 0; i < 150; i++) {
     const bushPosition = new THREE.Vector3(
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8),
       0,
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
     );
-    bushPosition.y = getTerrainHeight(bushPosition.x, bushPosition.z);
-    const bush = createBushes(world, bushPosition);
-    threeScene.scene.add(bush);
+    
+    // Check noise to place bushes in fertile/grassy areas
+    const density = noise(bushPosition.x * 0.03, bushPosition.z * 0.03);
+    
+    if (density > 0.3) {
+      bushPosition.y = getTerrainHeight(bushPosition.x, bushPosition.z);
+      const bush = createBushes(world, bushPosition);
+      threeScene.scene.add(bush);
 
-    // Create bounding box for collision detection
-    const bushBox = new THREE.Box3().setFromObject(bush);
-    bushBox.expandByScalar(0.3); // Smaller padding for bushes
-    world
-      .createEntity()
-      .add(new ThreeObject(bush))
-      .add(new Collider(bushBox))
-      .addTag(Obstacle);
+      // Create bounding box for collision detection
+      const bushBox = new THREE.Box3().setFromObject(bush);
+      bushBox.expandByScalar(0.3);
+      world
+        .createEntity()
+        .add(new ThreeObject(bush))
+        .add(new Collider(bushBox))
+        .addTag(Obstacle);
+    }
+  }
+
+  // Add decorative pebbles in bare spots
+  for (let i = 0; i < 300; i++) {
+    const x = getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5);
+    const z = getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5);
+    const density = noise(x * 0.03, z * 0.03);
+
+    if (density <= 0.3) {
+      const pos = new THREE.Vector3(x, 0, z);
+      pos.y = getTerrainHeight(x, z);
+      // Small pebble size
+      const size = getRandomNumber(0.2, 0.5);
+      const pebbleData = createBoulder(world, pos, size);
+      threeScene.scene.add(pebbleData.mesh);
+      
+      // No collision entity for small pebbles - purely decorative
+    }
   }
 
   // Add crates for cover and atmosphere
@@ -479,16 +564,21 @@ function initializeGame(world) {
       .addTag(Obstacle);
   }
 
-  // Add grass patches
-  for (let i = 0; i < 20; i++) {
-    const grassPosition = new THREE.Vector3(
-      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5),
-      0,
-      getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
-    );
-    grassPosition.y = getTerrainHeight(grassPosition.x, grassPosition.z);
-    const grass = createGrassPatch(world, grassPosition);
-    threeScene.scene.add(grass);
+  // Add grass patches - significantly increased density with clustering
+  for (let i = 0; i < 1200; i++) {
+    const x = getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5);
+    const z = getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5);
+    
+    // Use noise for placement - creates patches and clearings (bare spots)
+    const density = noise(x * 0.03, z * 0.03);
+    
+    // Only spawn if density is above threshold (creates clustering)
+    if (density > 0.4) {
+      const grassPosition = new THREE.Vector3(x, 0, z);
+      grassPosition.y = getTerrainHeight(x, z);
+      const grass = createGrassPatch(world, grassPosition);
+      threeScene.scene.add(grass);
+    }
   }
 
   // Add ancient ruins

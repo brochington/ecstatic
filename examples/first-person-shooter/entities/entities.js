@@ -1251,7 +1251,7 @@ export function createSkybox(scene) {
 }
 
 export function createBoulder(world, position, size) {
-  // Create natural rock formations that extend from the ground
+  // Create more realistic rock formations
   const boulderGroup = new THREE.Group();
 
   const baseColor = new THREE.Color().setHSL(
@@ -1260,230 +1260,69 @@ export function createBoulder(world, position, size) {
     0.25 + Math.random() * 0.4 // Dark to medium brightness
   );
 
-  // Decide on formation type: massive monoliths, piles, outcroppings, or scattered rocks
-  const formationType = Math.random();
-  let numRocks;
-
-  if (size > 12) {
-    // Very large formations - Joshua Tree style monoliths
-    if (formationType < 0.3) {
-      numRocks = getRandomNumber(1, 2); // Single massive rock
-    } else if (formationType < 0.6) {
-      numRocks = getRandomNumber(2, 4); // Small cluster of large rocks
-    } else {
-      numRocks = getRandomNumber(3, 6); // Medium formation
-    }
-  } else if (size > 8) {
-    // Large formations
-    if (formationType < 0.4) {
-      numRocks = getRandomNumber(2, 4); // Outcropping
-    } else if (formationType < 0.7) {
-      numRocks = getRandomNumber(4, 8); // Rock pile
-    } else {
-      numRocks = getRandomNumber(1, 3); // Large individual rocks
-    }
+  // Determine rock type: large monolith, cluster, or scattered
+  const type = Math.random();
+  let numRocks = 1;
+  if (size > 10) {
+    if (type < 0.4) numRocks = getRandomNumber(3, 5);
+    else if (type < 0.8) numRocks = getRandomNumber(2, 3);
   } else {
-    // Smaller formations
-    if (formationType < 0.4) {
-      numRocks = getRandomNumber(4, 8); // Rock pile
-    } else if (formationType < 0.7) {
-      numRocks = getRandomNumber(2, 5); // Outcropping
-    } else {
-      numRocks = getRandomNumber(1, 3); // Scattered rocks
-    }
+    if (type < 0.5) numRocks = getRandomNumber(2, 4);
   }
 
   const rocks = [];
-
+  
   for (let i = 0; i < numRocks; i++) {
-    // Vary rock shapes: spheres, flattened spheres, and irregular shapes
-    const rockType = Math.random();
-    let geometry,
-      scaleY = 1;
-
-    if (rockType < 0.4) {
-      // Round boulder
-      geometry = new THREE.SphereGeometry(1, 8, 6);
-    } else if (rockType < 0.7) {
-      // Flattened rock (lying on ground)
-      geometry = new THREE.SphereGeometry(1, 8, 6);
-      scaleY = 0.3 + Math.random() * 0.4; // Flatten it
-    } else {
-      // Irregular angular rock
-      geometry = new THREE.DodecahedronGeometry(1, 0);
-      // Randomly scale to make it irregular
-      geometry.scale(
-        0.8 + Math.random() * 0.4,
-        0.6 + Math.random() * 0.8,
-        0.8 + Math.random() * 0.4
-      );
+    // Use IcosahedronGeometry for jagged, realistic look
+    const detail = Math.random() > 0.5 ? 0 : 1;
+    const geometry = new THREE.IcosahedronGeometry(1, detail);
+    
+    // Distort the rock vertices slightly for variety
+    const positionAttribute = geometry.attributes.position;
+    for (let j = 0; j < positionAttribute.count; j++) {
+      const x = positionAttribute.getX(j);
+      const y = positionAttribute.getY(j);
+      const z = positionAttribute.getZ(j);
+      // Simple noise-like distortion
+      const noise = Math.sin(x * 2) * Math.cos(y * 2) * Math.sin(z * 2) * 0.2;
+      positionAttribute.setXYZ(j, x + noise, y + noise, z + noise);
     }
+    geometry.computeVertexNormals();
 
-    // Vary rock size significantly
-    const rockSize = size * (0.4 + Math.random() * 1.2);
-    geometry.scale(rockSize, rockSize * scaleY, rockSize);
+    // Vary scale per axis for irregular shape
+    const rockSize = size * (0.5 + Math.random() * 0.8) / Math.pow(numRocks, 0.3);
+    geometry.scale(
+      rockSize * (0.8 + Math.random() * 0.4),
+      rockSize * (0.6 + Math.random() * 0.6),
+      rockSize * (0.8 + Math.random() * 0.4)
+    );
 
     const rockMat = new THREE.MeshPhongMaterial({
-      color: baseColor.clone().multiplyScalar(0.7 + Math.random() * 0.5),
+      color: baseColor.clone().multiplyScalar(0.8 + Math.random() * 0.4),
+      flatShading: true, // Low poly look
+      shininess: 10
     });
 
     const rock = new THREE.Mesh(geometry, rockMat);
+    
+    // Position within group
+    if (numRocks > 1) {
+      rock.position.set(
+        (Math.random() - 0.5) * size * 0.6,
+        (Math.random() - 0.2) * size * 0.3,
+        (Math.random() - 0.5) * size * 0.6
+      );
+    }
+    
+    // Random rotation
+    rock.rotation.set(
+      Math.random() * Math.PI * 2,
+      Math.random() * Math.PI * 2,
+      Math.random() * Math.PI * 2
+    );
+
     rocks.push(rock);
-  }
-
-  // Position rocks... (logic omitted for brevity, assume same as before but adjusted)
-  // Since we overwrite the file, I need to include the full logic.
-  // Let's reuse the existing logic but ensure the base y is relative to 0 so when we move the group it works.
-  
-  if (size > 12) {
-    if (formationType < 0.3) {
-      rocks.forEach(rock => {
-        rock.position.set(
-          (Math.random() - 0.5) * size * 0.2,
-          size * 0.3 + Math.random() * size * 0.4, 
-          (Math.random() - 0.5) * size * 0.2
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 0.3 - Math.PI * 0.15,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 0.3 - Math.PI * 0.15
-        );
-        boulderGroup.add(rock);
-      });
-    } else if (formationType < 0.6) {
-      rocks.forEach((rock, index) => {
-        const angle = (index / rocks.length) * Math.PI * 2;
-        const radius = size * 0.4;
-        const height = size * 0.2 + Math.random() * size * 0.6;
-
-        rock.position.set(
-          Math.cos(angle) * radius,
-          height,
-          Math.sin(angle) * radius
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 0.4 - Math.PI * 0.2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 0.4 - Math.PI * 0.2
-        );
-        boulderGroup.add(rock);
-      });
-    } else {
-      rocks.forEach((rock, index) => {
-        const height = index * size * 0.25 + Math.random() * size * 0.3;
-        rock.position.set(
-          (Math.random() - 0.5) * size * 0.8,
-          height,
-          (Math.random() - 0.5) * size * 0.8
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 0.6 - Math.PI * 0.3,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 0.6 - Math.PI * 0.3
-        );
-        boulderGroup.add(rock);
-      });
-    }
-  } else if (size > 8) {
-    if (formationType < 0.4) {
-      rocks.forEach((rock, index) => {
-        const baseHeight = -size * 0.3 + index * size * 0.4;
-        rock.position.set(
-          (Math.random() - 0.5) * size * 0.7,
-          baseHeight + Math.random() * size * 0.5,
-          (Math.random() - 0.5) * size * 0.7
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 0.5 - Math.PI * 0.25,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 0.5 - Math.PI * 0.25
-        );
-        boulderGroup.add(rock);
-      });
-    } else if (formationType < 0.7) {
-      rocks.forEach((rock, index) => {
-        const angle = (index / rocks.length) * Math.PI * 2;
-        const radius = size * (0.4 + Math.random() * 0.3);
-        const height = -size * 0.2 + Math.random() * size * 1.0;
-        rock.position.set(
-          Math.cos(angle) * radius,
-          height,
-          Math.sin(angle) * radius
-        );
-        rock.position.x += (Math.random() - 0.5) * size * 0.4;
-        rock.position.z += (Math.random() - 0.5) * size * 0.4;
-        rock.rotation.set(
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2
-        );
-        boulderGroup.add(rock);
-      });
-    } else {
-      rocks.forEach(rock => {
-        rock.position.set(
-          (Math.random() - 0.5) * size * 2.5,
-          -size * 0.1 + Math.random() * size * 0.6,
-          (Math.random() - 0.5) * size * 2.5
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2
-        );
-        boulderGroup.add(rock);
-      });
-    }
-  } else {
-    if (formationType < 0.4) {
-      rocks.forEach((rock, index) => {
-        const angle = (index / rocks.length) * Math.PI * 2;
-        const radius = size * (0.3 + Math.random() * 0.4);
-        const height = -size * 0.3 + Math.random() * size * 0.8;
-        rock.position.set(
-          Math.cos(angle) * radius,
-          height,
-          Math.sin(angle) * radius
-        );
-        rock.position.x += (Math.random() - 0.5) * size * 0.3;
-        rock.position.z += (Math.random() - 0.5) * size * 0.3;
-        rock.rotation.set(
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2
-        );
-        boulderGroup.add(rock);
-      });
-    } else if (formationType < 0.7) {
-      rocks.forEach((rock, index) => {
-        const baseHeight = -size * 0.5 + index * size * 0.3;
-        rock.position.set(
-          (Math.random() - 0.5) * size * 0.6,
-          baseHeight + Math.random() * size * 0.4,
-          (Math.random() - 0.5) * size * 0.6
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 0.5 - Math.PI * 0.25,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 0.5 - Math.PI * 0.25
-        );
-        boulderGroup.add(rock);
-      });
-    } else {
-      rocks.forEach(rock => {
-        rock.position.set(
-          (Math.random() - 0.5) * size * 2,
-          -size * 0.2 + Math.random() * size * 0.4,
-          (Math.random() - 0.5) * size * 2
-        );
-        rock.rotation.set(
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2
-        );
-        boulderGroup.add(rock);
-      });
-    }
+    boulderGroup.add(rock);
   }
 
   boulderGroup.position.copy(position);
@@ -1491,7 +1330,8 @@ export function createBoulder(world, position, size) {
   const collisionBoxes = [];
   rocks.forEach(rock => {
     const rockBox = new THREE.Box3().setFromObject(rock);
-    const shrinkFactor = 0.5;
+    // Don't shrink too much to prevent spawning inside visual mesh
+    const shrinkFactor = 0.8; // 80% size (20% shrink) is safer than 50%
     const center = rockBox.getCenter(new THREE.Vector3());
     const size = rockBox.getSize(new THREE.Vector3());
     const halfSize = size.clone().multiplyScalar(shrinkFactor * 0.5);
@@ -1507,61 +1347,120 @@ export function createBoulder(world, position, size) {
 
 export function createTree(world, position) {
   const treeGroup = new THREE.Group();
-  const isJoshuaTree = Math.random() < 0.4;
-
-  if (isJoshuaTree) {
-    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 6, 8);
-    const trunkMat = new THREE.MeshPhongMaterial({
-      color: 0x654321,
-    });
+  
+  // More tree types: 0=Joshua, 1=Pine, 2=Dead, 3=Palm-ish
+  const treeType = Math.floor(Math.random() * 4);
+  
+  if (treeType === 0) { // Joshua Tree style (classic)
+    const trunkGeo = new THREE.CylinderGeometry(0.25 + Math.random()*0.1, 0.4 + Math.random()*0.1, 5 + Math.random()*2, 7);
+    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x654321, flatShading: true });
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-
-    trunk.rotation.y = Math.random() * Math.PI * 0.3 - Math.PI * 0.15;
-    trunk.rotation.x = Math.random() * Math.PI * 0.2 - Math.PI * 0.1;
-    trunk.position.y = 3;
+    trunk.position.y = 2.5;
+    trunk.rotation.x = (Math.random() - 0.5) * 0.2;
+    trunk.rotation.z = (Math.random() - 0.5) * 0.2;
     treeGroup.add(trunk);
 
-    const leafColors = [0x228b22, 0x32cd32, 0x006400, 0x90ee90];
-    for (let i = 0; i < 8; i++) {
-      const leafGeo = new THREE.ConeGeometry(0.1, 1.5 + Math.random() * 1, 6);
-      const leafMat = new THREE.MeshPhongMaterial({
-        color: leafColors[Math.floor(Math.random() * leafColors.length)],
-      });
-      const leaf = new THREE.Mesh(leafGeo, leafMat);
-
-      const angle = (i / 8) * Math.PI * 2;
-      const distance = 0.8 + Math.random() * 0.4;
-      const height = 4 + Math.random() * 2;
-
-      leaf.position.set(
-        Math.cos(angle) * distance,
-        height,
-        Math.sin(angle) * distance
-      );
-      leaf.lookAt(
-        new THREE.Vector3(Math.cos(angle) * 2, height, Math.sin(angle) * 2)
-      );
-      leaf.rotation.z += (Math.random() - 0.5) * 0.3;
-      treeGroup.add(leaf);
+    // Add random branches
+    const branchCount = getRandomNumber(2, 5);
+    for(let i=0; i<branchCount; i++) {
+      const branchLen = 2 + Math.random();
+      const branchGeo = new THREE.CylinderGeometry(0.15, 0.25, branchLen, 5);
+      const branch = new THREE.Mesh(branchGeo, trunkMat);
+      branch.position.y = 3 + Math.random()*2;
+      branch.rotation.z = (Math.random() - 0.5) * 1.5;
+      branch.rotation.x = (Math.random() - 0.5) * 1.5;
+      branch.position.x = (Math.random()-0.5)*0.5;
+      branch.position.z = (Math.random()-0.5)*0.5;
+      treeGroup.add(branch);
+      
+      // Tuft of leaves at end of branch
+      const tuftGeo = new THREE.IcosahedronGeometry(0.6 + Math.random()*0.4, 0);
+      const tuftMat = new THREE.MeshPhongMaterial({ color: 0x228b22, flatShading: true });
+      const tuft = new THREE.Mesh(tuftGeo, tuftMat);
+      tuft.position.y = branchLen/2;
+      branch.add(tuft);
     }
-  } else {
-    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
-    const trunkMat = new THREE.MeshPhongMaterial({
-      color: 0x8b4513,
-    });
+  } else if (treeType === 1) { // Pine Tree style
+    const trunkHeight = 2 + Math.random();
+    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, trunkHeight, 7);
+    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x3e2723, flatShading: true });
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 2;
+    trunk.position.y = trunkHeight/2;
     treeGroup.add(trunk);
-
-    const foliageColors = [0x228b22, 0x32cd32, 0x006400];
-    for (let i = 0; i < 3; i++) {
-      const foliageGeo = new THREE.ConeGeometry(2 - i * 0.3, 2, 8);
-      const foliageMat = new THREE.MeshPhongMaterial({
-        color: foliageColors[i % foliageColors.length],
-      });
+    
+    const foliageColor = 0x1b5e20; // Dark green
+    const levels = getRandomNumber(3, 5);
+    for(let i=0; i<levels; i++) {
+      const levelSize = (levels - i) * 0.8 + 0.5;
+      const foliageGeo = new THREE.ConeGeometry(levelSize, 2, 7);
+      const foliageMat = new THREE.MeshPhongMaterial({ color: foliageColor, flatShading: true });
       const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-      foliage.position.y = 3 + i * 0.8;
+      foliage.position.y = trunkHeight + i * 1.2;
       treeGroup.add(foliage);
+    }
+  } else if (treeType === 2) { // Dead Tree
+    const trunkHeight = 4 + Math.random()*3;
+    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, trunkHeight, 5);
+    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x8d6e63, flatShading: true }); // Greyish brown
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.y = trunkHeight/2;
+    trunk.rotation.z = (Math.random()-0.5)*0.2;
+    treeGroup.add(trunk);
+    
+    const branchCount = getRandomNumber(3, 7);
+    for(let i=0; i<branchCount; i++) {
+      const branchLen = 1.5 + Math.random()*2;
+      const branchGeo = new THREE.CylinderGeometry(0.05, 0.15, branchLen, 4);
+      const branch = new THREE.Mesh(branchGeo, trunkMat);
+      branch.position.y = trunkHeight * (0.4 + Math.random()*0.6);
+      const angle = Math.random() * Math.PI * 2;
+      const tilt = 0.5 + Math.random() * 1.0;
+      branch.rotation.y = angle;
+      branch.rotation.z = tilt;
+      // Translate to surface of trunk
+      branch.position.x += Math.sin(tilt) * branchLen/2 * Math.cos(angle); 
+      treeGroup.add(branch);
+    }
+  } else { // Palm-ish / Broadleaf
+    const trunkHeight = 5 + Math.random()*2;
+    // Curved trunk approximation (tilted cylinders)
+    const segs = 4;
+    const segHeight = trunkHeight / segs;
+    const currentPos = new THREE.Vector3(0, 0, 0);
+    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x795548, flatShading: true });
+    
+    const tiltX = (Math.random()-0.5)*0.3;
+    const tiltZ = (Math.random()-0.5)*0.3;
+    
+    for(let i=0; i<segs; i++) {
+      const rBottom = 0.4 - (i * 0.05);
+      const rTop = 0.4 - ((i+1) * 0.05);
+      const geo = new THREE.CylinderGeometry(rTop, rBottom, segHeight, 7);
+      const mesh = new THREE.Mesh(geo, trunkMat);
+      mesh.position.copy(currentPos);
+      mesh.position.y += segHeight/2;
+      // Apply slight curve
+      mesh.rotation.x = tiltX * i;
+      mesh.rotation.z = tiltZ * i;
+      treeGroup.add(mesh);
+      
+      currentPos.y += segHeight * Math.cos(tiltX*i); // Approx
+      currentPos.x -= segHeight * Math.sin(tiltZ*i);
+      currentPos.z += segHeight * Math.sin(tiltX*i);
+    }
+    
+    // Top foliage
+    const leafCount = getRandomNumber(5, 9);
+    for(let i=0; i<leafCount; i++) {
+      const leafGeo = new THREE.BoxGeometry(0.5, 0.1, 2.5);
+      const leafMat = new THREE.MeshPhongMaterial({ color: 0x4caf50, flatShading: true });
+      const leaf = new THREE.Mesh(leafGeo, leafMat);
+      leaf.position.copy(currentPos);
+      const angle = (i / leafCount) * Math.PI * 2;
+      leaf.rotation.y = angle;
+      leaf.rotation.x = 0.2 + Math.random()*0.3;
+      leaf.translateZ(1.2); // Move out from center
+      treeGroup.add(leaf);
     }
   }
 
@@ -1572,17 +1471,22 @@ export function createTree(world, position) {
 export function createBushes(world, position, count = 3) {
   const bushGroup = new THREE.Group();
 
+  // Create more varied bushes
   for (let i = 0; i < count; i++) {
-    const bushGeo = new THREE.SphereGeometry(0.8 + Math.random() * 0.4, 6, 4);
+    // Use Icosahedron for low-poly bush look
+    const bushGeo = new THREE.IcosahedronGeometry(0.6 + Math.random() * 0.6, 0);
+    const hue = 0.25 + Math.random() * 0.1; // Green to yellow-green
     const bushMat = new THREE.MeshPhongMaterial({
-      color: new THREE.Color().setHSL(0.25 + Math.random() * 0.1, 0.6, 0.4),
+      color: new THREE.Color().setHSL(hue, 0.6, 0.3 + Math.random()*0.2),
+      flatShading: true
     });
     const bush = new THREE.Mesh(bushGeo, bushMat);
     bush.position.set(
-      (Math.random() - 0.5) * 2,
-      Math.random() * 0.5,
-      (Math.random() - 0.5) * 2
+      (Math.random() - 0.5) * 2.5,
+      Math.random() * 0.5 + 0.3,
+      (Math.random() - 0.5) * 2.5
     );
+    bush.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
     bushGroup.add(bush);
   }
 
@@ -1668,31 +1572,58 @@ export function createStonePillar(world, position) {
 }
 
 export function createGrassPatch(world, position) {
-  const grassGroup = new THREE.Group();
+  // Use InstancedMesh for high performance grass rendering
+  const bladeCount = 30;
+  
+  // Base geometry for a single blade
+  const bladeGeo = new THREE.PlaneGeometry(0.15, 0.8);
+  bladeGeo.translate(0, 0.4, 0); // Pivot at bottom
 
-  for (let i = 0; i < 15; i++) {
-    const bladeGeo = new THREE.PlaneGeometry(0.1, 0.8);
-    const bladeMat = new THREE.MeshPhongMaterial({
-      color: 0x228b22,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-    const blade = new THREE.Mesh(bladeGeo, bladeMat);
+  const bladeMat = new THREE.MeshPhongMaterial({
+    color: 0x228b22,
+    side: THREE.DoubleSide,
+    flatShading: true,
+    shininess: 0
+  });
 
-    blade.position.set(
-      (Math.random() - 0.5) * 3,
-      Math.random() * 0.4,
-      (Math.random() - 0.5) * 3
+  const mesh = new THREE.InstancedMesh(bladeGeo, bladeMat, bladeCount);
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+  const baseHue = 0.28; // Green
+
+  for (let i = 0; i < bladeCount; i++) {
+    dummy.position.set(
+      (Math.random() - 0.5) * 3.5,
+      0,
+      (Math.random() - 0.5) * 3.5
     );
-    blade.rotation.y = Math.random() * Math.PI * 2;
-    blade.rotation.x = (Math.random() - 0.5) * 0.3;
-
-    grassGroup.add(blade);
+    
+    dummy.rotation.y = Math.random() * Math.PI * 2;
+    // More lean for variety
+    dummy.rotation.x = (Math.random() - 0.5) * 0.6;
+    dummy.rotation.z = (Math.random() - 0.5) * 0.6;
+    
+    const scale = 0.8 + Math.random() * 0.2;
+    dummy.scale.set(scale, scale * (0.8 + Math.random() * 0.6), scale);
+    
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    
+    // Vary color for natural look
+    // Hue: 0.25-0.35 (Yellow-green to green)
+    const hue = baseHue + (Math.random() - 0.5) * 0.1; 
+    const sat = 0.5 + Math.random() * 0.3;
+    const light = 0.2 + Math.random() * 0.3;
+    color.setHSL(hue, sat, light);
+    mesh.setColorAt(i, color);
   }
 
-  grassGroup.position.copy(position);
-  return grassGroup;
+  mesh.position.copy(position);
+  
+  // Ensure bounding box is correct for frustum culling
+  mesh.computeBoundingSphere();
+  
+  return mesh;
 }
 
 export function createRuin(world, position) {
