@@ -1780,9 +1780,9 @@ export function createRocketExplosion(world, position) {
       .addTag(Particle);
   }
 
-  // Apply splash damage in explosion radius
-  const explosionRadius = 4;
-  applySplashDamage(world, position, 40, null, explosionRadius); // null firedBy means it damages everyone
+  // Apply splash damage in explosion radius - much bigger and stronger
+  const explosionRadius = 10; // Increased from 4 to 10
+  applySplashDamage(world, position, 80, null, explosionRadius); // Increased from 40 to 80
 }
 
 export function createCollectable(world, position) {

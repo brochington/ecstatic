@@ -7,6 +7,7 @@ import {
   WeaponSystem,
   ThreeScene,
   GameConfig,
+  QueryCache,
 } from '../resources/resources.js';
 import {
   GameState,
@@ -207,11 +208,15 @@ export function playerShootingSystem({ world }) {
       // Machine gun and flamethrower auto-fire while button is held down
       shouldFire = mobileControls.isShooting() && weaponSystem.canFire();
     } else {
-      // Other weapons fire when mobile shoot button is pressed
-      shouldFire =
-        mobileControls.isShooting() && !input.shoot && weaponSystem.canFire();
-      if (mobileControls.isShooting()) {
-        input.shootReleased = true; // Simulate button release for single-shot weapons
+      // Single-shot weapons: Fire only on button press (transition from not shooting to shooting)
+      const isShooting = mobileControls.isShooting();
+      if (isShooting && !input.shoot) {
+        // Button was just pressed
+        shouldFire = weaponSystem.canFire();
+        input.shoot = true;
+      } else if (!isShooting && input.shoot) {
+        // Button was released
+        input.shoot = false;
       }
     }
   } else {
@@ -774,6 +779,7 @@ function checkObstacleCollision(entityBox, obstacleCollider) {
 
 export function entityObstacleCollisionSystem({ world }) {
   const obstacles = world.getAllTagged(Obstacle);
+  const queryCache = world.getResource(QueryCache);
 
   // Handle player collision with obstacles
   const player = world.getTagged(Player);
@@ -809,13 +815,13 @@ export function entityObstacleCollisionSystem({ world }) {
   // Handle weapon pickup collision with player (destroy arrows when weapon is picked up)
   if (player && player.state === 'created') {
     const playerCollider = player.get(Collider);
-    const weaponPickups = world.locateAll([WeaponPickup]);
+    const weaponPickups = queryCache.weaponPickups.get();
 
     for (const pickup of weaponPickups) {
       const pickupCollider = pickup.get(Collider);
       if (playerCollider.box.intersectsBox(pickupCollider.box)) {
         // Destroy arrow indicators when weapon is picked up
-        const arrows = world.locateAll([WeaponPickupArrow]);
+        const arrows = queryCache.weaponPickupArrows.get();
         for (const arrow of arrows) {
           const arrowComponent = arrow.get(WeaponPickupArrow);
           if (arrowComponent.weaponEntity === pickup) {
@@ -827,15 +833,8 @@ export function entityObstacleCollisionSystem({ world }) {
     }
   }
 
-  // Handle enemy collision with obstacles
-  const enemies = world.locateAll([
-    EnemyAI,
-    ScoutAI,
-    TankAI,
-    SniperAI,
-    ThreeObject,
-    Collider,
-  ]);
+  // Handle enemy collision with obstacles - use cached query
+  const enemies = queryCache.enemiesWithAI.get();
   for (const enemy of enemies) {
     if (enemy.state !== 'created') continue;
 
@@ -959,15 +958,13 @@ export function entityObstacleCollisionSystem({ world }) {
 // }
 
 export function collisionSystem({ world }) {
-  const bullets = world.locateAll([Projectile, Collider]);
-  const regularEnemies = world.locateAll([EnemyAI, Collider]);
-  const scouts = world.locateAll([ScoutAI, Collider]);
-  const tanks = world.locateAll([TankAI, Collider]);
-  const snipers = world.locateAll([SniperAI, Collider]);
-  const enemies = [...regularEnemies, ...scouts, ...tanks, ...snipers];
+  // Use cached queries for better performance
+  const queryCache = world.getResource(QueryCache);
+  const bullets = queryCache.projectiles.get();
+  const enemies = queryCache.allEnemies.get();
   const obstacles = world.getAllTagged(Obstacle);
-  const healthPacks = world.locateAll([HealthPack]);
-  const weaponPickups = world.locateAll([WeaponPickup]);
+  const healthPacks = queryCache.healthPacks.get();
+  const weaponPickups = queryCache.weaponPickups.get();
   const player = world.getTagged(Player);
 
   for (const bullet of bullets) {
@@ -984,10 +981,12 @@ export function collisionSystem({ world }) {
     if (isEnemyBullet && player && player.state === 'created') {
       const playerCollider = player.get(Collider);
       if (bulletCollider.box.intersectsBox(playerCollider.box)) {
-        // Enemy rockets explode on impact with player
+        // Enemy rockets explode on impact with player with splash damage
         if (bullet.hasTag && bullet.hasTag('rocket')) {
           const position = bullet.get(ThreeObject).mesh.position;
           createRocketExplosion(world, position);
+          // Also apply direct splash damage
+          applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
           bullet.destroy();
         } else {
           world.events.emit(new CollisionEvent(bullet, player));
@@ -1001,10 +1000,12 @@ export function collisionSystem({ world }) {
         if (enemy.state !== 'created') continue;
         const enemyCollider = enemy.get(Collider);
         if (bulletCollider.box.intersectsBox(enemyCollider.box)) {
-          // Rockets explode on impact with enemies
+          // Rockets explode on impact with enemies with massive splash damage
           if (bullet.hasTag && bullet.hasTag('rocket')) {
             const position = bullet.get(ThreeObject).mesh.position;
             createRocketExplosion(world, position);
+            // Direct hit also does splash damage (in addition to explosion damage)
+            applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
             bullet.destroy();
           } else {
             world.events.emit(new CollisionEvent(bullet, enemy));
@@ -1034,10 +1035,13 @@ export function collisionSystem({ world }) {
 
       for (const obstacleBox of obstacleBoxes) {
         if (bulletCollider.box.intersectsBox(obstacleBox)) {
-          // Rockets explode on impact with obstacles
+          // Rockets explode on impact with obstacles with splash damage
           if (bullet.hasTag && bullet.hasTag('rocket')) {
             const position = bullet.get(ThreeObject).mesh.position;
             createRocketExplosion(world, position);
+            // Also apply splash damage to nearby entities
+            const projectile = bullet.get(Projectile);
+            applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
           }
           bullet.destroy();
           break;
@@ -1074,7 +1078,8 @@ export function collisionSystem({ world }) {
     }
 
     // Handle armor pickup collision with player
-    const armorPickups = world.locateAll([ArmorPickup]);
+    const queryCache = world.getResource(QueryCache);
+    const armorPickups = queryCache.armorPickups.get();
     for (const pickup of armorPickups) {
       const pickupCollider = pickup.get(Collider);
       const armorPickup = pickup.get(ArmorPickup);
@@ -1088,7 +1093,7 @@ export function collisionSystem({ world }) {
     }
 
     // Handle collectable collision with player
-    const collectables = world.locateAll([Collectable]);
+    const collectables = queryCache.collectables.get();
     for (const collectable of collectables) {
       const collectableCollider = collectable.get(Collider);
       const collectableComponent = collectable.get(Collectable);
@@ -1724,8 +1729,9 @@ export function damageIndicatorSystem({ world, dt }) {
 
   const dtScale = dt / 16.66667;
 
-  // Process all damage indicators
-  const indicators = world.locateAll([DamageIndicator]);
+  // Process all damage indicators - use cached query
+  const queryCache = world.getResource(QueryCache);
+  const indicators = queryCache.damageIndicators.get();
   indicators.forEach(entity => {
     const indicator = entity.get(DamageIndicator);
     indicator.timer += dtScale;
@@ -1816,12 +1822,8 @@ export function cleanupSystem({ world }) {
 export function enemySpawnerSystem({ world, components }) {
   const gameState = components.get(GameState);
   const gameConfig = world.getResource(GameConfig);
-  const currentEnemies = world.locateAll([
-    EnemyAI,
-    ScoutAI,
-    TankAI,
-    SniperAI,
-  ]).length;
+  const queryCache = world.getResource(QueryCache);
+  const currentEnemies = queryCache.allEnemies.get().length;
 
   if (currentEnemies < gameConfig.maxEnemies) {
     gameState.enemySpawnTimer--;
@@ -1845,7 +1847,8 @@ export function enemySpawnerSystem({ world, components }) {
 export function healthPackSpawnerSystem({ world, components }) {
   const gameState = components.get(GameState);
   const gameConfig = world.getResource(GameConfig);
-  const currentPacks = world.locateAll([HealthPack]).length;
+  const queryCache = world.getResource(QueryCache);
+  const currentPacks = queryCache.healthPacks.get().length;
 
   if (currentPacks < 1) {
     gameState.healthPackSpawnTimer--;
@@ -1859,7 +1862,8 @@ export function healthPackSpawnerSystem({ world, components }) {
 export function weaponPickupSpawnerSystem({ world, components }) {
   const gameState = components.get(GameState);
   const gameConfig = world.getResource(GameConfig);
-  const currentPickups = world.locateAll([WeaponPickup]).length;
+  const queryCache = world.getResource(QueryCache);
+  const currentPickups = queryCache.weaponPickups.get().length;
 
   // Allow up to 2 weapon pickups on the field at once
   if (currentPickups < 2) {
@@ -1881,7 +1885,8 @@ export function weaponPickupSpawnerSystem({ world, components }) {
 export function armorPickupSpawnerSystem({ world, components }) {
   const gameState = components.get(GameState);
   const gameConfig = world.getResource(GameConfig);
-  const currentPickups = world.locateAll([ArmorPickup]).length;
+  const queryCache = world.getResource(QueryCache);
+  const currentPickups = queryCache.armorPickups.get().length;
 
   // Allow up to 1 armor pickup on the field at once
   if (currentPickups < 1) {
@@ -1900,9 +1905,10 @@ export function armorPickupSpawnerSystem({ world, components }) {
 
 export function collectableSpawnerSystem({ world, components }) {
   const gameState = components.get(GameState);
+  const queryCache = world.getResource(QueryCache);
 
   // Only spawn collectables at the start of the game (not continuously)
-  const currentCollectables = world.locateAll([Collectable]).length;
+  const currentCollectables = queryCache.collectables.get().length;
   const totalSpawned = currentCollectables + gameState.collectablesCollected;
 
   // Spawn collectables until we have 10 total (spawned + collected)
@@ -1919,7 +1925,8 @@ export function collectableSpawnerSystem({ world, components }) {
 
 function removeCollidersFromBouldersWithCollectables(world) {
   const boulders = world.getAllTagged(Boulder);
-  const collectables = world.locateAll([Collectable]);
+  const queryCache = world.getResource(QueryCache);
+  const collectables = queryCache.collectables.get();
 
   for (const boulder of boulders) {
     if (!boulder.has(ThreeObject) || !boulder.has(Collider)) continue;
@@ -2024,7 +2031,9 @@ export function hitFlashSystem({ entity, components }) {
 /* -------------------------------------------------------------------------- */
 
 export function armorRegenerationSystem({ world }) {
-  const players = world.locateAll([Armor, ArmorRegeneration]);
+  // Use cached query for better performance
+  const queryCache = world.getResource(QueryCache);
+  const players = queryCache.armorRegenPlayers.get();
 
   for (const player of players) {
     const armor = player.get(Armor);

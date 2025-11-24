@@ -181,7 +181,7 @@
         left: 50%;
         transform: translateX(-50%);
         width: 400px;
-        height: 60px;
+        height: 70px;
         background: linear-gradient(
           90deg,
           rgba(0, 0, 0, 0) 0%,
@@ -460,32 +460,33 @@
           height: 2px;
         }
 
-        /* Scale down HUD elements */
+        /* Move HUD to top-left (away from joystick) */
         #hud {
-          bottom: 10px;
+          top: 75px; /* Below minimap */
           left: 10px;
-          font-size: 12px;
+          bottom: auto; /* Remove bottom positioning */
+          font-size: 11px;
           gap: 5px;
         }
 
         .health-bar-container,
         .armor-bar-container {
-          width: 120px;
-          height: 15px;
+          width: 100px;
+          height: 12px;
         }
 
         .weapon-icon {
-          width: 30px;
-          height: 30px;
-          font-size: 16px;
-        }
-
-        .weapon-name {
+          width: 25px;
+          height: 25px;
           font-size: 14px;
         }
 
-        .ammo-display {
+        .weapon-name {
           font-size: 12px;
+        }
+
+        .ammo-display {
+          font-size: 10px;
         }
 
         /* Scale down stats section */
@@ -495,6 +496,37 @@
           font-size: 12px;
           padding: 5px;
           min-width: 80px;
+        }
+
+        /* Shrink compass on mobile */
+        #compass-container {
+          width: 200px; /* Half the desktop size */
+          height: 45px; /* Increased to prevent label clipping */
+          top: 10px;
+        }
+
+        #compass-arrow {
+          font-size: 14px;
+        }
+
+        .compass-tick {
+          top: 12px;
+          height: 6px;
+        }
+
+        .compass-tick.major {
+          top: 9px;
+          height: 10px;
+        }
+
+        .compass-label {
+          top: 22px; /* Adjusted for larger container */
+          font-size: 9px;
+        }
+
+        .compass-label.cardinal {
+          font-size: 11px;
+          top: 21px; /* Adjusted for larger container */
         }
 
         /* Mobile control overlays */
@@ -716,22 +748,13 @@
           <div class="fire-button" id="fire-button">🔫</div>
         </div>
       </div>
-
-      <!-- Orientation Warning -->
-      <div id="orientation-warning">
-        <i>📱</i>
-        <p>
-          Please rotate your device to landscape mode for the best gaming
-          experience!
-        </p>
-      </div>
     </div>
 
-    <!-- "ecstatic": "../../dist/ecstatic.esm.js", -->
+    <!-- "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.13/dist/ecstatic.esm.js", -->
     <script type="importmap">
       {
         "imports": {
-          "ecstatic": "https://unpkg.com/@brochington/ecstatic@0.4.13/dist/ecstatic.esm.js",
+          "ecstatic": "../../dist/ecstatic.esm.js",
           "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
         }

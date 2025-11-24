@@ -176,6 +176,8 @@ export class DamageIndicator {
   }
 }
 
+export class Particle {}
+
 // Tags
 export const Player = 'player';
 export const Enemy = 'enemy';
@@ -184,5 +186,4 @@ export const Tank = 'tank';
 export const Sniper = 'sniper';
 export const Bullet = 'bullet';
 export const Obstacle = 'obstacle';
-export const Particle = 'particle';
 export const Boulder = 'boulder';

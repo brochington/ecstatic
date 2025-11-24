@@ -9,6 +9,7 @@ import {
   GameConfig,
   WeaponSystem,
   AssetLibrary,
+  QueryCache,
 } from '../resources/resources.js';
 import {
   GameState,
@@ -33,6 +34,8 @@ import {
   Collectable,
   Boulder,
   Expires,
+  Projectile,
+  DamageIndicator,
 } from '../components/components.js';
 import {
   PlayerHealedEvent,
@@ -247,6 +250,32 @@ function initializeGame(world) {
 
   // Pass mobile flag to weapon system for performance optimization
   world.setResource(new WeaponSystem(mobileControls.isMobile));
+
+  // Initialize QueryCache with commonly-used queries for performance
+  const queryCache = new QueryCache();
+  world.setResource(queryCache);
+  
+  // Create persistent queries that auto-update when entities change
+  queryCache.projectiles = world.query({ all: [Projectile, Collider] });
+  queryCache.healthPacks = world.query({ all: [HealthPack] });
+  queryCache.weaponPickups = world.query({ all: [WeaponPickup] });
+  queryCache.armorPickups = world.query({ all: [ArmorPickup] });
+  queryCache.collectables = world.query({ all: [Collectable] });
+  queryCache.armorRegenPlayers = world.query({ all: [Armor, ArmorRegeneration] });
+  queryCache.weaponPickupArrows = world.query({ all: [WeaponPickupArrow] });
+  queryCache.damageIndicators = world.query({ all: [DamageIndicator] });
+  
+  // Query for all enemy types - uses ANY to match any enemy AI component
+  queryCache.allEnemies = world.query({ 
+    any: [EnemyAI, ScoutAI, TankAI, SniperAI],
+    all: [Collider]
+  });
+  
+  // Query for enemies with collision components (for obstacle avoidance)
+  queryCache.enemiesWithAI = world.query({
+    any: [EnemyAI, ScoutAI, TankAI, SniperAI],
+    all: [ThreeObject, Collider]
+  });
 
   world.createEntity().add(new GameState());
 

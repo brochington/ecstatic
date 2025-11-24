@@ -371,9 +371,8 @@ export class InputState {
 }
 
 export class GameConfig {
-  maxEnemies = 8;
-  // enemySpawnRate = 240;
-  enemySpawnRate = 120;
+  maxEnemies = 50;
+  enemySpawnRate = 20;
   healthPackSpawnRate = 300;
   weaponPickupSpawnRate = 900; // Spawn weapon pickups less frequently
 }
@@ -387,6 +386,42 @@ export class Weapon {
     this.ammo = ammo;
     this.maxAmmo = ammo; // Store the original max ammo
     this.lastFired = 0;
+  }
+}
+
+/**
+ * QueryCache resource stores commonly-used queries to avoid repeated locateAll() calls.
+ * 
+ * **Performance Benefits:**
+ * - Queries are created once and automatically maintained by the World
+ * - No need to scan all entities every frame - queries update reactively
+ * - Queries use efficient bitmask operations for component matching
+ * - Calling query.get() returns a filtered list instantly
+ * 
+ * **Usage Pattern:**
+ * Instead of:
+ *   const enemies = world.locateAll([EnemyAI, Collider]); // Scans all entities every call
+ * 
+ * Do this:
+ *   const queryCache = world.getResource(QueryCache);
+ *   const enemies = queryCache.allEnemies.get(); // O(n) where n = matched entities only
+ * 
+ * The World automatically adds/removes entities from queries when components change.
+ */
+export class QueryCache {
+  constructor() {
+    // These will be populated after world.query() calls in game initialization
+    this.projectiles = null;         // { all: [Projectile, Collider] }
+    this.allEnemies = null;          // { any: [EnemyAI, ScoutAI, TankAI, SniperAI], all: [Collider] }
+    this.obstacles = null;           // Tagged Obstacle (if needed)
+    this.healthPacks = null;         // { all: [HealthPack] }
+    this.weaponPickups = null;       // { all: [WeaponPickup] }
+    this.armorPickups = null;        // { all: [ArmorPickup] }
+    this.collectables = null;        // { all: [Collectable] }
+    this.enemiesWithAI = null;       // { any: [EnemyAI, ScoutAI, TankAI, SniperAI], all: [ThreeObject, Collider] }
+    this.armorRegenPlayers = null;   // { all: [Armor, ArmorRegeneration] }
+    this.weaponPickupArrows = null;  // { all: [WeaponPickupArrow] }
+    this.damageIndicators = null;    // { all: [DamageIndicator] }
   }
 }
 
@@ -414,10 +449,10 @@ export class WeaponSystem {
       new Weapon(
         'rocket',
         'Rocket Launcher',
-        50,
+        100,
         Math.round(120 * mobileMultiplier),
         5
-      ), // High damage, area effect
+      ), // Very high direct damage + splash
       new Weapon(
         'flamethrower',
         'Flamethrower',
