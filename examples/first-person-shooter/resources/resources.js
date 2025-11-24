@@ -19,6 +19,14 @@ export class ThreeScene {
       antialias: true,
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setScissorTest(false);
+
+    // Minimap Camera (Top-down Orthographic)
+    // Set an initial size (will be updated in system)
+    this.minimapCamera = new THREE.OrthographicCamera(-200, 200, 200, -200, 1, 1000);
+    this.minimapCamera.position.set(0, 100, 0);
+    this.minimapCamera.lookAt(0, 0, 0);
+    this.minimapCamera.layers.enableAll();
 
     // Disable clipping for now to avoid rendering issues
     // this.renderer.localClippingEnabled = true;
@@ -29,7 +37,13 @@ export class ThreeScene {
 
     // Improved lighting for outdoor scene
     const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x8b4513, 0.6); // Sky blue to brown
+    hemiLight.layers.enable(1); // Enable for minimap
     this.scene.add(hemiLight);
+
+    // Extra ambient light specifically for the minimap to brighten the terrain
+    const minimapAmbientLight = new THREE.AmbientLight(0xffffff, 5);
+    minimapAmbientLight.layers.set(1); // Only visible to minimap camera (Layer 1)
+    this.scene.add(minimapAmbientLight);
 
     // Sun-like directional light
     const dirLight = new THREE.DirectionalLight(0xfff8dc, 1.0); // Warm sunlight color
@@ -43,10 +57,63 @@ export class ThreeScene {
     dirLight.shadow.camera.right = 400;
     dirLight.shadow.camera.top = 400;
     dirLight.shadow.camera.bottom = -400;
+    dirLight.layers.enable(1); // Enable for minimap
     this.scene.add(dirLight);
 
     // Add atmospheric fog
     this.scene.fog = new THREE.Fog(0x87ceeb, 50, 800);
+
+    // --- Minimap Caching Setup ---
+    // Create a render target to cache the static terrain
+    this.minimapRenderTarget = new THREE.WebGLRenderTarget(1024, 1024, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+    });
+
+    // Create a separate scene to display the cached minimap texture
+    this.minimapDisplayScene = new THREE.Scene();
+    // Orthographic camera for the quad (normalized coordinates -0.5 to 0.5)
+    this.minimapDisplayCamera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0, 10);
+    
+    // Create a quad to display the texture
+    // We flip Y because render targets are sometimes inverted depending on UVs/GL convention
+    // But typically PlaneGeometry UVs (0,0 bottom-left) match. 
+    // However, in top-down view, -Z is North (Up on screen).
+    const planeGeo = new THREE.PlaneGeometry(1, 1);
+    const planeMat = new THREE.MeshBasicMaterial({ 
+      map: this.minimapRenderTarget.texture,
+      fog: false 
+    });
+    this.minimapQuad = new THREE.Mesh(planeGeo, planeMat);
+    this.minimapDisplayScene.add(this.minimapQuad);
+  }
+
+  bakeStaticMinimap() {
+    // 1. Configure Minimap Camera to see only Layer 1 (where we will put static objects)
+    // Layer 0 is default. We want to bake objects that are on Layer 1.
+    // If objects are on both 0 and 1, they will be seen.
+    // If dynamic objects are ONLY on 0, they won't be seen.
+    this.minimapCamera.layers.set(1); 
+
+    // 2. Render static scene to the render target
+    const oldClearColor = this.renderer.getClearColor(new THREE.Color());
+    const oldClearAlpha = this.renderer.getClearAlpha();
+
+    // Use a specific background color for minimap (e.g., ground color or fog color)
+    // or just transparent. Transparent is better for styling.
+    this.renderer.setClearColor(0x000000, 0); 
+    
+    this.renderer.setRenderTarget(this.minimapRenderTarget);
+    this.renderer.clear();
+    this.renderer.render(this.scene, this.minimapCamera);
+    
+    // 3. Restore renderer state
+    this.renderer.setRenderTarget(null);
+    this.renderer.setClearColor(oldClearColor, oldClearAlpha);
+    
+    // Reset layers just in case
+    this.minimapCamera.layers.enableAll();
   }
 }
 

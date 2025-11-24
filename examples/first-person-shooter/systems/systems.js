@@ -901,70 +901,6 @@ export function entityObstacleCollisionSystem({ world }) {
   }
 }
 
-// Rocket explosion handling has been moved to collisionSystem and lifecycleSystem
-// export function rocketExplosionSystem({ world }) {
-//   const rockets = world.locateAll(['rocket', Collider]);
-//
-//   for (const rocket of rockets) {
-//     if (rocket.state !== 'created') continue;
-//     const rocketCollider = rocket.get(Collider);
-//     const projectile = rocket.get(Projectile);
-//
-//     // Check for collision with obstacles or expiry
-//     let shouldExplode = false;
-//     const obstacles = world.getAllTagged(Obstacle);
-//
-//     for (const obstacle of obstacles) {
-//       const obstacleCollider = obstacle.get(Collider);
-//       const obstacleBoxes = Array.isArray(obstacleCollider.box)
-//         ? obstacleCollider.box
-//         : [obstacleCollider.box];
-//
-//       for (const obstacleBox of obstacleBoxes) {
-//         if (rocketCollider.box.intersectsBox(obstacleBox)) {
-//           shouldExplode = true;
-//           break;
-//         }
-//       }
-//       if (shouldExplode) break;
-//     }
-//
-//     // Rockets also explode on impact with enemies or players
-//     if (projectile.firedBy === Player) {
-//       const enemies = world.locateAll([
-//         EnemyAI,
-//         ScoutAI,
-//         TankAI,
-//         SniperAI,
-//         Collider,
-//       ]);
-//       for (const enemy of enemies) {
-//         if (enemy.state === 'created') {
-//           const enemyCollider = enemy.get(Collider);
-//           if (rocketCollider.box.intersectsBox(enemyCollider.box)) {
-//             shouldExplode = true;
-//             break;
-//           }
-//         }
-//       }
-//     } else {
-//       const player = world.getTagged(Player);
-//       if (player && player.state === 'created') {
-//         const playerCollider = player.get(Collider);
-//         if (rocketCollider.box.intersectsBox(playerCollider.box)) {
-//           shouldExplode = true;
-//         }
-//       }
-//     }
-//
-//     if (shouldExplode) {
-//       const position = rocket.get(ThreeObject).mesh.position;
-//       createRocketExplosion(world, position);
-//       rocket.destroy();
-//     }
-//   }
-// }
-
 export function collisionSystem({ world }) {
   // Use cached queries for better performance
   const queryCache = world.getResource(QueryCache);
@@ -1541,77 +1477,42 @@ function updateMinimap(world) {
 
   // Clear existing dots
   const existingDots = minimap.querySelectorAll(
-    '.minimap-enemy, .minimap-item, .minimap-armor, .minimap-collectable, .minimap-obstacle, .minimap-health'
+    '.minimap-enemy, .minimap-item, .minimap-armor, .minimap-collectable, .minimap-obstacle, .minimap-boulder, .minimap-tree, .minimap-health, .minimap-player'
   );
   existingDots.forEach(dot => dot.remove());
-
-  const entityDetails = [];
-  for (const entity of world.entities) {
-    // Skip undefined entities (holes in the array from deleted entities)
-    if (!entity) continue;
-
-    const details = [];
-    if (entity.has(Obstacle)) {
-      details.push('Obstacle');
-    }
-    if (entity.has(Player)) {
-      details.push('Player');
-    }
-    if (entity.has(Collectable)) {
-      details.push('Collectable');
-    }
-    if (
-      entity.has(Enemy) ||
-      entity.has(Scout) ||
-      entity.has(Tank) ||
-      entity.has(Sniper)
-    ) {
-      if (entity.has(Enemy)) details.push('Enemy');
-      if (entity.has(Scout)) details.push('Scout');
-      if (entity.has(Tank)) details.push('Tank');
-      if (entity.has(Sniper)) details.push('Sniper');
-    }
-    if (details.length > 0) {
-      entityDetails.push(details.join('+'));
-    }
-  }
 
   const mapSize = minimap.clientWidth; // Minimap size in pixels (matches CSS scaling)
 
   // Update player position on minimap
   if (player.has(ThreeObject)) {
-    const playerDot = minimap.querySelector('.minimap-player');
+    // Create new player dot if it doesn't exist (it was cleared above)
+    const playerDot = document.createElement('div');
+    playerDot.className = 'minimap-player';
+    
+    // Get the camera's world position since it's attached to the player container
+    const camera = threeScene.camera;
+    const playerPos = new THREE.Vector3();
+    camera.getWorldPosition(playerPos);
 
-    if (playerDot) {
-      // Get the camera's world position since it's attached to the player container
-      const camera = threeScene.camera;
-      const playerPos = new THREE.Vector3();
-      camera.getWorldPosition(playerPos);
+    const playerX = ((playerPos.x + sceneSize / 2) / sceneSize) * mapSize;
+    const playerZ = ((playerPos.z + sceneSize / 2) / sceneSize) * mapSize;
 
-      const playerX = ((playerPos.x + sceneSize / 2) / sceneSize) * mapSize;
-      const playerZ = ((playerPos.z + sceneSize / 2) / sceneSize) * mapSize;
+    // Ensure coordinates are within bounds
+    const clampedX = Math.max(0, Math.min(mapSize, playerX));
+    const clampedZ = Math.max(0, Math.min(mapSize, playerZ));
 
-      // Ensure coordinates are within bounds
-      const clampedX = Math.max(0, Math.min(mapSize, playerX));
-      const clampedZ = Math.max(0, Math.min(mapSize, playerZ));
-
-      playerDot.style.left = `${clampedX}px`;
-      playerDot.style.top = `${clampedZ}px`;
-    }
+    playerDot.style.left = `${clampedX}px`;
+    playerDot.style.top = `${clampedZ}px`;
+    minimap.appendChild(playerDot);
   }
 
   // Add enemy positions - collect all enemy types
-  const enemyTags = [Enemy, Scout, Tank, Sniper];
+  // Use hasTag since Enemy, Scout, etc. are tags
   const enemies = [];
   for (const entity of world.entities) {
-    // Skip undefined entities (holes in the array from deleted entities)
     if (!entity) continue;
-
-    for (const tag of enemyTags) {
-      if (entity.has(tag)) {
-        enemies.push(entity);
-        break; // Don't add the same entity multiple times if it has multiple enemy tags
-      }
+    if (entity.hasTag(Enemy) || entity.hasTag(Scout) || entity.hasTag(Tank) || entity.hasTag(Sniper)) {
+      enemies.push(entity);
     }
   }
 
@@ -1626,43 +1527,8 @@ function updateMinimap(world) {
       enemyMesh.getWorldPosition(enemyPos);
 
       // Convert world coordinates to minimap coordinates
-      // World goes from -50 to +50, map from 0 to 150
       const x = ((enemyPos.x + sceneSize / 2) / sceneSize) * mapSize;
       const z = ((enemyPos.z + sceneSize / 2) / sceneSize) * mapSize;
-
-      // Ensure coordinates are within bounds
-      const clampedX = Math.max(0, Math.min(mapSize, x));
-      const clampedZ = Math.max(0, Math.min(mapSize, z));
-
-      dot.style.left = `${clampedX}px`;
-      dot.style.top = `${clampedZ}px`;
-      minimap.appendChild(dot);
-    }
-  });
-
-  // Add obstacle positions (terrain)
-  const obstacles = [];
-  for (const entity of world.entities) {
-    // Skip undefined entities (holes in the array from deleted entities)
-    if (!entity) continue;
-
-    if (entity.has(Obstacle)) {
-      obstacles.push(entity);
-    }
-  }
-  obstacles.forEach(obstacle => {
-    if (obstacle.has(ThreeObject)) {
-      const obstacleMesh = obstacle.get(ThreeObject).mesh;
-      const dot = document.createElement('div');
-      dot.className = 'minimap-obstacle';
-
-      // Get world position of the obstacle mesh
-      const obstaclePos = new THREE.Vector3();
-      obstacleMesh.getWorldPosition(obstaclePos);
-
-      // Convert world coordinates to minimap coordinates
-      const x = ((obstaclePos.x + sceneSize / 2) / sceneSize) * mapSize;
-      const z = ((obstaclePos.z + sceneSize / 2) / sceneSize) * mapSize;
 
       // Ensure coordinates are within bounds
       const clampedX = Math.max(0, Math.min(mapSize, x));
@@ -1686,6 +1552,7 @@ function updateMinimap(world) {
       let shouldShow = false;
 
       // Determine what type of pickup this is and set appropriate class
+      // These are Components, so use .has()
       if (entity.has(ArmorPickup)) {
         dotClass = 'minimap-armor';
         shouldShow = true;
@@ -1803,7 +1670,35 @@ export function cameraControlSystem({ world }) {
 export function rendererSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  // 1. Render Main View
+  threeScene.renderer.setViewport(0, 0, width, height);
+  threeScene.renderer.setScissor(0, 0, width, height);
+  threeScene.renderer.setScissorTest(false); // Disable for full screen clear/render
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
+
+  // 2. Render Minimap View (Top-down)
+  // Get minimap container position and size
+  const minimapDiv = document.getElementById('minimap');
+  if (minimapDiv) {
+    const rect = minimapDiv.getBoundingClientRect();
+    
+    // Calculate viewport position (bottom-left origin for WebGL)
+    const bottom = height - rect.bottom;
+    
+    threeScene.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
+    threeScene.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
+    threeScene.renderer.setScissorTest(true);
+    
+    // Render the cached static terrain texture (Quad)
+    threeScene.renderer.render(threeScene.minimapDisplayScene, threeScene.minimapDisplayCamera);
+    
+    // Reset scissor test
+    threeScene.renderer.setScissorTest(false);
+  }
 }
 
 

@@ -1247,6 +1247,7 @@ export function createSkybox(scene) {
   });
 
   const skyMesh = new THREE.Mesh(skyGeometry, skyMaterial);
+  skyMesh.layers.enable(1); // Enable for minimap
   scene.add(skyMesh);
 }
 
@@ -1330,8 +1331,9 @@ export function createBoulder(world, position, size) {
   const collisionBoxes = [];
   rocks.forEach(rock => {
     const rockBox = new THREE.Box3().setFromObject(rock);
-    // Don't shrink too much to prevent spawning inside visual mesh
-    const shrinkFactor = 0.8; // 80% size (20% shrink) is safer than 50%
+    // Shrink box to 60% to avoid invisible walls on irregular/rotated shapes
+    // It is better to clip slightly into the rock than to hit invisible air
+    const shrinkFactor = 0.6; 
     const center = rockBox.getCenter(new THREE.Vector3());
     const size = rockBox.getSize(new THREE.Vector3());
     const halfSize = size.clone().multiplyScalar(shrinkFactor * 0.5);

@@ -261,7 +261,7 @@
       #minimap {
         width: 150px;
         height: 150px;
-        background: #228b22;
+        background: transparent;
         border: 2px solid #666;
         position: relative;
         border-radius: 3px;
@@ -323,6 +323,26 @@
         border-radius: 50%;
         transform: translate(-50%, -50%);
         border: 1px solid #654321;
+      }
+
+      .minimap-boulder {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: #a0a0a0;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        border: 1px solid #606060;
+      }
+
+      .minimap-tree {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #006400;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        border: 1px solid #004000;
       }
 
       .minimap-health {
@@ -444,7 +464,8 @@
           left: 5px;
           transform: none; /* Remove center positioning */
           padding: 3px;
-          background: rgba(0, 0, 0, 0.8);
+          /* background: rgba(0, 0, 0, 0.8); */
+          background: white;
           border-radius: 3px;
         }
 
@@ -455,6 +476,8 @@
         .minimap-armor,
         .minimap-collectable,
         .minimap-obstacle,
+        .minimap-boulder,
+        .minimap-tree,
         .minimap-health {
           width: 2px;
           height: 2px;

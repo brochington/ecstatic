@@ -33,6 +33,7 @@ import {
   HitFlash,
   Collectable,
   Boulder,
+  Tree,
   Expires,
   Projectile,
   DamageIndicator,
@@ -383,7 +384,7 @@ function initializeGame(world) {
     .addTag(Obstacle);
 
   // Create massive rock formations like Joshua Tree Desert
-  const numFormations = 120 + Math.floor(Math.random() * 40); // 80-120 formations
+  const numFormations = 60 + Math.floor(Math.random() * 20); // Reduced count for better navigation
 
   for (let i = 0; i < numFormations; i++) {
     // Vary sizes dramatically - from small rocks to massive formations
@@ -432,7 +433,8 @@ function initializeGame(world) {
       .createEntity()
       .add(new ThreeObject(tree))
       .add(new Collider(treeBox))
-      .addTag(Obstacle);
+      .addTag(Obstacle)
+      .addTag(Tree);
   }
 
   // Add many bushes - concentrated in grassy areas
@@ -625,6 +627,27 @@ function initializeGame(world) {
     .add(new ArmorRegeneration(5, 120)) // Regenerate 5 armor per second after 2 seconds delay
     .add(playerCollider)
     .addTag(Player);
+
+  // --- Minimap Baking ---
+  // Assign static objects to Layer 1 for minimap baking
+  // Ground, Obstacles (Boulders, Trees, Walls, Ruins, Crates, Barrels)
+  
+  // Ground Mesh (it was added to scene but let's find its Entity or Mesh)
+  ground.layers.enable(1);
+
+  // Find all obstacles and enable Layer 1 on their meshes
+  const obstacles = world.getAllTagged(Obstacle);
+  for (const obstacle of obstacles) {
+    if (obstacle.has(ThreeObject)) {
+      const obj = obstacle.get(ThreeObject).mesh;
+      obj.traverse((child) => {
+        child.layers.enable(1);
+      });
+    }
+  }
+
+  // Bake the static minimap
+  threeScene.bakeStaticMinimap();
 }
 
 /* -------------------------------------------------------------------------- */
