@@ -96,8 +96,7 @@ import {
   createGrassPatch,
   createRuin,
 } from '../entities/entities.js';
-
-export const sceneSize = 400;
+import { sceneSize, getTerrainHeight } from '../game/terrain.js';
 
 /* -------------------------------------------------------------------------- */
 /*                           SYSTEM REGISTRATION                            */
@@ -283,7 +282,7 @@ function initializeGame(world) {
   createBoundaryWalls(world, threeScene);
 
   // Create more natural ground with grass-like appearance
-  const groundGeo = new THREE.PlaneGeometry(sceneSize, sceneSize, 32, 32);
+  const groundGeo = new THREE.PlaneGeometry(sceneSize, sceneSize, 128, 128); // Increased segments for better noise detail
   const groundMat = new THREE.MeshPhongMaterial({
     color: 0x228b22, // Bright green grass color
     transparent: false,
@@ -296,7 +295,7 @@ function initializeGame(world) {
     const x = positions.getX(i);
     const y = positions.getY(i);
     // Create subtle rolling hills
-    const height = Math.sin(x * 0.01) * Math.cos(y * 0.01) * 0.2;
+    const height = getTerrainHeight(x, -y);
     positions.setZ(i, height);
   }
   groundGeo.computeVertexNormals();
@@ -308,9 +307,13 @@ function initializeGame(world) {
 
   // Add ground as an obstacle to prevent entities from falling through
   // Create a proper bounding box for the ground plane
+  // Since ground is uneven, we make this box cover the lowest possible point up to a safe height
+  // But for "solid" obstacle, this might be tricky. The physics system should probably use getTerrainHeight.
+  // We keep this for broad phase or just remove it if it interferes. 
+  // Let's keep it low so it catches things falling through the world but doesn't block movement on top.
   const groundBox = new THREE.Box3(
-    new THREE.Vector3(-sceneSize / 2, -0.5, -sceneSize / 2),
-    new THREE.Vector3(sceneSize / 2, 0.5, sceneSize / 2)
+    new THREE.Vector3(-sceneSize / 2, -50, -sceneSize / 2),
+    new THREE.Vector3(sceneSize / 2, -5, sceneSize / 2) // Below any terrain
   );
   world
     .createEntity()
@@ -335,6 +338,8 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + minDistance, sceneSize / 2 - minDistance)
     );
+    // Set Y to terrain height
+    boulderPosition.y = getTerrainHeight(boulderPosition.x, boulderPosition.z);
 
     const boulderData = createBoulder(world, boulderPosition, boulderSize);
     threeScene.scene.add(boulderData.mesh);
@@ -355,6 +360,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 12, sceneSize / 2 - 12)
     );
+    treePosition.y = getTerrainHeight(treePosition.x, treePosition.z);
     const tree = createTree(world, treePosition);
     threeScene.scene.add(tree);
 
@@ -375,6 +381,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
     );
+    bushPosition.y = getTerrainHeight(bushPosition.x, bushPosition.z);
     const bush = createBushes(world, bushPosition);
     threeScene.scene.add(bush);
 
@@ -395,6 +402,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
     );
+    cratePosition.y = getTerrainHeight(cratePosition.x, cratePosition.z);
     const crate = createCrate(world, cratePosition);
     threeScene.scene.add(crate);
 
@@ -415,6 +423,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
     );
+    barrelPosition.y = getTerrainHeight(barrelPosition.x, barrelPosition.z);
     const barrel = createBarrel(world, barrelPosition);
     threeScene.scene.add(barrel);
 
@@ -435,6 +444,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 8, sceneSize / 2 - 8)
     );
+    logPosition.y = getTerrainHeight(logPosition.x, logPosition.z);
     const log = createFallenLog(world, logPosition);
     threeScene.scene.add(log);
 
@@ -455,6 +465,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
     );
+    pillarPosition.y = getTerrainHeight(pillarPosition.x, pillarPosition.z);
     const pillar = createStonePillar(world, pillarPosition);
     threeScene.scene.add(pillar);
 
@@ -475,6 +486,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
     );
+    grassPosition.y = getTerrainHeight(grassPosition.x, grassPosition.z);
     const grass = createGrassPatch(world, grassPosition);
     threeScene.scene.add(grass);
   }
@@ -486,6 +498,7 @@ function initializeGame(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 15, sceneSize / 2 - 15)
     );
+    ruinPosition.y = getTerrainHeight(ruinPosition.x, ruinPosition.z);
     const ruin = createRuin(world, ruinPosition);
     threeScene.scene.add(ruin);
 
@@ -500,7 +513,8 @@ function initializeGame(world) {
   }
 
   const playerContainer = new THREE.Object3D();
-  playerContainer.position.set(0, 1.7, 0);
+  // Start player higher to land on ground
+  playerContainer.position.set(0, getTerrainHeight(0, 0) + 2, 0);
   threeScene.scene.add(playerContainer);
   threeScene.camera.position.set(0, 0, 0);
   playerContainer.add(threeScene.camera);

@@ -69,7 +69,7 @@ import {
   spawnArmorPickup,
   spawnCollectable,
 } from '../entities/entities.js';
-import { sceneSize } from '../game/game.js';
+import { sceneSize, getTerrainHeight } from '../game/terrain.js';
 
 /* -------------------------------------------------------------------------- */
 /*                                   SYSTEMS                                  */
@@ -166,8 +166,12 @@ export function playerMovementSystem({ world, dt }) {
     halfSize - playerRadius
   );
 
-  if (threeObject.mesh.position.y < 1.7) {
-    threeObject.mesh.position.y = 1.7;
+  // Ground collision logic for player
+  const terrainHeight = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  const playerMinHeight = terrainHeight + 1.7; // Player eye height / container height offset
+
+  if (threeObject.mesh.position.y < playerMinHeight) {
+    threeObject.mesh.position.y = playerMinHeight;
     velocity.y = 0;
   }
 }
@@ -303,7 +307,7 @@ export function enemyAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = 1;
+    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -380,7 +384,7 @@ export function scoutAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = 1;
+    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -465,7 +469,7 @@ export function tankAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = 1;
+    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -542,7 +546,7 @@ export function sniperAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * targetDistance;
     ai.targetPosition.z += Math.sin(angle) * targetDistance;
-    ai.targetPosition.y = 1;
+    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -627,7 +631,10 @@ export function healthPackAnimationSystem({ components, dt }) {
 
   healthPack.bobTimer += 0.05 * dtScale;
   healthPack.bobOffset = Math.sin(healthPack.bobTimer) * 0.2;
-  threeObject.mesh.position.y = 1 + healthPack.bobOffset;
+  
+  // Get terrain height for this pack
+  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  threeObject.mesh.position.y = terrainH + 1 + healthPack.bobOffset;
 
   threeObject.mesh.rotation.y += 0.02 * dtScale;
 }
@@ -643,7 +650,9 @@ export function weaponPickupAnimationSystem({ components, dt }) {
 
   weaponPickup.bobTimer += 0.05 * dtScale;
   weaponPickup.bobOffset = Math.sin(weaponPickup.bobTimer) * 0.15;
-  threeObject.mesh.position.y = 1 + weaponPickup.bobOffset;
+  
+  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  threeObject.mesh.position.y = terrainH + 1 + weaponPickup.bobOffset;
 
   // Rotate weapons to make them more visible
   threeObject.mesh.rotation.y += 0.03 * dtScale;
@@ -661,7 +670,9 @@ export function armorPickupAnimationSystem({ components, dt }) {
 
   armorPickup.bobTimer += 0.05 * dtScale;
   armorPickup.bobOffset = Math.sin(armorPickup.bobTimer) * 0.15;
-  threeObject.mesh.position.y = 1 + armorPickup.bobOffset;
+  
+  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  threeObject.mesh.position.y = terrainH + 1 + armorPickup.bobOffset;
 
   // Rotate armor to make it more visible with shield-like motion
   threeObject.mesh.rotation.y += 0.02 * dtScale;
@@ -689,7 +700,8 @@ export function collectableAnimationSystem({ components, dt }) {
   threeObject.mesh.rotation.z = collectable.rotationTimer * 0.3;
 
   // Set base position with bobbing
-  threeObject.mesh.position.y = collectable.bobOffset + 1.5;
+  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  threeObject.mesh.position.y = terrainH + collectable.bobOffset + 1.5;
 
   // Pulsing emissive intensity for extra glow effect
   const emissivePulse = Math.sin(collectable.bobTimer * 2) * 0.2 + 0.8;
@@ -885,11 +897,7 @@ export function entityObstacleCollisionSystem({ world }) {
       }
     }
 
-    // Ground collision for enemies (similar to player)
-    if (enemyObject.mesh.position.y < 1.0) {
-      enemyObject.mesh.position.y = 1.0;
-      enemyVelocity.y = 0;
-    }
+    // Ground collision logic is handled in groundCollisionSystem
   }
 }
 
@@ -1963,14 +1971,18 @@ function removeCollidersFromBouldersWithCollectables(world) {
 export function groundCollisionSystem({ components }) {
   const threeObject = components.get(ThreeObject);
   const velocity = components.get(Velocity);
+  
+  if (!threeObject || !velocity) return;
 
-  // Assuming ground is at y=0. Adjust y position based on entity's height.
-  // Most of your enemies have their origin at the center.
-  // A simple check is to see if they go below their resting height.
-  const groundY = 1.0; // A common resting height for your enemies.
-
-  if (threeObject.mesh.position.y < groundY) {
-    threeObject.mesh.position.y = groundY;
+  const terrainHeight = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  
+  // Determine offset based on entity type or collider if possible
+  // For now, use a heuristic of 1.0 for enemies/items
+  const offset = 1.0;
+  
+  // Simple ground collision
+  if (threeObject.mesh.position.y < terrainHeight + offset) {
+    threeObject.mesh.position.y = terrainHeight + offset;
     // Stop downward movement upon hitting the ground.
     if (velocity.y < 0) {
       velocity.y = 0;
