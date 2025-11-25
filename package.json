@@ -1,6 +1,6 @@
 {
   "name": "@brochington/ecstatic",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "a damn fine ECS library",
   "main": "dist/ecstatic.cjs.js",
   "module": "dist/ecstatic.esm.js",
@@ -49,14 +49,8 @@
   ],
   "homepage": "https://brochington.github.io/ecstatic/",
   "types": "ecstatic.d.ts",
-  "dependencies": {
-    "class-transformer": "^0.5.1",
-    "uuid": "13.0.0"
-  },
-  "peerDependencies": {
-    "class-transformer": "^0.5.1",
-    "uuid": "13.0.0"
-  },
+  "dependencies": {},
+  "peerDependencies": {},
   "devDependencies": {
     "@rspack/cli": "^1.5.7",
     "@rspack/core": "^1.5.7",

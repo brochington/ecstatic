@@ -10,6 +10,25 @@ export type SerializableClassConstructor<T> = ClassConstructor<T> & {
 
 export type EntityId = number;
 
+export interface QueryDef<CT> {
+  /** Must include ALL of these components */
+  all?: ClassConstructor<CT>[];
+  /** Must include AT LEAST ONE of these components */
+  any?: ClassConstructor<CT>[];
+  /** Must NOT include ANY of these components */
+  none?: ClassConstructor<CT>[];
+  /** Must include EXACTLY these components (no more, no less). Equivalent to 'same'. */
+  only?: ClassConstructor<CT>[];
+  /** Must include EXACTLY these components. Equivalent to 'only'. */
+  same?: ClassConstructor<CT>[];
+  /** Must NOT include EXACTLY these components. */
+  different?: ClassConstructor<CT>[];
+  /** Must include AT LEAST this many components */
+  min?: number;
+  /** Must include AT MOST this many components */
+  max?: number;
+}
+
 export type EntityState =
   | "creating"
   | "created"
@@ -73,9 +92,107 @@ export type Transitions<S extends State, D = undefined> = Record<
   (data: D, current: S) => S
 >;
 
+export declare class BitSet {
+  mask: Uint32Array;
+  size: number;
+
+  constructor(size?: number);
+
+  /**
+   * Sets the bit at the given index to 1.
+   * Automatically resizes if the index is out of bounds.
+   */
+  set(index: number): void;
+
+  /**
+   * Sets the bit at the given index to 0.
+   */
+  clear(index: number): void;
+
+  /**
+   * Checks if this BitSet contains all bits set in the other BitSet.
+   * Used for 'All' checks.
+   */
+  contains(other: BitSet): boolean;
+
+  /**
+   * Checks if this BitSet shares ANY bits with the other BitSet.
+   * Used for 'Any'/'Some' checks.
+   */
+  intersects(other: BitSet): boolean;
+
+  /**
+   * Checks if this BitSet is exactly equal to the other BitSet.
+   * Used for 'Only'/'Same' checks.
+   */
+  equals(other: BitSet): boolean;
+
+  /**
+   * Returns the total number of bits set to 1.
+   */
+  count(): number;
+
+  /**
+   * Generates a unique string key for Map lookups.
+   */
+  toString(): string;
+
+  /**
+   * Creates a copy of the BitSet.
+   */
+  clone(): BitSet;
+}
+
+export declare class ComponentRegistry {
+  static getId(componentClass: ClassConstructor<any>): number;
+}
+
+export declare class Query<CT> {
+  /** The cached result set managed by the World */
+  entities: Set<EntityId>;
+
+  /** The unique key identifying this query configuration */
+  readonly key: string;
+
+  /** Track if this query relies on specific component indexes or global updates */
+  readonly isUniversal: boolean;
+
+  /** Components that trigger this query */
+  readonly relevantComponents: Set<string>;
+
+  constructor(world: World<CT>, def: QueryDef<CT>);
+
+  /**
+   * Checks if the entity matches the query criteria.
+   */
+  match(entity: Entity<CT>): boolean;
+
+  /**
+   * Make Query iterable.
+   * Iterates over the entities currently in the result set.
+   */
+  [Symbol.iterator](): Iterator<Entity<CT>>;
+
+  /**
+   * Returns the results as an array for easier filtering/mapping.
+   */
+  get(): Entity<CT>[];
+
+  /**
+   * Returns the first matching entity or null.
+   */
+  first(): Entity<CT> | null;
+
+  /**
+   * Returns the number of matching entities.
+   */
+  get size(): number;
+}
+
 export class Entity<CT> {
   get id(): EntityId;
   get world(): World<CT>;
+  get componentMask(): BitSet;
 
   /**
    * Get the current state of the entity.
@@ -329,8 +446,6 @@ export type SystemFunc<CT> = (
 declare class Systems<CT> {
   world: World<CT>;
 
-  systemFuncBySystemName: Map<string, SystemFunc<CT>>;
-
   compNamesBySystemName: Map<string, string[]>;
 
   constructor(world: World<CT>);
@@ -338,23 +453,26 @@ declare class Systems<CT> {
   setPhaseOrder(order: string[]): void;
 
   add(
-    cTypes: ClassConstructor<CT>[],
+    query: Query<CT>,
     systemFunc: SystemFunc<CT>,
-    canonicalKey: string,
-    options: { phase?: string; name?: string }
+    options?: { phase?: string; name?: string }
   ): this;
 
   run(args?: { dt?: number; time?: number }): void;
 }
 
 declare class World<CT> {
-  componentCollections: Map<EntityId, ComponentCollection<CT>>;
+  componentCollections: ComponentCollection<CT>[];
 
-  entities: Map<EntityId, Entity<CT>>;
+  entities: Entity<CT>[];
 
-  entitiesByCTypes: Map<string[], Set<EntityId>>;
+  queries: Map<string, Query<CT>>;
 
   entitiesByTags: Map<Tag, Set<EntityId>>;
+
+  entitiesToCreate: Set<Entity<CT>>;
+
+  entitiesToDestroy: Set<Entity<CT>>;
 
   /**
    * Provides access to systems added to the world.
@@ -371,6 +489,12 @@ declare class World<CT> {
    * Event management system for handling custom events.
    */
   events: EventManager<CT>;
+
+  /**
+   * Creates or retrieves a Query based on the definition.
+   * The Query is cached and automatically maintained by the World.
+   */
+  query(def: QueryDef<CT>): Query<CT>;
 
   /**
    * "finds" a single entity based on a predicate
@@ -464,7 +588,7 @@ declare class World<CT> {
   addSystemListener<E>(
     EventType: ClassConstructor<E>,
     listenerFunc: EventListenerFunc<E, CT>,
-    options: { phase?: string }
+    options?: { phase?: string }
   ): this;
 
   /**
@@ -497,7 +621,7 @@ declare class World<CT> {
    */
   createEntityFromPrefab(
     name: string,
-    overrides: { [componentName: string]: Partial<CT> }
+    overrides?: { [componentName: string]: Partial<CT> }
   ): Entity<CT>;
 
   /**
@@ -507,11 +631,12 @@ declare class World<CT> {
 
   /**
    * Add a system to the world.
+   * Accepts a Query object, QueryDef, or array of component constructors (legacy).
    */
   addSystem(
-    cTypes: ClassConstructor<CT>[],
+    queryDef: ClassConstructor<CT>[] | QueryDef<CT> | Query<CT>,
     systemFunc: SystemFunc<CT>,
-    options: { phase?: string; name?: string }
+    options?: { phase?: string; name?: string }
   ): this;
 
   /**

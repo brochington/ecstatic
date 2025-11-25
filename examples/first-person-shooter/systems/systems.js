@@ -71,6 +71,17 @@ import {
 } from '../entities/entities.js';
 import { sceneSize, getTerrainHeight } from '../game/terrain.js';
 
+
+// -------------------------------------------------------------------------- 
+// GLOBAL REUSABLE OBJECTS (POOLS)
+// Reduces Garbage Collection jitter by reusing objects instead of creating new ones
+// -------------------------------------------------------------------------- 
+const _TEMP_VEC1 = new THREE.Vector3();
+const _TEMP_VEC2 = new THREE.Vector3();
+const _TEMP_VEC3 = new THREE.Vector3();
+const _TEMP_MAT4 = new THREE.Matrix4();
+// const _TEMP_BOX  = new THREE.Box3();
+
 /* -------------------------------------------------------------------------- */
 /*                                   SYSTEMS                                  */
 /* -------------------------------------------------------------------------- */
@@ -92,7 +103,7 @@ export function playerMovementSystem({ world, dt }) {
   velocity.z *= Math.pow(0.95, dtScale);
 
   const speed = 0.04 * dtScale;
-  const direction = new THREE.Vector3();
+  const direction = _TEMP_VEC1.set(0, 0, 0);
 
   // Handle desktop controls
   if (!mobileControls || !mobileControls.isMobile) {
@@ -101,14 +112,14 @@ export function playerMovementSystem({ world, dt }) {
     const camera = controls.pointerLock.getObject();
 
     // Get forward vector from camera, flatten to ground (y=0), and normalize
-    const forward = new THREE.Vector3();
+    const forward = _TEMP_VEC2;
     camera.getWorldDirection(forward);
     forward.y = 0;
     forward.normalize();
 
     // Calculate right vector
-    const right = new THREE.Vector3();
-    right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+    const right = _TEMP_VEC3;
+    right.crossVectors(forward, THREE.Object3D.DEFAULT_UP).normalize();
 
     if (input.forward) {
       velocity.add(forward.multiplyScalar(speed));
@@ -127,7 +138,7 @@ export function playerMovementSystem({ world, dt }) {
     const movementVector = mobileControls.getMovementVector();
 
     if (movementVector.x !== 0 || movementVector.y !== 0) {
-      const playerRotationMatrix = new THREE.Matrix4();
+      const playerRotationMatrix = _TEMP_MAT4;
       playerRotationMatrix.makeRotationY(threeObject.mesh.rotation.y);
 
       // Forward/backward
@@ -149,9 +160,9 @@ export function playerMovementSystem({ world, dt }) {
     velocity.normalize().multiplyScalar(maxSpeed);
     velocity.y = yVel;
   }
-  
+
   // Note: position update is handled in movementSystem, which also uses dtScale
-  
+
   // Boundary Clamping
   const halfSize = sceneSize / 2;
   const playerRadius = 0.5;
@@ -167,7 +178,10 @@ export function playerMovementSystem({ world, dt }) {
   );
 
   // Ground collision logic for player
-  const terrainHeight = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  const terrainHeight = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
   const playerMinHeight = terrainHeight + 1.7; // Player eye height / container height offset
 
   if (threeObject.mesh.position.y < playerMinHeight) {
@@ -193,13 +207,14 @@ export function playerShootingSystem({ world }) {
   if (!input || !player || !controls || !weaponSystem) return;
 
   const camera = controls.pointerLock.getObject();
-  const direction = new THREE.Vector3();
+  const direction = _TEMP_VEC1;
   camera.getWorldDirection(direction);
 
-  const startPosition = new THREE.Vector3();
-  camera
-    .getWorldPosition(startPosition)
-    .add(direction.clone().multiplyScalar(1.5));
+  const startPosition = _TEMP_VEC2;
+  camera.getWorldPosition(startPosition)
+
+  _TEMP_VEC3.copy(direction).multiplyScalar(1.5);
+  startPosition.add(_TEMP_VEC3);
 
   const weapon = weaponSystem.getCurrentWeapon();
 
@@ -237,7 +252,7 @@ export function playerShootingSystem({ world }) {
   if (shouldFire && weaponSystem.fire()) {
     switch (weapon.type) {
       case 'pistol':
-        createBullet(world, startPosition, direction, Player, weapon.damage);
+        createBullet(world, startPosition.clone(), direction.clone(), Player, weapon.damage);
         break;
       case 'shotgun':
         createShotgunBlast(
@@ -249,10 +264,10 @@ export function playerShootingSystem({ world }) {
         );
         break;
       case 'machinegun':
-        createBullet(world, startPosition, direction, Player, weapon.damage);
+        createBullet(world, startPosition.clone(), direction.clone(), Player, weapon.damage);
         break;
       case 'rocket':
-        createRocket(world, startPosition, direction, Player, weapon.damage);
+        createRocket(world, startPosition.clone(), direction.clone(), Player, weapon.damage);
         break;
       case 'flamethrower':
         createFlameThrowerBlast(
@@ -265,7 +280,7 @@ export function playerShootingSystem({ world }) {
         break;
     }
 
-    createMuzzleFlash(world, startPosition, direction, weapon.type);
+    createMuzzleFlash(world, startPosition.clone(), direction.clone(), weapon.type);
   }
 
   // Reset shootReleased after firing
@@ -307,7 +322,8 @@ export function enemyAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
+    ai.targetPosition.y =
+      getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -384,7 +400,8 @@ export function scoutAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
+    ai.targetPosition.y =
+      getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -469,7 +486,8 @@ export function tankAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * distanceFromPlayer;
     ai.targetPosition.z += Math.sin(angle) * distanceFromPlayer;
-    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
+    ai.targetPosition.y =
+      getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -546,7 +564,8 @@ export function sniperAISystem({ world, components, dt }) {
     ai.targetPosition.copy(playerObj.mesh.position);
     ai.targetPosition.x += Math.cos(angle) * targetDistance;
     ai.targetPosition.z += Math.sin(angle) * targetDistance;
-    ai.targetPosition.y = getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
+    ai.targetPosition.y =
+      getTerrainHeight(ai.targetPosition.x, ai.targetPosition.z) + 1;
     ai.moveTimer = ai.moveCooldown;
   }
 
@@ -589,9 +608,9 @@ export function sniperAISystem({ world, components, dt }) {
 export function movementSystem({ entity, components, dt }) {
   const velocity = components.get(Velocity);
   const threeObject = components.get(ThreeObject);
-  
+
   const dtScale = dt / 16.66667;
-  
+
   threeObject.mesh.position.add(velocity.clone().multiplyScalar(dtScale));
 
   // Boundary check for projectiles - destroy if too far outside scene
@@ -631,9 +650,12 @@ export function healthPackAnimationSystem({ components, dt }) {
 
   healthPack.bobTimer += 0.05 * dtScale;
   healthPack.bobOffset = Math.sin(healthPack.bobTimer) * 0.2;
-  
+
   // Get terrain height for this pack
-  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  const terrainH = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
   threeObject.mesh.position.y = terrainH + 1 + healthPack.bobOffset;
 
   threeObject.mesh.rotation.y += 0.02 * dtScale;
@@ -650,8 +672,11 @@ export function weaponPickupAnimationSystem({ components, dt }) {
 
   weaponPickup.bobTimer += 0.05 * dtScale;
   weaponPickup.bobOffset = Math.sin(weaponPickup.bobTimer) * 0.15;
-  
-  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+
+  const terrainH = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
   threeObject.mesh.position.y = terrainH + 1 + weaponPickup.bobOffset;
 
   // Rotate weapons to make them more visible
@@ -670,8 +695,11 @@ export function armorPickupAnimationSystem({ components, dt }) {
 
   armorPickup.bobTimer += 0.05 * dtScale;
   armorPickup.bobOffset = Math.sin(armorPickup.bobTimer) * 0.15;
-  
-  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+
+  const terrainH = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
   threeObject.mesh.position.y = terrainH + 1 + armorPickup.bobOffset;
 
   // Rotate armor to make it more visible with shield-like motion
@@ -700,7 +728,10 @@ export function collectableAnimationSystem({ components, dt }) {
   threeObject.mesh.rotation.z = collectable.rotationTimer * 0.3;
 
   // Set base position with bobbing
-  const terrainH = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
+  const terrainH = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
   threeObject.mesh.position.y = terrainH + collectable.bobOffset + 1.5;
 
   // Pulsing emissive intensity for extra glow effect
@@ -772,7 +803,13 @@ function checkObstacleCollision(entityBox, obstacleCollider) {
 
   for (const obstacleBox of obstacleBoxes) {
     if (entityBox.intersectsBox(obstacleBox)) {
-      // Calculate overlap on each axis
+      // GC OPTIMIZATION: Calculate centers manually or use recycled vector
+      const entCenter = _TEMP_VEC1;
+      entityBox.getCenter(entCenter);
+
+      const obsCenter = _TEMP_VEC2;
+      obstacleBox.getCenter(obsCenter);
+
       const overlapX =
         Math.min(entityBox.max.x, obstacleBox.max.x) -
         Math.max(entityBox.min.x, obstacleBox.min.x);
@@ -783,10 +820,28 @@ function checkObstacleCollision(entityBox, obstacleCollider) {
         Math.min(entityBox.max.z, obstacleBox.max.z) -
         Math.max(entityBox.min.z, obstacleBox.min.z);
 
-      return { overlapX, overlapY, overlapZ, obstacleBox };
+      return { overlapX, overlapY, overlapZ, obstacleBox }; // Returning object here is acceptable
     }
   }
   return null;
+}
+
+// Helper for spatial partitioning
+function getNearbyObstacles(obstacles, position, radius) {
+  const nearby = [];
+  const r2 = radius * radius;
+
+  for (const obstacle of obstacles) {
+    const obsPos = obstacle.get(ThreeObject).mesh.position;
+    const dx = position.x - obsPos.x;
+    const dz = position.z - obsPos.z;
+
+    // Check squared distance to avoid sqrt
+    if (dx * dx + dz * dz < r2) {
+      nearby.push(obstacle);
+    }
+  }
+  return nearby;
 }
 
 export function entityObstacleCollisionSystem({ world }) {
@@ -800,24 +855,28 @@ export function entityObstacleCollisionSystem({ world }) {
     const playerObject = player.get(ThreeObject);
     const playerBox = playerCollider.box;
 
-    for (const obstacle of obstacles) {
+    // OPTIMIZATION: Only check obstacles within a reasonable radius of player
+    const nearbyObstacles = getNearbyObstacles(
+      obstacles,
+      playerObject.mesh.position,
+      10
+    );
+
+    for (const obstacle of nearbyObstacles) {
       const obstacleCollider = obstacle.get(Collider);
       const collision = checkObstacleCollision(playerBox, obstacleCollider);
 
       if (collision) {
         const { overlapX, overlapZ, obstacleBox } = collision;
 
+        const obsCenter = _TEMP_VEC1;
+        obstacleBox.getCenter(obsCenter);
+
         if (Math.abs(overlapX) < Math.abs(overlapZ)) {
-          const sign = Math.sign(
-            playerObject.mesh.position.x -
-              obstacleBox.getCenter(new THREE.Vector3()).x
-          );
+          const sign = Math.sign(playerObject.mesh.position.x - obsCenter.x);
           playerObject.mesh.position.x += overlapX * sign;
         } else {
-          const sign = Math.sign(
-            playerObject.mesh.position.z -
-              obstacleBox.getCenter(new THREE.Vector3()).z
-          );
+          const sign = Math.sign(playerObject.mesh.position.z - obsCenter.z);
           playerObject.mesh.position.z += overlapZ * sign;
         }
       }
@@ -854,7 +913,14 @@ export function entityObstacleCollisionSystem({ world }) {
     const enemyObject = enemy.get(ThreeObject);
     const enemyVelocity = enemy.get(Velocity);
 
-    for (const obstacle of obstacles) {
+    // OPTIMIZATION: Only check obstacles within radius of enemy
+    const nearbyObstacles = getNearbyObstacles(
+      obstacles,
+      enemyObject.mesh.position,
+      8
+    );
+
+    for (const obstacle of nearbyObstacles) {
       const obstacleCollider = obstacle.get(Collider);
       const collision = checkObstacleCollision(
         enemyCollider.box,
@@ -864,36 +930,26 @@ export function entityObstacleCollisionSystem({ world }) {
       if (collision) {
         const { overlapX, overlapY, overlapZ, obstacleBox } = collision;
 
-        // Find the axis with the smallest overlap
-        const minOverlap = Math.min(
-          Math.abs(overlapX),
-          Math.abs(overlapY),
-          Math.abs(overlapZ)
-        );
+       const obsCenter = _TEMP_VEC1;
+       obstacleBox.getCenter(obsCenter);
 
-        if (minOverlap === Math.abs(overlapY)) {
-          // Y axis collision (ground/ceiling)
-          const sign = Math.sign(
-            enemyObject.mesh.position.y -
-              obstacleBox.getCenter(new THREE.Vector3()).y
-          );
-          enemyObject.mesh.position.y += overlapY * sign;
-          enemyVelocity.y = 0; // Stop vertical movement
-        } else if (Math.abs(overlapX) < Math.abs(overlapZ)) {
-          // X axis collision
-          const sign = Math.sign(
-            enemyObject.mesh.position.x -
-              obstacleBox.getCenter(new THREE.Vector3()).x
-          );
-          enemyObject.mesh.position.x += overlapX * sign;
-        } else {
-          // Z axis collision
-          const sign = Math.sign(
-            enemyObject.mesh.position.z -
-              obstacleBox.getCenter(new THREE.Vector3()).z
-          );
-          enemyObject.mesh.position.z += overlapZ * sign;
-        }
+       const minOverlap = Math.min(
+         Math.abs(overlapX),
+         Math.abs(overlapY),
+         Math.abs(overlapZ)
+       );
+
+       if (minOverlap === Math.abs(overlapY)) {
+         const sign = Math.sign(enemyObject.mesh.position.y - obsCenter.y);
+         enemyObject.mesh.position.y += overlapY * sign;
+         enemyVelocity.y = 0;
+       } else if (Math.abs(overlapX) < Math.abs(overlapZ)) {
+         const sign = Math.sign(enemyObject.mesh.position.x - obsCenter.x);
+         enemyObject.mesh.position.x += overlapX * sign;
+       } else {
+         const sign = Math.sign(enemyObject.mesh.position.z - obsCenter.z);
+         enemyObject.mesh.position.z += overlapZ * sign;
+       }
       }
     }
 
@@ -930,7 +986,13 @@ export function collisionSystem({ world }) {
           const position = bullet.get(ThreeObject).mesh.position;
           createRocketExplosion(world, position);
           // Also apply direct splash damage
-          applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
+          applySplashDamage(
+            world,
+            position,
+            projectile.damage,
+            projectile.firedBy,
+            8
+          );
           bullet.destroy();
         } else {
           world.events.emit(new CollisionEvent(bullet, player));
@@ -949,7 +1011,13 @@ export function collisionSystem({ world }) {
             const position = bullet.get(ThreeObject).mesh.position;
             createRocketExplosion(world, position);
             // Direct hit also does splash damage (in addition to explosion damage)
-            applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
+            applySplashDamage(
+              world,
+              position,
+              projectile.damage,
+              projectile.firedBy,
+              8
+            );
             bullet.destroy();
           } else {
             world.events.emit(new CollisionEvent(bullet, enemy));
@@ -985,7 +1053,13 @@ export function collisionSystem({ world }) {
             createRocketExplosion(world, position);
             // Also apply splash damage to nearby entities
             const projectile = bullet.get(Projectile);
-            applySplashDamage(world, position, projectile.damage, projectile.firedBy, 8);
+            applySplashDamage(
+              world,
+              position,
+              projectile.damage,
+              projectile.firedBy,
+              8
+            );
           }
           bullet.destroy();
           break;
@@ -1241,7 +1315,13 @@ const uiState = {
   lastWeaponIcon: '',
 };
 
+let uiFrameCount = 0;
+
 export function uiRenderSystem({ world }) {
+  uiFrameCount++;
+
+  if (uiFrameCount % 3 !== 0) return;
+
   const gameStateEntity = world.locate(GameState);
   if (!gameStateEntity) return;
   const gameState = gameStateEntity.get(GameState);
@@ -1267,7 +1347,7 @@ export function uiRenderSystem({ world }) {
   if (player && player.has(Health)) {
     const health = player.get(Health);
     const healthPercent = (health.value / health.maxValue) * 100;
-    
+
     if (Math.abs(healthPercent - uiState.lastHealthPercent) > 0.1) {
       document.getElementById('health-bar').style.width = `${healthPercent}%`;
 
@@ -1291,7 +1371,7 @@ export function uiRenderSystem({ world }) {
   if (player && player.has(Armor)) {
     const armor = player.get(Armor);
     const armorPercent = (armor.value / armor.maxValue) * 100;
-    
+
     if (Math.abs(armorPercent - uiState.lastArmorPercent) > 0.1) {
       document.getElementById('armor-bar').style.width = `${armorPercent}%`;
       uiState.lastArmorPercent = armorPercent;
@@ -1307,7 +1387,7 @@ export function uiRenderSystem({ world }) {
       document.getElementById('current-weapon').innerText = currentWeapon.name;
       uiState.lastWeaponName = currentWeapon.name;
     }
-    
+
     if (currentWeapon.ammo !== uiState.lastAmmo) {
       document.getElementById('current-ammo').innerText =
         currentWeapon.ammo === Infinity ? '∞' : currentWeapon.ammo;
@@ -1334,7 +1414,7 @@ export function uiRenderSystem({ world }) {
         iconText = '🔥';
         break;
     }
-    
+
     if (iconText !== uiState.lastWeaponIcon) {
       weaponIcon.innerText = iconText;
       uiState.lastWeaponIcon = iconText;
@@ -1488,7 +1568,7 @@ function updateMinimap(world) {
     // Create new player dot if it doesn't exist (it was cleared above)
     const playerDot = document.createElement('div');
     playerDot.className = 'minimap-player';
-    
+
     // Get the camera's world position since it's attached to the player container
     const camera = threeScene.camera;
     const playerPos = new THREE.Vector3();
@@ -1511,7 +1591,12 @@ function updateMinimap(world) {
   const enemies = [];
   for (const entity of world.entities) {
     if (!entity) continue;
-    if (entity.hasTag(Enemy) || entity.hasTag(Scout) || entity.hasTag(Tank) || entity.hasTag(Sniper)) {
+    if (
+      entity.hasTag(Enemy) ||
+      entity.hasTag(Scout) ||
+      entity.hasTag(Tank) ||
+      entity.hasTag(Sniper)
+    ) {
       enemies.push(entity);
     }
   }
@@ -1667,6 +1752,8 @@ export function cameraControlSystem({ world }) {
   }
 }
 
+// let frameCount = 0;
+
 export function rendererSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
   if (!threeScene) return;
@@ -1680,27 +1767,7 @@ export function rendererSystem({ world }) {
   threeScene.renderer.setScissorTest(false); // Disable for full screen clear/render
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
 
-  // 2. Render Minimap View (Top-down)
-  // Get minimap container position and size
-  const minimapDiv = document.getElementById('minimap');
-  if (minimapDiv) {
-    const rect = minimapDiv.getBoundingClientRect();
-    
-    // Calculate viewport position (bottom-left origin for WebGL)
-    const bottom = height - rect.bottom;
-    
-    threeScene.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
-    threeScene.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
-    threeScene.renderer.setScissorTest(true);
-    
-    // Render the cached static terrain texture (Quad)
-    threeScene.renderer.render(threeScene.minimapDisplayScene, threeScene.minimapDisplayCamera);
-    
-    // Reset scissor test
-    threeScene.renderer.setScissorTest(false);
-  }
 }
-
 
 export function cleanupSystem({ world }) {
   const threeScene = world.getResource(ThreeScene);
@@ -1866,15 +1933,18 @@ function removeCollidersFromBouldersWithCollectables(world) {
 export function groundCollisionSystem({ components }) {
   const threeObject = components.get(ThreeObject);
   const velocity = components.get(Velocity);
-  
+
   if (!threeObject || !velocity) return;
 
-  const terrainHeight = getTerrainHeight(threeObject.mesh.position.x, threeObject.mesh.position.z);
-  
+  const terrainHeight = getTerrainHeight(
+    threeObject.mesh.position.x,
+    threeObject.mesh.position.z
+  );
+
   // Determine offset based on entity type or collider if possible
   // For now, use a heuristic of 1.0 for enemies/items
   const offset = 1.0;
-  
+
   // Simple ground collision
   if (threeObject.mesh.position.y < terrainHeight + offset) {
     threeObject.mesh.position.y = terrainHeight + offset;

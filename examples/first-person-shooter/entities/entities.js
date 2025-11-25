@@ -1,5 +1,6 @@
 import { getRandomNumber } from '../utils/utils.js';
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { PlayerDamagedEvent } from '../events/events.js';
 import { ThreeScene, AssetLibrary } from '../resources/resources.js';
 import {
@@ -86,10 +87,15 @@ export function applySplashDamage(world, position, damage, firedBy, radius) {
 
 export function createExplosion(world, position, color, count = 20) {
   const threeScene = world.getResource(ThreeScene);
+  const mobileControls = world.getResource('MobileControls');
   const assets = world.getResource(AssetLibrary);
   if (!threeScene || !assets) return;
 
-  for (let i = 0; i < count; i++) {
+  // OPTIMIZATION: Reduce particle count on mobile
+  const isMobile = mobileControls && mobileControls.isMobile;
+  const particleCount = isMobile ? Math.floor(count / 4) : count;
+
+  for (let i = 0; i < particleCount; i++) {
     const geo = assets.geometries.explosionParticle;
     const mat = assets.getExplosionMaterial(color);
     const mesh = new THREE.Mesh(geo, mat);
@@ -440,23 +446,45 @@ export function createMuzzleFlash(
       // Mobile-optimized: simpler geometry
       geo = assets.geometries.muzzleFlashMobile;
       switch (weaponType) {
-        case 'pistol': mat = assets.materials.flashYellowMobile; break;
-        case 'shotgun': mat = assets.materials.flashOrangeMobile; break;
-        case 'machinegun': mat = assets.materials.flashCyanMobile; break;
-        case 'rocket': mat = assets.materials.flashRedMobile; break;
-        case 'flamethrower': mat = assets.materials.flashOrangeMobile; break;
-        default: mat = assets.materials.flashYellowMobile;
+        case 'pistol':
+          mat = assets.materials.flashYellowMobile;
+          break;
+        case 'shotgun':
+          mat = assets.materials.flashOrangeMobile;
+          break;
+        case 'machinegun':
+          mat = assets.materials.flashCyanMobile;
+          break;
+        case 'rocket':
+          mat = assets.materials.flashRedMobile;
+          break;
+        case 'flamethrower':
+          mat = assets.materials.flashOrangeMobile;
+          break;
+        default:
+          mat = assets.materials.flashYellowMobile;
       }
     } else {
       // Desktop version
       geo = assets.geometries.muzzleFlashDesktop;
       switch (weaponType) {
-        case 'pistol': mat = assets.materials.flashYellow; break;
-        case 'shotgun': mat = assets.materials.flashOrange; break;
-        case 'machinegun': mat = assets.materials.flashCyan; break;
-        case 'rocket': mat = assets.materials.flashRed; break;
-        case 'flamethrower': mat = assets.materials.flashOrange; break;
-        default: mat = assets.materials.flashYellow;
+        case 'pistol':
+          mat = assets.materials.flashYellow;
+          break;
+        case 'shotgun':
+          mat = assets.materials.flashOrange;
+          break;
+        case 'machinegun':
+          mat = assets.materials.flashCyan;
+          break;
+        case 'rocket':
+          mat = assets.materials.flashRed;
+          break;
+        case 'flamethrower':
+          mat = assets.materials.flashOrange;
+          break;
+        default:
+          mat = assets.materials.flashYellow;
       }
     }
 
@@ -515,7 +543,7 @@ export function spawnScout(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 2, sceneSize / 2 - 2)
     );
-    
+
     // Adjust height to terrain
     position.y = getTerrainHeight(position.x, position.z) + 1;
 
@@ -593,7 +621,7 @@ export function spawnTank(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 3, sceneSize / 2 - 3)
     );
-    
+
     // Adjust height to terrain
     position.y = getTerrainHeight(position.x, position.z) + 1;
 
@@ -671,7 +699,7 @@ export function spawnSniper(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
     );
-    
+
     // Adjust height to terrain
     position.y = getTerrainHeight(position.x, position.z) + 1;
 
@@ -749,7 +777,7 @@ export function spawnEnemy(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 2, sceneSize / 2 - 2)
     );
-    
+
     // Adjust height to terrain
     position.y = getTerrainHeight(position.x, position.z) + 1;
 
@@ -835,7 +863,7 @@ export function spawnHealthPack(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
     );
-    
+
     // Adjust height to terrain
     packPosition.y = getTerrainHeight(packPosition.x, packPosition.z) + 1;
 
@@ -993,9 +1021,10 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
         0,
         getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
       );
-      
+
       // Adjust height to terrain
-      weaponPosition.y = getTerrainHeight(weaponPosition.x, weaponPosition.z) + 1;
+      weaponPosition.y =
+        getTerrainHeight(weaponPosition.x, weaponPosition.z) + 1;
 
       attempts++;
     } while (
@@ -1010,7 +1039,8 @@ export function spawnWeaponPickup(world, weaponType = null, position = null) {
         0,
         getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
       );
-      weaponPosition.y = getTerrainHeight(weaponPosition.x, weaponPosition.z) + 1;
+      weaponPosition.y =
+        getTerrainHeight(weaponPosition.x, weaponPosition.z) + 1;
     }
   }
 
@@ -1071,7 +1101,7 @@ export function spawnArmorPickup(world, armorAmount = 50) {
       0,
       getRandomNumber(-sceneSize / 2 + 5, sceneSize / 2 - 5)
     );
-    
+
     // Adjust height to terrain
     armorPosition.y = getTerrainHeight(armorPosition.x, armorPosition.z) + 1;
 
@@ -1129,10 +1159,10 @@ export function createCollectable(world, position) {
     color: 0xffd700,
     emissive: 0xaa5500,
     emissiveIntensity: 0.4,
-    shininess: 100
+    shininess: 100,
   });
   const mesh = new THREE.Mesh(geo, mat);
-  
+
   const light = new THREE.PointLight(0xffd700, 0.8, 6);
   mesh.add(light);
 
@@ -1161,7 +1191,7 @@ export function spawnCollectable(world) {
       0,
       getRandomNumber(-sceneSize / 2 + 10, sceneSize / 2 - 10)
     );
-    
+
     // Adjust height to terrain
     position.y = getTerrainHeight(position.x, position.z);
 
@@ -1198,7 +1228,7 @@ function isPositionBlocked(world, position) {
       const playerPos = playerObj.mesh.position;
       const horizontalDistance = Math.sqrt(
         Math.pow(position.x - playerPos.x, 2) +
-        Math.pow(position.z - playerPos.z, 2)
+          Math.pow(position.z - playerPos.z, 2)
       );
       if (horizontalDistance < 25) {
         return true; // Too close to player
@@ -1252,16 +1282,15 @@ export function createSkybox(scene) {
 }
 
 export function createBoulder(world, position, size) {
-  // Create more realistic rock formations
-  const boulderGroup = new THREE.Group();
+  // OPTIMIZATION: Merge geometries to reduce draw calls
+  // Note: We use a shared material color for the whole group to allow merging
 
   const baseColor = new THREE.Color().setHSL(
-    0.08 + Math.random() * 0.12, // Brownish hue with more variation
-    0.15 + Math.random() * 0.25, // Low to medium saturation
-    0.25 + Math.random() * 0.4 // Dark to medium brightness
+    0.08 + Math.random() * 0.12,
+    0.15,
+    0.3
   );
 
-  // Determine rock type: large monolith, cluster, or scattered
   const type = Math.random();
   let numRocks = 1;
   if (size > 10) {
@@ -1271,229 +1300,166 @@ export function createBoulder(world, position, size) {
     if (type < 0.5) numRocks = getRandomNumber(2, 4);
   }
 
-  const rocks = [];
-  
-  for (let i = 0; i < numRocks; i++) {
-    // Use IcosahedronGeometry for jagged, realistic look
-    const detail = Math.random() > 0.5 ? 0 : 1;
-    const geometry = new THREE.IcosahedronGeometry(1, detail);
-    
-    // Distort the rock vertices slightly for variety
-    const positionAttribute = geometry.attributes.position;
-    for (let j = 0; j < positionAttribute.count; j++) {
-      const x = positionAttribute.getX(j);
-      const y = positionAttribute.getY(j);
-      const z = positionAttribute.getZ(j);
-      // Simple noise-like distortion
-      const noise = Math.sin(x * 2) * Math.cos(y * 2) * Math.sin(z * 2) * 0.2;
-      positionAttribute.setXYZ(j, x + noise, y + noise, z + noise);
-    }
-    geometry.computeVertexNormals();
+  const geometries = [];
+  const collisionBoxes = [];
 
-    // Vary scale per axis for irregular shape
-    const rockSize = size * (0.5 + Math.random() * 0.8) / Math.pow(numRocks, 0.3);
-    geometry.scale(
+  // Create a temporary matrix to position geometries before merging
+  const matrix = new THREE.Matrix4();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const pos = new THREE.Vector3();
+
+  for (let i = 0; i < numRocks; i++) {
+    const detail = 0; // Low detail for performance
+    const geometry = new THREE.IcosahedronGeometry(1, detail);
+
+    // Randomize transform
+    const rockSize =
+      (size * (0.5 + Math.random() * 0.8)) / Math.pow(numRocks, 0.3);
+    scale.set(
       rockSize * (0.8 + Math.random() * 0.4),
       rockSize * (0.6 + Math.random() * 0.6),
       rockSize * (0.8 + Math.random() * 0.4)
     );
 
-    const rockMat = new THREE.MeshPhongMaterial({
-      color: baseColor.clone().multiplyScalar(0.8 + Math.random() * 0.4),
-      flatShading: true, // Low poly look
-      shininess: 10
-    });
-
-    const rock = new THREE.Mesh(geometry, rockMat);
-    
-    // Position within group
     if (numRocks > 1) {
-      rock.position.set(
+      pos.set(
         (Math.random() - 0.5) * size * 0.6,
         (Math.random() - 0.2) * size * 0.3,
         (Math.random() - 0.5) * size * 0.6
       );
+    } else {
+      pos.set(0, 0, 0);
     }
-    
-    // Random rotation
-    rock.rotation.set(
+
+    const rotation = new THREE.Euler(
       Math.random() * Math.PI * 2,
       Math.random() * Math.PI * 2,
       Math.random() * Math.PI * 2
     );
+    quaternion.setFromEuler(rotation);
 
-    rocks.push(rock);
-    boulderGroup.add(rock);
+    matrix.compose(pos, quaternion, scale);
+    geometry.applyMatrix4(matrix);
+
+    // Create collision box for this rock (relative to boulder center)
+    // We calculate this before merging
+    geometry.computeBoundingBox();
+    if (geometry.boundingBox) {
+      const box = geometry.boundingBox.clone();
+      // Shrink slightly to avoid snagging
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      box.expandByScalar(-0.2);
+      // Translate to world position
+      box.translate(position);
+      collisionBoxes.push(box);
+    }
+
+    geometries.push(geometry);
   }
 
-  boulderGroup.position.copy(position);
+  // Merge all rocks into one geometry
+  const mergedGeo = BufferGeometryUtils.mergeGeometries(geometries);
 
-  const collisionBoxes = [];
-  rocks.forEach(rock => {
-    const rockBox = new THREE.Box3().setFromObject(rock);
-    // Shrink box to 60% to avoid invisible walls on irregular/rotated shapes
-    // It is better to clip slightly into the rock than to hit invisible air
-    const shrinkFactor = 0.6; 
-    const center = rockBox.getCenter(new THREE.Vector3());
-    const size = rockBox.getSize(new THREE.Vector3());
-    const halfSize = size.clone().multiplyScalar(shrinkFactor * 0.5);
-    const min = center.clone().sub(halfSize);
-    const max = center.clone().add(halfSize);
-    const shrunkBox = new THREE.Box3(min, max);
-    shrunkBox.translate(boulderGroup.position);
-    collisionBoxes.push(shrunkBox);
+  // Single material for the whole boulder formation
+  const rockMat = new THREE.MeshPhongMaterial({
+    color: baseColor,
+    flatShading: true,
+    shininess: 5,
   });
 
-  return { mesh: boulderGroup, collisionBoxes };
+  const mesh = new THREE.Mesh(mergedGeo, rockMat);
+  mesh.position.copy(position);
+
+  // Only cast shadows if needed (resources.js handles global shadow disable)
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  return { mesh: mesh, collisionBoxes };
 }
 
 export function createTree(world, position) {
-  const treeGroup = new THREE.Group();
-  
-  // More tree types: 0=Joshua, 1=Pine, 2=Dead, 3=Palm-ish
-  const treeType = Math.floor(Math.random() * 4);
-  
-  if (treeType === 0) { // Joshua Tree style (classic)
-    const trunkGeo = new THREE.CylinderGeometry(0.25 + Math.random()*0.1, 0.4 + Math.random()*0.1, 5 + Math.random()*2, 7);
-    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x654321, flatShading: true });
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 2.5;
-    trunk.rotation.x = (Math.random() - 0.5) * 0.2;
-    trunk.rotation.z = (Math.random() - 0.5) * 0.2;
-    treeGroup.add(trunk);
+  // Optimization: Use Instanced/Merged geometry for trees to reduce draw calls.
+  // This replaces the complex Group hierarchy with a single Mesh.
 
-    // Add random branches
-    const branchCount = getRandomNumber(2, 5);
-    for(let i=0; i<branchCount; i++) {
-      const branchLen = 2 + Math.random();
-      const branchGeo = new THREE.CylinderGeometry(0.15, 0.25, branchLen, 5);
-      const branch = new THREE.Mesh(branchGeo, trunkMat);
-      branch.position.y = 3 + Math.random()*2;
-      branch.rotation.z = (Math.random() - 0.5) * 1.5;
-      branch.rotation.x = (Math.random() - 0.5) * 1.5;
-      branch.position.x = (Math.random()-0.5)*0.5;
-      branch.position.z = (Math.random()-0.5)*0.5;
-      treeGroup.add(branch);
-      
-      // Tuft of leaves at end of branch
-      const tuftGeo = new THREE.IcosahedronGeometry(0.6 + Math.random()*0.4, 0);
-      const tuftMat = new THREE.MeshPhongMaterial({ color: 0x228b22, flatShading: true });
-      const tuft = new THREE.Mesh(tuftGeo, tuftMat);
-      tuft.position.y = branchLen/2;
-      branch.add(tuft);
-    }
-  } else if (treeType === 1) { // Pine Tree style
-    const trunkHeight = 2 + Math.random();
-    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, trunkHeight, 7);
-    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x3e2723, flatShading: true });
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = trunkHeight/2;
-    treeGroup.add(trunk);
-    
-    const foliageColor = 0x1b5e20; // Dark green
-    const levels = getRandomNumber(3, 5);
-    for(let i=0; i<levels; i++) {
-      const levelSize = (levels - i) * 0.8 + 0.5;
-      const foliageGeo = new THREE.ConeGeometry(levelSize, 2, 7);
-      const foliageMat = new THREE.MeshPhongMaterial({ color: foliageColor, flatShading: true });
-      const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-      foliage.position.y = trunkHeight + i * 1.2;
-      treeGroup.add(foliage);
-    }
-  } else if (treeType === 2) { // Dead Tree
-    const trunkHeight = 4 + Math.random()*3;
-    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, trunkHeight, 5);
-    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x8d6e63, flatShading: true }); // Greyish brown
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = trunkHeight/2;
-    trunk.rotation.z = (Math.random()-0.5)*0.2;
-    treeGroup.add(trunk);
-    
-    const branchCount = getRandomNumber(3, 7);
-    for(let i=0; i<branchCount; i++) {
-      const branchLen = 1.5 + Math.random()*2;
-      const branchGeo = new THREE.CylinderGeometry(0.05, 0.15, branchLen, 4);
-      const branch = new THREE.Mesh(branchGeo, trunkMat);
-      branch.position.y = trunkHeight * (0.4 + Math.random()*0.6);
-      const angle = Math.random() * Math.PI * 2;
-      const tilt = 0.5 + Math.random() * 1.0;
-      branch.rotation.y = angle;
-      branch.rotation.z = tilt;
-      // Translate to surface of trunk
-      branch.position.x += Math.sin(tilt) * branchLen/2 * Math.cos(angle); 
-      treeGroup.add(branch);
-    }
-  } else { // Palm-ish / Broadleaf
-    const trunkHeight = 5 + Math.random()*2;
-    // Curved trunk approximation (tilted cylinders)
-    const segs = 4;
-    const segHeight = trunkHeight / segs;
-    const currentPos = new THREE.Vector3(0, 0, 0);
-    const trunkMat = new THREE.MeshPhongMaterial({ color: 0x795548, flatShading: true });
-    
-    const tiltX = (Math.random()-0.5)*0.3;
-    const tiltZ = (Math.random()-0.5)*0.3;
-    
-    for(let i=0; i<segs; i++) {
-      const rBottom = 0.4 - (i * 0.05);
-      const rTop = 0.4 - ((i+1) * 0.05);
-      const geo = new THREE.CylinderGeometry(rTop, rBottom, segHeight, 7);
-      const mesh = new THREE.Mesh(geo, trunkMat);
-      mesh.position.copy(currentPos);
-      mesh.position.y += segHeight/2;
-      // Apply slight curve
-      mesh.rotation.x = tiltX * i;
-      mesh.rotation.z = tiltZ * i;
-      treeGroup.add(mesh);
-      
-      currentPos.y += segHeight * Math.cos(tiltX*i); // Approx
-      currentPos.x -= segHeight * Math.sin(tiltZ*i);
-      currentPos.z += segHeight * Math.sin(tiltX*i);
-    }
-    
-    // Top foliage
-    const leafCount = getRandomNumber(5, 9);
-    for(let i=0; i<leafCount; i++) {
-      const leafGeo = new THREE.BoxGeometry(0.5, 0.1, 2.5);
-      const leafMat = new THREE.MeshPhongMaterial({ color: 0x4caf50, flatShading: true });
-      const leaf = new THREE.Mesh(leafGeo, leafMat);
-      leaf.position.copy(currentPos);
-      const angle = (i / leafCount) * Math.PI * 2;
-      leaf.rotation.y = angle;
-      leaf.rotation.x = 0.2 + Math.random()*0.3;
-      leaf.translateZ(1.2); // Move out from center
-      treeGroup.add(leaf);
-    }
-  }
+  // 1. Create geometries for parts
+  const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3, 5);
+  trunkGeo.translate(0, 1.5, 0);
 
-  treeGroup.position.copy(position);
-  return treeGroup;
+  const leavesGeo = new THREE.ConeGeometry(1.5, 3, 5);
+  leavesGeo.translate(0, 3.5, 0);
+
+  // 2. Merge them into a single geometry
+  const combinedGeo = BufferGeometryUtils.mergeGeometries([
+    trunkGeo,
+    leavesGeo,
+  ]);
+
+  // 3. Create Material
+  const mat = new THREE.MeshPhongMaterial({
+    color: 0x228b22,
+    flatShading: true,
+  });
+
+  const mesh = new THREE.Mesh(combinedGeo, mat);
+  mesh.position.copy(position);
+
+  // Random rotation for variety
+  mesh.rotation.y = Math.random() * Math.PI * 2;
+
+  // Shadows enabled (resources.js handles disabling them on mobile if needed,
+  // but the mesh property should be set here).
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  return mesh; // Returns a single Mesh instead of a Group
 }
 
 export function createBushes(world, position, count = 3) {
-  const bushGroup = new THREE.Group();
+  // OPTIMIZATION: Merge bush geometries
+  const geometries = [];
+  const matrix = new THREE.Matrix4();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const pos = new THREE.Vector3();
 
-  // Create more varied bushes
+  // Use a single color for the clump to allow merging
+  const hue = 0.25 + Math.random() * 0.1;
+  const color = new THREE.Color().setHSL(hue, 0.6, 0.35);
+
   for (let i = 0; i < count; i++) {
-    // Use Icosahedron for low-poly bush look
-    const bushGeo = new THREE.IcosahedronGeometry(0.6 + Math.random() * 0.6, 0);
-    const hue = 0.25 + Math.random() * 0.1; // Green to yellow-green
-    const bushMat = new THREE.MeshPhongMaterial({
-      color: new THREE.Color().setHSL(hue, 0.6, 0.3 + Math.random()*0.2),
-      flatShading: true
-    });
-    const bush = new THREE.Mesh(bushGeo, bushMat);
-    bush.position.set(
+    const bushGeo = new THREE.IcosahedronGeometry(1, 0); // Radius 1 base
+
+    pos.set(
       (Math.random() - 0.5) * 2.5,
       Math.random() * 0.5 + 0.3,
       (Math.random() - 0.5) * 2.5
     );
-    bush.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
-    bushGroup.add(bush);
+
+    const s = 0.6 + Math.random() * 0.6;
+    scale.set(s, s, s);
+
+    quaternion.setFromEuler(
+      new THREE.Euler(Math.random() * 3, Math.random() * 3, Math.random() * 3)
+    );
+
+    matrix.compose(pos, quaternion, scale);
+    bushGeo.applyMatrix4(matrix);
+
+    geometries.push(bushGeo);
   }
 
-  bushGroup.position.copy(position);
-  return bushGroup;
+  const mergedGeo = BufferGeometryUtils.mergeGeometries(geometries);
+  const bushMat = new THREE.MeshPhongMaterial({
+    color: color,
+    flatShading: true,
+  });
+
+  const mesh = new THREE.Mesh(mergedGeo, bushMat);
+  mesh.position.copy(position);
+
+  return mesh; // Returns single Mesh
 }
 
 export function createCrate(world, position) {
@@ -1576,7 +1542,7 @@ export function createStonePillar(world, position) {
 export function createGrassPatch(world, position) {
   // Use InstancedMesh for high performance grass rendering
   const bladeCount = 30;
-  
+
   // Base geometry for a single blade
   const bladeGeo = new THREE.PlaneGeometry(0.15, 0.8);
   bladeGeo.translate(0, 0.4, 0); // Pivot at bottom
@@ -1585,7 +1551,7 @@ export function createGrassPatch(world, position) {
     color: 0x228b22,
     side: THREE.DoubleSide,
     flatShading: true,
-    shininess: 0
+    shininess: 0,
   });
 
   const mesh = new THREE.InstancedMesh(bladeGeo, bladeMat, bladeCount);
@@ -1599,21 +1565,21 @@ export function createGrassPatch(world, position) {
       0,
       (Math.random() - 0.5) * 3.5
     );
-    
+
     dummy.rotation.y = Math.random() * Math.PI * 2;
     // More lean for variety
     dummy.rotation.x = (Math.random() - 0.5) * 0.6;
     dummy.rotation.z = (Math.random() - 0.5) * 0.6;
-    
+
     const scale = 0.8 + Math.random() * 0.2;
     dummy.scale.set(scale, scale * (0.8 + Math.random() * 0.6), scale);
-    
+
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
-    
+
     // Vary color for natural look
     // Hue: 0.25-0.35 (Yellow-green to green)
-    const hue = baseHue + (Math.random() - 0.5) * 0.1; 
+    const hue = baseHue + (Math.random() - 0.5) * 0.1;
     const sat = 0.5 + Math.random() * 0.3;
     const light = 0.2 + Math.random() * 0.3;
     color.setHSL(hue, sat, light);
@@ -1621,45 +1587,63 @@ export function createGrassPatch(world, position) {
   }
 
   mesh.position.copy(position);
-  
+
   // Ensure bounding box is correct for frustum culling
   mesh.computeBoundingSphere();
-  
+
   return mesh;
 }
 
 export function createRuin(world, position) {
-  const ruinGroup = new THREE.Group();
-
-  const stoneColors = [0x888888, 0x999999, 0x777777];
+  // OPTIMIZATION: Merge ruin blocks
+  const geometries = [];
+  const matrix = new THREE.Matrix4();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const pos = new THREE.Vector3();
 
   for (let i = 0; i < 5; i++) {
-    const stoneGeo = new THREE.BoxGeometry(
+    // Base size 1x1x1
+    const stoneGeo = new THREE.BoxGeometry(1, 1, 1);
+
+    scale.set(
       1 + Math.random() * 2,
       0.5 + Math.random() * 1.5,
       0.8 + Math.random() * 1.2
     );
-    const stoneMat = new THREE.MeshPhongMaterial({
-      color: stoneColors[Math.floor(Math.random() * stoneColors.length)],
-    });
-    const stone = new THREE.Mesh(stoneGeo, stoneMat);
 
-    stone.position.set(
+    pos.set(
       (Math.random() - 0.5) * 4,
       Math.random() * 1,
       (Math.random() - 0.5) * 4
     );
-    stone.rotation.set(
-      Math.random() * 0.5,
-      Math.random() * Math.PI * 2,
-      Math.random() * 0.5
+
+    quaternion.setFromEuler(
+      new THREE.Euler(
+        Math.random() * 0.5,
+        Math.random() * Math.PI * 2,
+        Math.random() * 0.5
+      )
     );
 
-    ruinGroup.add(stone);
+    matrix.compose(pos, quaternion, scale);
+    stoneGeo.applyMatrix4(matrix);
+
+    geometries.push(stoneGeo);
   }
 
-  ruinGroup.position.copy(position);
-  return ruinGroup;
+  const mergedGeo = BufferGeometryUtils.mergeGeometries(geometries);
+  const stoneMat = new THREE.MeshPhongMaterial({
+    color: 0x888888,
+    flatShading: true,
+  });
+
+  const mesh = new THREE.Mesh(mergedGeo, stoneMat);
+  mesh.position.copy(position);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  return mesh;
 }
 
 export function createBoundaryWalls(world, threeScene) {

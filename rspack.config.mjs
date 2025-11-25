@@ -94,8 +94,6 @@ const esmConfig = {
   externalsType: isProduction ? 'module-import' : undefined,
   externals: isProduction ? {
     // Externalize dependencies for cleaner ESM output
-    'class-transformer': 'class-transformer',
-    'uuid': 'uuid',
   } : {},
 };
 
